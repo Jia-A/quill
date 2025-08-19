@@ -18,6 +18,7 @@ userRouter.post("/signup", async (c) => {
     datasourceUrl: c.env.DATABASE_URL, // we have to access the env vars inside a route only because all the routes might be   deployed independently.
   }).$extends(withAccelerate());
 
+
   const body = await c.req.json();
   try {
     const user = await prisma.user.create({
