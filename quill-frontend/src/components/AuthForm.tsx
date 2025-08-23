@@ -3,19 +3,23 @@ import { useForm } from "react-hook-form";
 import Button from "../atoms/Button";
 import Input from "../atoms/Input";
 import { signupAction, signinAction } from "../actions/authActions";
-import type { SignupInput } from "@tech--tonic/medium-app-common";
+import { type SignupInput, SigninInput } from "@tech--tonic/medium-app-common";
 import { useState } from "react";
-// import { useNavigate } from "react-router-dom";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { signupSchema, signinSchema } from "@/utils/resolvers";
+import { useRouter } from "next/navigation";
 
 const AuthForm = () => {
   const [isSignupForm, setIsSignupForm] = useState(true);
-  // const navigate = useNavigate();
+  const router = useRouter()
   const {
     handleSubmit: handleSubmitSignup,
     register: registerSignup,
     getValues: getSignupValues,
     reset: resetSignup,
+    formState: { errors : signupErrors }
   } = useForm<SignupInput>({
+    resolver : zodResolver(signupSchema),
     defaultValues: { name: "", email: "", password: "" },
   });
 
@@ -24,7 +28,10 @@ const AuthForm = () => {
     register: registerSignin,
     getValues: getSigninValues,
     reset: resetSignin,
-  } = useForm<SignupInput>({ defaultValues: { email: "", password: "" } });
+    formState: { errors : signinErrors }
+  } = useForm<SigninInput>({ 
+    resolver : zodResolver(signinSchema),
+    defaultValues: { email: "", password: "" } });
 
   const signupHandler = async () => {
     const { name, email, password } = getSignupValues();
@@ -37,7 +44,7 @@ const AuthForm = () => {
     try {
       await signupAction(payload);
       resetSignup();
-    //   navigate("/blogs");
+      router.push("/blogs");
       console.log("Signup successful");
     } catch (error) {
       console.error("Signup error:", error);
@@ -53,7 +60,7 @@ const AuthForm = () => {
     try {
       await signinAction(payload);
       resetSignin();
-    //   navigate("/blogs");
+      router.push("/blogs");
       console.log("Signup successful");
     } catch (error) {
       console.error("Signin error:", error);
@@ -84,8 +91,11 @@ const AuthForm = () => {
           <form onSubmit={handleSubmitSignup(signupHandler)}>
             <span className="flex flex-col gap-3 w-[350px] mt-4">
               <Input label="Fullname" register={registerSignup("name")} />
+              {signupErrors.name && <p className="text-red-500 text-sm">{signupErrors.name.message}</p>}
               <Input label="Email" register={registerSignup("email")} />
+              {signupErrors.email && <p className="text-red-500 text-sm">{signupErrors.email.message}</p>}
               <Input label="Password" register={registerSignup("password")} />
+              {signupErrors.password && <p className="text-red-500 text-sm">{signupErrors.password.message}</p>}
             </span>
             <Button label="Signup" type="submit" />
           </form>
@@ -93,9 +103,11 @@ const AuthForm = () => {
           <form onSubmit={handleSubmitSignin(signinHandler)}>
             <span className="flex flex-col gap-3 w-[350px] mt-4">
               <Input label="Email" register={registerSignin("email")} />
+              {signinErrors.email && <p className="text-red-500 text-sm">{signinErrors.email.message}</p>}
               <Input label="Password" register={registerSignin("password")} />
+               {signinErrors.password && <p className="text-red-500 text-sm">{signinErrors.password.message}</p>}
             </span>
-            <Button label="Signup" type="submit" />
+            <Button label="Signin" type="submit" />
           </form>
         )}
       </div>

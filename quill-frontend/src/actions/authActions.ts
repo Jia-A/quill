@@ -4,7 +4,9 @@ import axios from "axios"
 
 
 export const signupAction = async (payload : SignupInput) => {
-    const response = await axios.post(`${API_URL}/user/signup`, payload)
+    const signupInp = {...payload, avatar : ""}
+    const response = await axios.post(`${API_URL}/user/signup`, signupInp)
+    console.log(response)
     if (response.status === 200) {
         localStorage.setItem("token", response.data.token)
         return response.data
