@@ -1,16 +1,14 @@
-import AuthForm from "@/components/AuthForm"
-import Quote from "@/components/Quote"
+'use client'
+import MainSection from '@/components/MainSection'
+import { useCustomer } from '@/hooks/useCustomer'
+import React from 'react'
 
-const Auth = () => {
+const LandingPage = () => {
   return (
-    <div className='grid lg:grid-cols-2 h-screen'>
-      <AuthForm />
-      <div className="hidden lg:block">
-        <Quote />
-      </div>
-      
+    <div>
+        <MainSection />
     </div>
   )
 }
 
-export default Auth
+export default LandingPage
