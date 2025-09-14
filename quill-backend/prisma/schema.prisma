@@ -30,6 +30,7 @@ model Post {
   content String?
   image String?
   published Boolean @default(false)
+  publishedDate DateTime? @db.Date
   authorId String
   author User @relation(fields: [authorId], references: [id])
 }
