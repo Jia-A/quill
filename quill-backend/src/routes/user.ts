@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client/edge";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { Hono } from "hono";
+import { setCookie } from "hono/cookie";
 import { sign } from "hono/jwt";
 
 export const userRouter = new Hono<{
@@ -28,6 +29,7 @@ userRouter.post("/signup", async (c) => {
       },
     });
     const token = await sign({ id: user.id }, c.env.JWT_SECRET);
+    setCookie(c, "token", token, { sameSite : "None", secure : true, path : "/"})
     return c.json({
       message: "User created successfully",
       user,
@@ -56,6 +58,7 @@ userRouter.post("/signin", async (c) => {
       return c.json({ error: "User not found" }, 404);
     }
     const token = await sign({ id: userExists.id }, c.env.JWT_SECRET);
+    setCookie(c, "token", token, { sameSite : "None", secure : false, path : "/"})
     return c.json({
       message: "User signed in successfully",
       userExists,
@@ -65,3 +68,4 @@ userRouter.post("/signin", async (c) => {
     return c.json({ error: error }, 500);
   }
 });
+
