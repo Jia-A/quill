@@ -134,7 +134,7 @@ const AuthForm = () => {
               label="Signin"
               type="submit"
               variant="primary"
-              className="mt-6"
+              className="mt-6 w-full md:w-1/2 justify-center"
             />
           </form>
         )}
