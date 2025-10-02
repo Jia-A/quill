@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Nunito } from "next/font/google";
+// import { Nunito } from "next/font/google";
+import { Inter } from 'next/font/google'
 import Header from "@/components/Header";
 
-const nunito = Nunito({
+const nunito = Inter({
       subsets: ['latin'],
       weight: ['400', '700'], // Specify desired weights (e.g., regular and bold)
       display: 'swap', // Optimizes font loading behavior
