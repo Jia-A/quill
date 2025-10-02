@@ -8,6 +8,7 @@ import React, { useState } from "react";
 
 const LoggedinUserHeader = () => {
   const { customer } = useCustomer();
+  console.log(customer);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const router = useRouter();
   const handleLogout = () => {
@@ -18,13 +19,19 @@ const LoggedinUserHeader = () => {
   };
   return (
     <header className="w-full flex justify-between items-center px-6 py-2 bg-white border-b border-gray-200 sticky top-0 z-50">
-      <span className="text-3xl font-extrabold tracking-wide cursor-pointer" onClick={() => router.push("/")}>QUILL</span>
+      <span
+        className="text-3xl font-extrabold tracking-wide cursor-pointer"
+        onClick={() => router.push("/blogs")}
+      >
+        QUILL
+      </span>
       <div className="flex gap-10">
         <Button
           variant="secondary"
           size="sm"
           label="Write"
           icon={<PencilSquareIcon width={20} height={20} />}
+          onClick={() => router.push("/editor")}
         />
         <Avatar
           size="sm"

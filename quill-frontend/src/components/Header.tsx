@@ -6,9 +6,7 @@ import HomepageHeader from './HomepageHeader'
 
 const Header = () => {
 const {isLogin, isLoading}= useCustomer()
-
-
-
+console.log(isLogin, isLoading)
   return (
     <div>
       {!isLoading && 

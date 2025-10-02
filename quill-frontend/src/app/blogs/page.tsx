@@ -1,9 +1,13 @@
 import { getBulkBlogs } from "@/actions/blogActions";
 import BlogList from "./BlogList";
 
+// Enable ISR - revalidate every 5 minutes (300 seconds)
+export const revalidate = 300;
+
 export default async function BlogHub() {
   // Fetch data on the server
   const data = await getBulkBlogs();
+  console.log(data)
   const blogs = data?.blogs || [];
 
   return (
