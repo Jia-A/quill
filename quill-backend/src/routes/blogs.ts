@@ -14,7 +14,7 @@ export const blogRouter = new Hono<{
 }>();
 
 blogRouter.use("/*", async (c, next) => {
-  if (c.req.path === "/api/v1/blog/bulk") {
+  if (c.req.path === "/api/v1/blog/bulk" || c.req.path.startsWith("/api/v1/blog/single/")) {
     await next();
     return;
   }
@@ -40,6 +40,8 @@ blogRouter.post("/", async (c) => {
       data: {
         title: body.title,
         content: body.content,
+        image: body.image,
+        published: body.published,
         authorId: userId,
         publishedDate: new Date(),
       },
@@ -63,6 +65,15 @@ blogRouter.get("/single/:id", async (c) => {
     const blog = await prisma.post.findFirst({
       where: {
         id: c.req.param("id"),
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
       },
     });
     return c.json({
@@ -108,6 +119,7 @@ blogRouter.get("/bulk", async (c) => {
       id: true,
       title: true,
       content: true,
+      image: true,
       publishedDate: true,
       author: {
         select: {
