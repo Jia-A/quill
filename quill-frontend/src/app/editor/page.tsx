@@ -13,7 +13,7 @@ import { Upload, X, ImageIcon, Link as LinkIcon } from "lucide-react";
 
 export default function BlogEditor() {
   const [title, setTitle] = useState("");
-  const [isError, setIsError] = useState({ element: "", message: "" });
+  const [isError, setIsError] = useState({element : "", message: ""});
   const [imageUrl, setImageUrl] = useState("");
   const [content, setContent] = useState("");
   const [isDragOver, setIsDragOver] = useState(false);
@@ -50,8 +50,8 @@ export default function BlogEditor() {
     setIsDragOver(false);
 
     const files = Array.from(e.dataTransfer.files);
-    const imageFile = files.find((file) => file.type.startsWith("image/"));
-
+    const imageFile = files.find(file => file.type.startsWith('image/'));
+    
     if (imageFile) {
       // For demo purposes, we'll create a URL for the dropped image
       // In a real app, you'd upload this to a cloud service
@@ -62,7 +62,7 @@ export default function BlogEditor() {
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && file.type.startsWith("image/")) {
+    if (file && file.type.startsWith('image/')) {
       // For demo purposes, we'll create a URL for the selected image
       // In a real app, you'd upload this to a cloud service
       const imageUrl = URL.createObjectURL(file);
@@ -122,45 +122,44 @@ export default function BlogEditor() {
       title,
       content: content,
       image: imageUrl,
-      published: true,
+      published:true
     };
 
-    console.log(title, content);
+    console.log(title, content)
 
-    if (!title) {
-      setIsError({ element: "title", message: "Title is required" });
+    if(!title) {
+      setIsError({element: "title", message: "Title is required"});
       return;
     }
-    if (!content || content === "<p></p>") {
-      setIsError({ element: "content", message: "Content is required" });
+    if(!content || content === '<p></p>') {
+      setIsError({element: "content", message: "Content is required"});
       return;
     }
     try {
-      const response = await postBlog(payload);
-      console.log(response);
-    } catch (error) {
-      console.log(error);
+      const response = await postBlog(payload)
+      console.log(response)
+    }
+    catch(error) {
+      console.log(error)
     }
     console.log(payload);
-  };
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="max-w-4xl mx-auto py-8 px-6">
         {/* Header */}
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Create Your Story
-          </h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Create Your Story</h1>
           <p className="text-gray-600">Share your thoughts with the world</p>
         </div>
 
         {/* Publish Button */}
         <div className="mb-8 flex justify-center">
-          <Button
-            label="Publish Post"
-            variant="primary"
-            className="px-8 py-3 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
+          <Button 
+            label="Publish Post" 
+            variant="primary" 
+            className="px-8 py-3 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200" 
             onClick={handlePublish}
           />
         </div>
@@ -169,10 +168,7 @@ export default function BlogEditor() {
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
           {/* Blog Title Input */}
           <div className="p-6 border-b border-gray-100">
-            <label
-              htmlFor="title"
-              className="block text-sm font-semibold text-gray-700 mb-3"
-            >
+            <label htmlFor="title" className="block text-sm font-semibold text-gray-700 mb-3">
               Article Title
             </label>
             <input
@@ -184,9 +180,7 @@ export default function BlogEditor() {
               className="w-full text-2xl font-bold border-none outline-none placeholder-gray-400 bg-transparent"
             />
             {isError.element === "title" && (
-              <span className="text-red-500 text-sm mt-2 block">
-                {isError.message}
-              </span>
+              <span className="text-red-500 text-sm mt-2 block">{isError.message}</span>
             )}
           </div>
 
@@ -195,15 +189,15 @@ export default function BlogEditor() {
             <label className="block text-sm font-semibold text-gray-700 mb-3">
               Featured Image
             </label>
-
+            
             {!imageUrl ? (
               <div className="space-y-4">
                 {/* Drag and Drop Area */}
                 <div
-                  className={`relative border border-dashed rounded-xl p-8 text-center transition-all duration-200 ${
-                    isDragOver
-                      ? "border-blue-500 bg-blue-50 scale-105"
-                      : "border-gray-300 hover:border-gray-400 hover:bg-gray-50"
+                  className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 ${
+                    isDragOver 
+                      ? 'border-blue-500 bg-blue-50 scale-105' 
+                      : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
                   }`}
                   onDragEnter={handleDragEnter}
                   onDragLeave={handleDragLeave}
@@ -211,27 +205,21 @@ export default function BlogEditor() {
                   onDrop={handleDrop}
                 >
                   <div className="flex flex-col items-center space-y-4">
-                    <div
-                      className={`w-16 h-16 rounded-full flex items-center justify-center ${
-                        isDragOver
-                          ? "bg-blue-100 text-blue-600"
-                          : "bg-gray-100 text-gray-600"
-                      }`}
-                    >
+                    <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
+                      isDragOver ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
+                    }`}>
                       <Upload className="w-8 h-8" />
                     </div>
-
+                    
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                        {isDragOver
-                          ? "Drop your image here!"
-                          : "Drop your image here"}
+                        {isDragOver ? 'Drop your image here!' : 'Drop your image here'}
                       </h3>
                       <p className="text-gray-500 text-sm">
                         or click to browse your files
                       </p>
                     </div>
-
+                    
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -321,10 +309,45 @@ export default function BlogEditor() {
             <MenuBar editor={editor} />
             <EditorContent editor={editor} />
             {isError.element === "content" && (
-              <span className="text-red-500 text-sm mt-2 block">
-                {isError.message}
-              </span>
+              <span className="text-red-500 text-sm mt-2 block">{isError.message}</span>
             )}
+          </div>
+        </div>
+
+        {/* Preview Section */}
+        <div className="mt-12 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+          <div className="p-6 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <ImageIcon className="w-6 h-6" />
+              Live Preview
+            </h2>
+            <p className="text-gray-600 mt-1">See how your post will look</p>
+          </div>
+          
+          <div className="p-6 min-h-[200px]">
+            {/* Preview Title */}
+            {title && (
+              <h1 className="text-4xl font-bold mb-6 text-gray-900 leading-tight">{title}</h1>
+            )}
+
+            {/* Preview Image */}
+            {imageUrl && (
+              <div className="mb-8 relative w-full h-80 rounded-xl overflow-hidden bg-gray-100">
+                <Image
+                  src={imageUrl}
+                  alt={title || "Blog featured image"}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              </div>
+            )}
+
+            {/* Preview Content */}
+            <div
+              className="prose prose-lg prose-gray max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-blue-600"
+              dangerouslySetInnerHTML={{ __html: content || "<p class='text-gray-400 italic'>Start writing to see your content here...</p>" }}
+            ></div>
           </div>
         </div>
       </div>
