@@ -15,7 +15,7 @@ const app = new Hono<{
 
 app.use("/*", cors({
   credentials: true,
-  origin: "http://localhost:3000",
+  origin: ["http://localhost:3000", "https://your-frontend.vercel.app"],
 }))
 app.route("/api/v1/user/", userRouter)
 app.route("/api/v1/blog/", blogRouter);

@@ -16,7 +16,7 @@ export const userRouter = new Hono<{
 
 userRouter.post("/signup", async (c) => {
   const prisma = new PrismaClient({
-     datasourceUrl: c.env.DATABASE_URL, //we have to access the env vars inside a route only because all the routes might be   deployed independently.
+     accelerateUrl: c.env.DATABASE_URL, // we are keeping accelerateURL separetely in each route because it might be possible that the routes will be deployed separately as well
   }).$extends(withAccelerate());
 
   const body = await c.req.json();
@@ -42,7 +42,7 @@ userRouter.post("/signup", async (c) => {
 
 userRouter.post("/signin", async (c) => {
   const prisma = new PrismaClient({
-    datasourceUrl: c.env.DATABASE_URL,
+    accelerateUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());
 
   const body = await c.req.json();
