@@ -11,8 +11,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -22,6 +20,7 @@ model User {
   avatar String?
   password String?
   posts Post[]
+  aboutAuthor String?
 }
 
 model Post {
@@ -33,4 +32,5 @@ model Post {
   publishedDate DateTime? @db.Date
   authorId String
   author User @relation(fields: [authorId], references: [id])
+  summary String?
 }
