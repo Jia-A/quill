@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client/edge";
+import { PrismaClient } from "../generated/prisma/client";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { Hono } from "hono";
 import { verify } from "hono/jwt";
@@ -19,7 +19,7 @@ blogRouter.use("/*", async (c, next) => {
     return;
   }
   const headers = c.req.header("authorization") || "";
-  const verifiedString = await verify(headers, c.env.JWT_SECRET);
+  const verifiedString = await verify(headers, c.env.JWT_SECRET, "HS256");
   if (verifiedString.id) {
     c.set("userId", verifiedString?.id as string);
     await next();
