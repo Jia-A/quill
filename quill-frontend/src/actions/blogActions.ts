@@ -10,7 +10,8 @@ export const getBulkBlogs = async () => {
   if (response.ok) {
     return await response.json();
   } else {
-    throw new Error("Can't fetch blogs right now!");
+    // throw new Error("Can't fetch blogs right now!");
+    console.log("Error fetching blogs:", response);
   }
 };
 
