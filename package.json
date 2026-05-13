@@ -1,0 +1,12 @@
+{
+  "name": "quill",
+  "private": true,
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev:frontend": "pnpm --filter quill-frontend dev",
+    "dev:backend": "pnpm --filter quill-backend dev",
+    "build:frontend": "pnpm --filter quill-frontend build",
+    "deploy:backend": "pnpm --filter quill-backend deploy",
+    "lint": "pnpm -r lint"
+  }
+}
