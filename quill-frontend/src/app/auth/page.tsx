@@ -1,16 +1,5 @@
-import AuthForm from "@/components/AuthForm"
-import Quote from "@/components/Quote"
+import { redirect } from "next/navigation";
 
-const Auth = () => {
-  return (
-    <div className='grid lg:grid-cols-2 h-screen'>
-      <AuthForm />
-      <div className="hidden lg:block">
-        <Quote />
-      </div>
-      
-    </div>
-  )
+export default function AuthIndex() {
+  redirect("/auth/signin");
 }
-
-export default Auth

@@ -23,7 +23,7 @@ const Avatar = ({size= "md", avImage, alt, name, onClick} : AvatarProps) => {
         }
     }
   return (
-    <div className={`rounded-full overflow-hidden border-2 border-[#0d2738] cursor-pointer ${sizeClasses}`} onClick={onClick}>
+    <div className={`rounded-full overflow-hidden border-2 relative border-[#0d2738] cursor-pointer ${sizeClasses}`} onClick={onClick}>
       {avImage ? (
         <Image src={avImage} alt={alt || name || "avatar"} className="object-cover w-full h-full" fill />
       ) : (

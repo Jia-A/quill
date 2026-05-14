@@ -3,6 +3,7 @@ import "./globals.css";
 // import { Nunito } from "next/font/google";
 import { Inter } from 'next/font/google'
 import Header from "@/components/Header";
+import SessionProviderWrapper from "@/components/SessionProviderWrapper";
 
 const nunito = Inter({
       subsets: ['latin'],
@@ -24,9 +25,10 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${nunito.className} antialiased`}
-      >
+      > <SessionProviderWrapper>
         <Header />
         {children}
+        </SessionProviderWrapper>
       </body>
     </html>
   );
