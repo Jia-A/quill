@@ -14,12 +14,14 @@ const HomepageHeader = () => {
       >
         QUILL
       </span>
-      <Link href={"/auth"}>
-        <div className="flex gap-2">
+      <div className="flex gap-2">
+        <Link href="/auth/signin">
           <Button variant="secondary" size="sm" label="Login" />
+        </Link>
+        <Link href="/auth/signup">
           <Button variant="secondary" size="sm" label="Signup" />
-        </div>
-      </Link>
+        </Link>
+      </div>
     </header>
   );
 };
