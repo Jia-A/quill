@@ -8,10 +8,12 @@ import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signupSchema, signinSchema } from "@/utils/resolvers";
 import { useRouter } from "next/navigation";
+import { signIn, signOut, useSession } from "next-auth/react";
 
 const AuthForm = () => {
   const [isSignupForm, setIsSignupForm] = useState(true);
   const router = useRouter();
+  const { data: session, status } = useSession();
   const {
     handleSubmit: handleSubmitSignup,
     register: registerSignup,
@@ -70,6 +72,21 @@ const AuthForm = () => {
     }
   };
 
+    if (status === "loading") return <p>Loading...</p>;
+
+     if (session) {
+    return (
+      <div className="p-8">
+        <p>Hi {session.user?.name} ({session.user?.email})</p>
+        <button
+          onClick={() => signOut()}
+          className="mt-4 px-4 py-2 bg-red-500 text-white rounded"
+        >
+          Sign out
+        </button>
+      </div>
+    );
+  }
   return (
     <div className="h-screen flex justify-center items-center p-3">
       <div className="flex flex-col gap-2">
@@ -91,6 +108,7 @@ const AuthForm = () => {
         </div>
 
         {isSignupForm ? (
+          <>
           <form onSubmit={handleSubmitSignup(signupHandler)}>
             <span className="flex flex-col gap-3 w-[350px] mt-4">
               <Input label="Fullname" register={registerSignup("name")} />
@@ -114,6 +132,11 @@ const AuthForm = () => {
             </span>
             <Button label="Signup" type="submit" variant="primary" className="mt-6 w-full md:w-1/2 justify-center" />
           </form>
+          <Button label="Continue with Google" variant="primary" className="mt-6 w-full md:w-1/2 justify-center" onClick={() => signIn("google", { callbackUrl: "/blogs" })}/>
+          <Button label="Continue with Linkedin" variant="primary" className="mt-6 w-full md:w-1/2 justify-center" onClick={() => signIn("linkedin", { callbackUrl: "/blogs" })}/>
+          <Button label="Continue with Github" variant="primary" className="mt-6 w-full md:w-1/2 justify-center" onClick={() => signIn("github", { callbackUrl: "/blogs" })}/>
+
+          </>
         ) : (
           <form onSubmit={handleSubmitSignin(signinHandler)}>
             <span className="flex flex-col gap-3 w-[350px] mt-4">

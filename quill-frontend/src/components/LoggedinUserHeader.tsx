@@ -3,15 +3,20 @@ import Avatar from "@/atoms/Avatar";
 import Button from "@/atoms/Button";
 import { useCustomer } from "@/hooks/useCustomer";
 import { PencilSquareIcon } from "@heroicons/react/24/outline";
+import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import { useState } from "react";
 
 const LoggedinUserHeader = () => {
   const { customer } = useCustomer();
-  console.log(customer);
+  const { data: session } = useSession();
+  const { name, image } = session?.user || {};
   const [showUserMenu, setShowUserMenu] = useState(false);
   const router = useRouter();
   const handleLogout = () => {
+    if(session){
+      signOut({ callbackUrl: "/" });
+    }
     localStorage.removeItem("customer");
     localStorage.removeItem("token");
     router.push("/");
@@ -35,9 +40,9 @@ const LoggedinUserHeader = () => {
         />
         <Avatar
           size="sm"
-          avImage={customer?.avatar}
-          alt={customer?.name}
-          name={customer?.name}
+          avImage={customer?.avatar || image}
+          alt={customer?.name || name}
+          name={customer?.name || name}
           onClick={() => setShowUserMenu(!showUserMenu)}
         />
         {showUserMenu && (
@@ -48,7 +53,7 @@ const LoggedinUserHeader = () => {
             <>
               <div className="px-4 py-2 border-b border-gray-200">
                 <span className="text-sm font-medium">
-                  Hi {customer?.name || "User"} 👋
+                  Hi {customer?.name || name || "User"} 👋
                 </span>
               </div>
               <button
