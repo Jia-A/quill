@@ -2,6 +2,7 @@ import Button from "@/atoms/Button";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React from "react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const HomepageHeader = () => {
   const router = useRouter();
@@ -14,12 +15,15 @@ const HomepageHeader = () => {
       >
         QUILL
       </span>
-      <Link href={"/auth"}>
-        <div className="flex gap-2">
-          <Button variant="secondary" size="sm" label="Login" />
-          <Button variant="secondary" size="sm" label="Signup" />
-        </div>
-      </Link>
+      <div className="flex items-center gap-2">
+        <ThemeToggle />
+        <Link href={"/auth"}>
+          <div className="flex gap-2">
+            <Button variant="secondary" size="sm" label="Login" />
+            <Button variant="secondary" size="sm" label="Signup" />
+          </div>
+        </Link>
+      </div>
     </header>
   );
 };
