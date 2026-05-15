@@ -5,6 +5,7 @@ import { useCustomer } from "@/hooks/useCustomer";
 import { PencilSquareIcon } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const LoggedinUserHeader = () => {
   const { customer } = useCustomer();
@@ -25,7 +26,8 @@ const LoggedinUserHeader = () => {
       >
         QUILL
       </span>
-      <div className="flex gap-10">
+      <div className="flex gap-4 items-center">
+        <ThemeToggle />
         <Button
           variant="secondary"
           size="sm"
