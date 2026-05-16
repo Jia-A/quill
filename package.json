@@ -7,6 +7,7 @@
     "dev:backend": "pnpm --filter quill-backend dev",
     "build:frontend": "pnpm --filter quill-frontend build",
     "deploy:backend": "pnpm --filter quill-backend deploy",
-    "lint": "pnpm -r lint"
+    "lint": "pnpm -r lint",
+    "preinstall": "npx -y only-allow pnpm"
   }
 }
