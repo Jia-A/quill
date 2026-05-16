@@ -1,9 +1,11 @@
 import 'dotenv/config'
-import { defineConfig, env } from 'prisma/config'
+import { defineConfig } from 'prisma/config'
+
+declare const process: { env: Record<string, string | undefined> }
 
 export default defineConfig({
   schema: 'prisma/schema.prisma',
   datasource: {
-    url: env('DIRECT_URL'), // Use DIRECT_URL for migrations and CLI operations
+    url: process.env.DIRECT_URL ?? '',
   },
 })
