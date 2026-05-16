@@ -1,6 +1,8 @@
 <div align="center">
 
-<img src="quill-frontend/public/Quill_logo.png" alt="Quill logo" width="160" />
+<p align="center">
+  <img src="quill-frontend/public/Quill_logo.png" alt="Quill logo" width="160" />
+</p>
 
 # Quill
 
