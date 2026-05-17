@@ -1,5 +1,9 @@
 <div align="center">
 
+<p align="center">
+  <img src="quill-frontend/public/Quill_logo.png" alt="Quill logo" width="160" />
+</p>
+
 # Quill
 
 **A modern, Medium-inspired publishing platform for writers who love clean tools.**
@@ -151,7 +155,9 @@ model Post {
 ### Prerequisites
 
 - Node.js 20+
-- npm (or your package manager of choice)
+- [pnpm](https://pnpm.io/) 9+ (this repo uses pnpm workspaces)
+
+> First-time setup: run `corepack enable` once on your machine. Node ships with Corepack, and this repo pins pnpm via the `packageManager` field in `package.json`, so Corepack will automatically use the correct pnpm version — no separate install required.
 - A PostgreSQL database URL (Neon, Supabase, or any Postgres host)
 - A [Prisma Accelerate](https://www.prisma.io/data-platform/accelerate) connection string
 - A Cloudflare account (for deploying the backend)
@@ -163,11 +169,18 @@ git clone <your-repo-url> quill
 cd quill
 ```
 
-### 2. Backend — `quill-backend`
+### 2. Install dependencies
+
+From the repo root (pnpm will install for all workspaces):
+
+```bash
+pnpm install
+```
+
+### 3. Backend — `quill-backend`
 
 ```bash
 cd quill-backend
-npm install
 ```
 
 Create a `.dev.vars` file for local Wrangler dev:
@@ -181,23 +194,22 @@ JWT_SECRET="a-long-random-secret"
 Generate the Prisma client and run migrations:
 
 ```bash
-npx prisma generate --no-engine
-npx prisma migrate deploy
+pnpm exec prisma generate --no-engine
+pnpm exec prisma migrate deploy
 ```
 
 Start the worker locally:
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 The API will be available at `http://127.0.0.1:8787`.
 
-### 3. Frontend — `quill-frontend`
+### 4. Frontend — `quill-frontend`
 
 ```bash
 cd ../quill-frontend
-npm install
 ```
 
 Create a `.env.local` file:
@@ -209,7 +221,7 @@ NEXT_PUBLIC_API_URL=http://127.0.0.1:8787
 Run the dev server:
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) and start writing.
@@ -220,22 +232,22 @@ Open [http://localhost:3000](http://localhost:3000) and start writing.
 
 | Command | What it does |
 |---------|--------------|
-| `npm run dev` | Start Next.js in dev mode |
-| `npm run build` | Production build |
-| `npm run start` | Serve the production build |
-| `npm run lint` | ESLint |
+| `pnpm dev` | Start Next.js in dev mode |
+| `pnpm build` | Production build |
+| `pnpm start` | Serve the production build |
+| `pnpm lint` | ESLint |
 
 **Backend** (`quill-backend/`)
 
 | Command | What it does |
 |---------|--------------|
-| `npm run dev` | Start the Worker locally with Wrangler |
-| `npm run deploy` | Deploy to Cloudflare Workers (minified) |
-| `npm run cf-typegen` | Regenerate Cloudflare binding types |
+| `pnpm dev` | Start the Worker locally with Wrangler |
+| `pnpm deploy` | Deploy to Cloudflare Workers (minified) |
+| `pnpm cf-typegen` | Regenerate Cloudflare binding types |
 
 ### Deployment
 
-- **Backend** → `cd quill-backend && npm run deploy` to ship the Worker. Set secrets with `npx wrangler secret put DATABASE_URL` / `ACCELERATE_URL` / `JWT_SECRET`.
+- **Backend** → `cd quill-backend && pnpm deploy` to ship the Worker. Set secrets with `pnpm exec wrangler secret put DATABASE_URL` / `ACCELERATE_URL` / `JWT_SECRET`.
 - **Frontend** → Deploy to Vercel, Cloudflare Pages, or any Node host. Set `NEXT_PUBLIC_API_URL` to the deployed Worker URL.
 
 ## License
