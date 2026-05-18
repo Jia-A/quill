@@ -15,9 +15,13 @@ export const useCustomer = () => {
     const customerData = !IS_SSR ? localStorage.getItem("customer") : null;
 
     useEffect(() => {
-        if (customerData) {
-            setCustomer(JSON.parse(customerData));
-            setIsLogin(true)
+        if (customerData && customerData !== "undefined" && customerData !== "null") {
+            try {
+                setCustomer(JSON.parse(customerData));
+                setIsLogin(true);
+            } catch {
+                localStorage.removeItem("customer");
+            }
         }
         setIsLoading(false)
     }, [customerData]);

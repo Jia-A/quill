@@ -11,11 +11,11 @@ importers:
   quill-backend:
     dependencies:
       '@prisma/client':
-        specifier: ^7.2.0
+        specifier: 7.8.0
         version: 7.8.0(prisma@7.8.0(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.3))(typescript@5.9.3)
       '@prisma/extension-accelerate':
-        specifier: ^2.0.2
-        version: 2.0.2(@prisma/client@7.8.0(prisma@7.8.0(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.3))(typescript@5.9.3))
+        specifier: 3.0.1
+        version: 3.0.1(@prisma/client@7.8.0(prisma@7.8.0(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.3))(typescript@5.9.3))
       dotenv:
         specifier: ^17.2.3
         version: 17.4.2
@@ -23,14 +23,8 @@ importers:
         specifier: ^4.11.1
         version: 4.12.18
     devDependencies:
-      i:
-        specifier: ^0.3.7
-        version: 0.3.7
-      npm:
-        specifier: ^11.7.0
-        version: 11.14.1
       prisma:
-        specifier: ^7.2.0
+        specifier: 7.8.0
         version: 7.8.0(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.3)
       wrangler:
         specifier: ^4.56.0
@@ -757,9 +751,9 @@ packages:
   '@prisma/engines@7.8.0':
     resolution: {integrity: sha512-jx3rCnNNrt5uzbkKlegtQ2GZHxSlihMCzutgT/BP6UIDF1r9tDI39hV/0T/cHZgzJ3ELbuQPXlVZy+Y1n0pcgw==}
 
-  '@prisma/extension-accelerate@2.0.2':
-    resolution: {integrity: sha512-yZK6/k7uOEFpEsKoZezQS1CKDboPtBCQ0NyI70e1Un8tDiRgg80iWGyjsJmRpps2ZIut3MroHP+dyR3wVKh8lA==}
-    engines: {node: '>=18'}
+  '@prisma/extension-accelerate@3.0.1':
+    resolution: {integrity: sha512-xc+kn4AjjTzS9jsdD1JWCebB09y0Aj+C8GjjG7oUm81PF9psvmJOw5rxpl7tOEBz/8hmuNX996XL28ys/OLxVA==}
+    engines: {node: '>=22'}
     peerDependencies:
       '@prisma/client': '>=4.16.1'
 
@@ -1996,10 +1990,6 @@ packages:
   https-proxy-agent@5.0.1:
     resolution: {integrity: sha512-dFcAjpTQFgoLMzC2VwU+C/CbS7uRL0lWmxDITmqm7C+7F0Odmj6s9l6alZc6AELXhrnggM2CeWSXHGOdX2YtwA==}
     engines: {node: '>= 6'}
-
-  i@0.3.7:
-    resolution: {integrity: sha512-FYz4wlXgkQwIPqhzC5TdNMLSE5+GS1IIDJZY/1ZiEPCT2S3COUVZeT5OW4BmW4r5LHLQuOosSwsvnroG9GR59Q==}
-    engines: {node: '>=0.4'}
 
   iconv-lite@0.7.2:
     resolution: {integrity: sha512-im9DjEDQ55s9fL4EYzOAv0yMqmMBSZp6G0VvFyTMPKWxiSBHUj9NW/qqLmXUwXrrM7AvqSlTCfvqRb0cM8yYqw==}
@@ -3579,7 +3569,7 @@ snapshots:
       '@prisma/fetch-engine': 7.8.0
       '@prisma/get-platform': 7.8.0
 
-  '@prisma/extension-accelerate@2.0.2(@prisma/client@7.8.0(prisma@7.8.0(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.3))(typescript@5.9.3))':
+  '@prisma/extension-accelerate@3.0.1(@prisma/client@7.8.0(prisma@7.8.0(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.3))(typescript@5.9.3))':
     dependencies:
       '@prisma/client': 7.8.0(prisma@7.8.0(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.3))(typescript@5.9.3)
 
@@ -4998,8 +4988,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  i@0.3.7: {}
-
   iconv-lite@0.7.2:
     dependencies:
       safer-buffer: 2.1.2
@@ -5353,7 +5341,7 @@ snapshots:
   object-keys@1.1.1: {}
 
   object.assign@4.1.7:
-    dependencies:
+    dependencies: 
       call-bind: 1.0.9
       call-bound: 1.0.4
       define-properties: 1.2.1
