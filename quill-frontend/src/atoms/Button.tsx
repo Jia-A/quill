@@ -28,17 +28,17 @@ const Button = ({
         <button
           type={type}
           className={classNames(
-            "bg-[#02111B] self-center rounded-md text-white w-auto cursor-pointer transition transform duration-200 ease-in-out hover:scale-105 hover:shadow-lg hover:bg-[#0a2435] flex",
+            "bg-[#02111B] dark:bg-primary self-center rounded-md text-white dark:text-primary-foreground w-auto cursor-pointer transition transform duration-200 ease-in-out hover:scale-105 hover:shadow-lg hover:bg-[#0a2435] dark:hover:bg-primary/90 flex",
             sizeClasses,
             className
           )}
           {...rest}
         >
           {label}
-          {icon ? 
+          {icon ?
           <span className="ml-2">{icon}</span>
           : null}
-          
+
         </button>
       );
     case "secondary":
@@ -46,16 +46,16 @@ const Button = ({
         <button
           type={type}
           className={classNames(
-            "bg-[white] self-center border-[1.5px] border-[#8f8dac] font-semibold rounded-md text-[#02111B] w-auto cursor-pointer transition transform duration-200 ease-in-out hover:scale-101 hover:shadow-md flex",
+            "bg-white dark:bg-transparent self-center border-[1.5px] border-[#8f8dac] dark:border-border font-semibold rounded-md text-[#02111B] dark:text-foreground w-auto cursor-pointer transition transform duration-200 ease-in-out hover:scale-101 hover:shadow-md dark:hover:bg-muted flex",
             sizeClasses,
             className
           )}
           {...rest}
         >{label}
-          {icon ? 
+          {icon ?
           <span className="ml-2">{icon}</span>
           : null}
-          
+
         </button>
       );
     case "iconOnly":
