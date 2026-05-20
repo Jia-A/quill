@@ -12,9 +12,7 @@ const LoggedinUserHeader = ({session} : {session: Session}) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const router = useRouter();
   const handleLogout = () => {
-    console.log("Logging out user", session);
     if(session){
-      console.log("Signing out from next-auth");
       signOut({ callbackUrl: "/" });
     }
   };

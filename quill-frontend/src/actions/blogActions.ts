@@ -6,11 +6,9 @@ export const getBulkBlogs = async () => {
   const response = await fetch(`${API_URL}/blog/bulk`, {
     next: { revalidate: 300 } // Enable ISR with 5-minute revalidation
   });
-  console.log(response);
   if (response.ok) {
     return await response.json();
   } else {
-    // throw new Error("Can't fetch blogs right now!");
     console.log("Error fetching blogs:", response);
   }
 };

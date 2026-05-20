@@ -12,9 +12,7 @@ const page = async ({ params }) => {
   const { id } = await params;
   
   try {
-    console.log(`🔄 Fetching blog with ID: ${id} at ${new Date().toISOString()}`);
     const response = await getBlogById(id);
-    console.log(`✅ Got blog response for ID: ${id}`);
     
     if (!response.blog) {
       throw new Error('Blog not found');

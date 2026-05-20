@@ -23,7 +23,6 @@ export default function BlogEditor() {
 
   const onChange = (content: string) => {
     setContent(content);
-    console.log(content);
   };
 
   // Handle drag events
@@ -125,7 +124,6 @@ export default function BlogEditor() {
       published:true
     };
 
-    console.log(title, content)
 
     if(!title) {
       setIsError({element: "title", message: "Title is required"});
@@ -137,12 +135,11 @@ export default function BlogEditor() {
     }
     try {
       const response = await postBlog(payload)
-      console.log(response)
+      console.log(response) // You can add a success message or redirect the user after successful publish
     }
     catch(error) {
       console.log(error)
     }
-    console.log(payload);
   }
 
   return (

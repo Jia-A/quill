@@ -3,7 +3,6 @@ import type { NextRequest } from "next/server";
 
 export default function middleware(req: NextRequest) {
   // Check the token cookie
-  console.log(req.cookies);
   const token = req.cookies.get("token")?.value;
 
   // If the user is trying to access /editor and no token → redirect
