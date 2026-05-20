@@ -27,7 +27,7 @@ const SigninForm = () => {
     try {
       const response = await signinAction(payload);
       reset();
-      localStorage.setItem("customer", JSON.stringify(response.userExists));
+      localStorage.setItem("customer", JSON.stringify(response.user));
       router.push("/blogs");
     } catch (error) {
       console.error("Signin error:", error);
@@ -47,7 +47,7 @@ const SigninForm = () => {
         )}
       </span>
       <Button
-        label="Signin"
+        label="Sign in"
         type="submit"
         variant="primary"
         className="mt-6 w-full justify-center"

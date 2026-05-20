@@ -48,20 +48,20 @@ userRouter.post("/signin", async (c) => {
   const body = await c.req.json();
 
   try {
-    const userExists = await prisma.user.findFirst({
+    const user = await prisma.user.findFirst({
       where: {
         email: body?.email,
         password: body?.password,
       },
     });
-    if (!userExists) {
+    if (!user) {
       return c.json({ error: "User not found" }, 404);
     }
-    const token = await sign({ id: userExists.id }, c.env.JWT_SECRET, "HS256");
+    const token = await sign({ id: user.id }, c.env.JWT_SECRET, "HS256");
     setCookie(c, "token", token, { sameSite : "None", secure : false, path : "/"})
     return c.json({
       message: "User signed in successfully",
-      userExists,
+      user,
       token,
     });
   } catch (error) {

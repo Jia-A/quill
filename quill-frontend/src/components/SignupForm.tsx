@@ -37,7 +37,7 @@ const SignupForm = () => {
   return (
     <form onSubmit={handleSubmit(signupHandler)}>
       <span className="flex flex-col gap-3 w-[350px] mt-4">
-        <Input label="Fullname" register={register("name")} />
+        <Input label="Full name" register={register("name")} />
         {errors.name && (
           <p className="text-red-500 text-sm">{errors.name.message}</p>
         )}
