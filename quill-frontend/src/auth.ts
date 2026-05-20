@@ -10,7 +10,6 @@ const credentialsSchema = z.object({
   password: z.string().min(6),
 });
 
-
 export const { handlers, signIn, signOut, auth } = NextAuth({
   session: { strategy: "jwt" },
   pages: { signIn: "/auth" },
@@ -58,6 +57,41 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
+    async signIn({ user, account }) {
+    // Only run for OAuth — Credentials already gets its backendToken from authorize()
+    if (
+      account?.provider === "google" ||
+      account?.provider === "github" ||
+      account?.provider === "linkedin"
+    ) {
+      try {
+        const res = await fetch(
+          `${process.env.AUTH_BACKEND_URL}/user/oauth-sync`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: user.email,
+              name: user.name,
+              avatar: user.image,
+            }),
+          }
+        );
+        if (!res.ok) {
+          console.error("[signIn] oauth-sync failed:", await res.text());
+          return false; // blocks the sign-in
+        }
+        const data = await res.json();
+        // Stash backend data onto the user object — jwt callback will pick it up
+        user.id = data.user.id;
+        user.backendToken = data.token;
+      } catch (err) {
+        console.error("[signIn] oauth-sync error:", err);
+        return false;
+      }
+    }
+    return true; // allow sign-in to proceed
+  },
     async jwt({ token, user }) {
       if (user) {
         token.id = (user as { id?: string }).id;
@@ -70,5 +104,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       session.backendToken = token.backendToken as string | undefined;
       return session;
     },
+  
   },
 });
