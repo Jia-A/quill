@@ -69,3 +69,43 @@ userRouter.post("/signin", async (c) => {
   }
 });
 
+userRouter.post("/oauth-sync", async (c) =>{
+  const prisma = new PrismaClient({
+    accelerateUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+
+  const body = await c.req.json();
+  const { email, name, avatar } = body;
+
+  if (!email) {
+    return c.json({ error: "Email is required" }, 400);
+  }
+
+    try {
+    // Upsert: create if not exists, otherwise return existing user
+    const user = await prisma.user.upsert({
+      where: { email },
+      update: {
+        // refresh name/avatar in case they changed on the provider side
+        name: name ?? undefined,
+        avatar: avatar ?? undefined,
+      },
+      create: {
+        email,
+        name: name ?? null,
+        avatar: avatar ?? null,
+        // no password — OAuth users don't have one
+      },
+    });
+
+    const token = await sign({ id: user.id }, c.env.JWT_SECRET, "HS256");
+
+    return c.json({
+      message: "OAuth user synced",
+      user,
+      token,
+    });
+  } catch (error: any) {
+    return c.json({ error: error?.message ?? "Sync failed" }, 500);
+  }
+});
