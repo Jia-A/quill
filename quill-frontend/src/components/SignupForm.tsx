@@ -7,6 +7,7 @@ import { signupAction } from "../actions/authActions";
 import { signupSchema } from "@/utils/resolvers";
 import Button from "../atoms/Button";
 import Input from "../atoms/Input";
+import { signIn } from "next-auth/react";
 
 const SignupForm = () => {
   const router = useRouter();
@@ -25,10 +26,19 @@ const SignupForm = () => {
     const { name, email, password } = getValues();
     const payload = { name, email, password };
     try {
-      const response = await signupAction(payload);
+      await signupAction(payload);
+      const response = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+      if (response?.error) {
+        console.error("Auto sign-in after signup failed:", response.error);
+        return;
+      }
       reset();
-      localStorage.setItem("customer", JSON.stringify(response.user));
       router.push("/blogs");
+      router.refresh();
     } catch (error) {
       console.error("Signup error:", error);
     }

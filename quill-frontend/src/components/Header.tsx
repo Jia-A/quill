@@ -1,18 +1,14 @@
 'use client'
-import { useCustomer } from '@/hooks/useCustomer'
-import React from 'react'
 import LoggedinUserHeader from './LoggedinUserHeader'
 import HomepageHeader from './HomepageHeader'
 import { useSession } from 'next-auth/react'
 
 const Header = () => {
-const {isLogin, isLoading}= useCustomer()
-const {status} = useSession()
-console.log(isLogin, isLoading)
+const {status, data : session} = useSession()
+console.log("Session status:", status)
   return (
     <div>
-      {!isLoading && 
-      (status==="authenticated" || isLogin ? <LoggedinUserHeader /> : <HomepageHeader />)}
+      { status==="authenticated"  ? <LoggedinUserHeader session={session}/> : <HomepageHeader />}
       
     </div>
   )

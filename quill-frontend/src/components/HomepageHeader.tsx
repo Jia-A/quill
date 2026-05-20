@@ -1,7 +1,6 @@
 import Button from "@/atoms/Button";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import React from "react";
 
 const HomepageHeader = () => {
   const router = useRouter();

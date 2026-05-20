@@ -1,12 +1,13 @@
 "use client";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 import { type SigninInput } from "@tech--tonic/medium-app-common";
 import { signinAction } from "../actions/authActions";
 import { signinSchema } from "@/utils/resolvers";
 import Button from "../atoms/Button";
 import Input from "../atoms/Input";
+import { signIn } from "next-auth/react";
 
 const SigninForm = () => {
   const router = useRouter();
@@ -23,12 +24,19 @@ const SigninForm = () => {
 
   const signinHandler = async () => {
     const { email, password } = getValues();
-    const payload = { email, password };
     try {
-      const response = await signinAction(payload);
+      const response = await signIn("credentials", {
+      email,
+      password,
+      redirect: false, // we'll handle redirect ourselves so we can show errors
+    });
+    if (response?.error) {
+      console.error("Signin error:", response.error);
+      return;
+    }
       reset();
-      localStorage.setItem("customer", JSON.stringify(response.user));
       router.push("/blogs");
+      router.refresh();
     } catch (error) {
       console.error("Signin error:", error);
     }
