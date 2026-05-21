@@ -2,6 +2,10 @@
   "name": "quill",
   "private": true,
   "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=9.15.0"
+  },
   "scripts": {
     "dev": "concurrently \"pnpm --filter quill-frontend dev\" \"pnpm --filter quill-backend dev\" --names fe,be --prefix-colors cyan,yellow",
     "dev:frontend": "pnpm --filter quill-frontend dev",
