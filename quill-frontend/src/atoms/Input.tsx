@@ -9,11 +9,11 @@ const Input = ({
 }) => {
   return (
     <span className="flex flex-col w-full">
-      <label htmlFor="Firstname" className="text-sm mb-1 text-gray-700">
+      <label htmlFor="Firstname" className="text-sm mb-1 text-foreground">
         {label}
       </label>
       <input
-        className="border border-gray-300 rounded p-2 w-full focus:outline-none focus:border-black "
+        className="border border-border dark:border-muted-foreground/40 rounded p-2 w-full bg-background dark:bg-muted text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         {...register}
       />
     </span>

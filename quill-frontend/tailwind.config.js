@@ -48,6 +48,7 @@ const config = {
     },
   },
   plugins: [typography],
+	darkMode: 'selector'
 };
 
 export default config;

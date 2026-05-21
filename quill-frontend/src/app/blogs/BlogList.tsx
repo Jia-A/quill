@@ -57,17 +57,17 @@ export default function BlogList({ blogs }: BlogListProps) {
             transition={{ duration: 0.5, delay: idx * 0.1 }}
             className="border-b pb-8 group hover:transition-transform hover:duration-300 hover:scale-101"
           >
-            <Link href={`/blog/${article.id}`} prefetch={false} className="text-black">
+            <Link href={`/blog/${article.id}`} prefetch={false} className="text-foreground">
               <div className="flex gap-6 items-start">
                 {/* Content Section */}
                 <div className="flex-1">
                   <h3 className="text-2xl font-semibold mb-2 hover:underline">
                     {article.title}
                   </h3>
-                  <p className="mt-2 text-gray-700 leading-relaxed">
+                  <p className="mt-2 text-muted-foreground leading-relaxed">
                     {getOneLineText(article.content)}
                   </p>
-                  <div className="mt-3 flex flex-wrap gap-4 text-sm text-gray-500">
+                  <div className="mt-3 flex flex-wrap gap-4 text-sm text-muted-foreground">
                     {publishedDate && 
                       <span className="flex items-center gap-1">
                         <CalendarIcon width={16} height={16} /> {publishedDate}
@@ -84,7 +84,7 @@ export default function BlogList({ blogs }: BlogListProps) {
                 
                 {/* Image Section */}
                 {article.image && (
-                  <div className="flex-shrink-0 w-24 h-24 md:w-32 md:h-32 relative rounded-lg overflow-hidden bg-gray-100">
+                  <div className="flex-shrink-0 w-24 h-24 md:w-32 md:h-32 relative rounded-lg overflow-hidden bg-muted">
                     <Image
                       src={article.image}
                       alt={article.title}
