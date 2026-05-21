@@ -44,6 +44,7 @@ const AuthForm = () => {
     console.log("Signup payload:", payload);
     try {
       const response = await signupAction(payload);
+      if (!response?.user) throw new Error("Signup failed");
       resetSignup();
       localStorage.setItem("customer", JSON.stringify(response.user));
       router.push("/blogs");
@@ -61,6 +62,7 @@ const AuthForm = () => {
     };
     try {
       const response = await signinAction(payload);
+      if (!response?.userExists) throw new Error("Signin failed");
       resetSignin();
       localStorage.setItem("customer", JSON.stringify(response.userExists));
       router.push("/blogs");

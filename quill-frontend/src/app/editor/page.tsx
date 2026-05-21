@@ -109,7 +109,7 @@ export default function BlogEditor() {
     editorProps: {
       attributes: {
         class:
-          "prose max-w-none w-full min-h-[500px] border rounded-md bg-slate-50 py-2 px-3",
+          "prose dark:prose-invert max-w-none w-full min-h-[500px] border border-border rounded-md bg-muted py-2 px-3 text-foreground",
       },
     },
     onUpdate: ({ editor }) => {
@@ -146,12 +146,12 @@ export default function BlogEditor() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto py-8 px-6">
         {/* Header */}
         <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Create Your Story</h1>
-          <p className="text-gray-600">Share your thoughts with the world</p>
+          <h1 className="text-4xl font-bold text-foreground mb-2">Create Your Story</h1>
+          <p className="text-muted-foreground">Share your thoughts with the world</p>
         </div>
 
         {/* Publish Button */}
@@ -165,10 +165,10 @@ export default function BlogEditor() {
         </div>
 
         {/* Main Editor Container */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+        <div className="bg-card rounded-2xl shadow-xl border border-border overflow-hidden">
           {/* Blog Title Input */}
-          <div className="p-6 border-b border-gray-100">
-            <label htmlFor="title" className="block text-sm font-semibold text-gray-700 mb-3">
+          <div className="p-6 border-b border-border">
+            <label htmlFor="title" className="block text-sm font-semibold text-foreground mb-3">
               Article Title
             </label>
             <input
@@ -177,7 +177,7 @@ export default function BlogEditor() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter a compelling title..."
-              className="w-full text-2xl font-bold border-none outline-none placeholder-gray-400 bg-transparent"
+              className="w-full text-2xl font-bold border-none outline-none placeholder-muted-foreground bg-transparent text-foreground"
             />
             {isError.element === "title" && (
               <span className="text-red-500 text-sm mt-2 block">{isError.message}</span>
@@ -185,8 +185,8 @@ export default function BlogEditor() {
           </div>
 
           {/* Enhanced Image Upload Section */}
-          <div className="p-6 border-b border-gray-100">
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
+          <div className="p-6 border-b border-border">
+            <label className="block text-sm font-semibold text-foreground mb-3">
               Featured Image
             </label>
             
@@ -196,8 +196,8 @@ export default function BlogEditor() {
                 <div
                   className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 ${
                     isDragOver 
-                      ? 'border-blue-500 bg-blue-50 scale-105' 
-                      : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-950 scale-105'
+                      : 'border-border hover:border-muted-foreground hover:bg-muted'
                   }`}
                   onDragEnter={handleDragEnter}
                   onDragLeave={handleDragLeave}
@@ -206,16 +206,16 @@ export default function BlogEditor() {
                 >
                   <div className="flex flex-col items-center space-y-4">
                     <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
-                      isDragOver ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
+                      isDragOver ? 'bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300' : 'bg-muted text-muted-foreground'
                     }`}>
                       <Upload className="w-8 h-8" />
                     </div>
                     
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      <h3 className="text-lg font-semibold text-foreground mb-2">
                         {isDragOver ? 'Drop your image here!' : 'Drop your image here'}
                       </h3>
-                      <p className="text-gray-500 text-sm">
+                      <p className="text-muted-foreground text-sm">
                         or click to browse your files
                       </p>
                     </div>
@@ -232,16 +232,16 @@ export default function BlogEditor() {
 
                 {/* Alternative Options */}
                 <div className="flex items-center gap-4">
-                  <div className="flex-1 h-px bg-gray-200"></div>
-                  <span className="text-sm text-gray-500 font-medium">or</span>
-                  <div className="flex-1 h-px bg-gray-200"></div>
+                  <div className="flex-1 h-px bg-border"></div>
+                  <span className="text-sm text-muted-foreground font-medium">or</span>
+                  <div className="flex-1 h-px bg-border"></div>
                 </div>
 
                 {/* URL Input Toggle */}
                 {!showUrlInput ? (
                   <button
                     onClick={() => setShowUrlInput(true)}
-                    className="w-full flex items-center justify-center gap-2 py-3 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="w-full flex items-center justify-center gap-2 py-3 px-4 border border-border rounded-lg hover:bg-muted text-foreground transition-colors"
                   >
                     <LinkIcon className="w-4 h-4" />
                     Add image from URL
@@ -253,7 +253,7 @@ export default function BlogEditor() {
                       value={tempImageUrl}
                       onChange={(e) => setTempImageUrl(e.target.value)}
                       placeholder="https://example.com/image.jpg"
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="flex-1 px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                     <Button
                       onClick={handleUrlSubmit}
@@ -268,7 +268,7 @@ export default function BlogEditor() {
                         setShowUrlInput(false);
                         setTempImageUrl("");
                       }}
-                      className="px-4 py-2 text-gray-500 hover:text-gray-700"
+                      className="px-4 py-2 text-muted-foreground hover:text-foreground"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -278,7 +278,7 @@ export default function BlogEditor() {
             ) : (
               /* Image Preview */
               <div className="relative group">
-                <div className="relative w-full h-64 rounded-xl overflow-hidden bg-gray-100">
+                <div className="relative w-full h-64 rounded-xl overflow-hidden bg-muted">
                   <Image
                     src={imageUrl}
                     alt="Featured image preview"
@@ -294,7 +294,7 @@ export default function BlogEditor() {
                     <X className="w-4 h-4" />
                   </button>
                 </div>
-                <p className="text-sm text-gray-500 mt-2 text-center">
+                <p className="text-sm text-muted-foreground mt-2 text-center">
                   Image ready! Click the × to remove and choose a different one.
                 </p>
               </div>
@@ -303,7 +303,7 @@ export default function BlogEditor() {
 
           {/* Editor Section */}
           <div className="p-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-3">
+            <label className="block text-sm font-semibold text-foreground mb-3">
               Content
             </label>
             <MenuBar editor={editor} />
@@ -315,24 +315,24 @@ export default function BlogEditor() {
         </div>
 
         {/* Preview Section */}
-        <div className="mt-12 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-          <div className="p-6 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
-            <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+        <div className="mt-12 bg-card rounded-2xl shadow-xl border border-border overflow-hidden">
+          <div className="p-6 bg-muted border-b border-border">
+            <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
               <ImageIcon className="w-6 h-6" />
               Live Preview
             </h2>
-            <p className="text-gray-600 mt-1">See how your post will look</p>
+            <p className="text-muted-foreground mt-1">See how your post will look</p>
           </div>
           
           <div className="p-6 min-h-[200px]">
             {/* Preview Title */}
             {title && (
-              <h1 className="text-4xl font-bold mb-6 text-gray-900 leading-tight">{title}</h1>
+              <h1 className="text-4xl font-bold mb-6 text-foreground leading-tight">{title}</h1>
             )}
 
             {/* Preview Image */}
             {imageUrl && (
-              <div className="mb-8 relative w-full h-80 rounded-xl overflow-hidden bg-gray-100">
+              <div className="mb-8 relative w-full h-80 rounded-xl overflow-hidden bg-muted">
                 <Image
                   src={imageUrl}
                   alt={title || "Blog featured image"}
@@ -345,8 +345,8 @@ export default function BlogEditor() {
 
             {/* Preview Content */}
             <div
-              className="prose prose-lg prose-gray max-w-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-blue-600"
-              dangerouslySetInnerHTML={{ __html: content || "<p class='text-gray-400 italic'>Start writing to see your content here...</p>" }}
+              className="prose prose-lg prose-gray dark:prose-invert max-w-none"
+              dangerouslySetInnerHTML={{ __html: content || "<p class='text-muted-foreground italic'>Start writing to see your content here...</p>" }}
             ></div>
           </div>
         </div>
