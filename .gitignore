@@ -2,6 +2,10 @@
 node_modules/
 .pnpm-store/
 
+# Disallowed lockfiles (this project uses pnpm)
+package-lock.json
+yarn.lock
+
 # Environment
 .env
 .env.local
