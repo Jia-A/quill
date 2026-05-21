@@ -8,9 +8,18 @@
     "dev:backend": "pnpm --filter quill-backend dev",
     "build:frontend": "pnpm --filter quill-frontend build",
     "deploy:backend": "pnpm --filter quill-backend deploy",
-    "lint": "pnpm -r lint"
+    "lint": "pnpm -r lint",
+    "preinstall": "npx -y only-allow pnpm",
+    "prepare": "husky",
+    "format": "prettier --write ."
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,json,css,md,yml,yaml}": "prettier --write"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "concurrently": "^9.1.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.5",
+    "prettier": "^3.8.3"
   }
 }
