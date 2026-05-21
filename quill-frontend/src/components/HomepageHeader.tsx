@@ -1,19 +1,21 @@
 import Button from "@/atoms/Button";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const HomepageHeader = () => {
   const router = useRouter();
 
   return (
-    <header className="w-full flex justify-between items-center px-6 py-2 bg-white border-b border-gray-200 sticky top-0 z-50">
+    <header className="w-full flex justify-between items-center px-6 py-2 bg-background border-b border-border sticky top-0 z-50">
       <span
         className="text-3xl font-extrabold tracking-wide cursor-pointer"
         onClick={() => router.push("/blogs")}
       >
         QUILL
       </span>
-      <div className="flex gap-2">
+      <div className="flex items-center gap-2">
+        <ThemeToggle />
         <Link href="/auth/signin">
           <Button variant="secondary" size="sm" label="Login" />
         </Link>

@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
 import "./globals.css";
 // import { Nunito } from "next/font/google";
-import { Inter } from 'next/font/google'
+import { Inter } from "next/font/google";
 import Header from "@/components/Header";
 import SessionProviderWrapper from "@/components/SessionProviderWrapper";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 const nunito = Inter({
-      subsets: ['latin'],
-      weight: ['400', '700'], // Specify desired weights (e.g., regular and bold)
-      display: 'swap', // Optimizes font loading behavior
-    });
+  subsets: ["latin"],
+  weight: ["400", "700"], // Specify desired weights (e.g., regular and bold)
+  display: "swap", // Optimizes font loading behavior
+});
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -22,13 +23,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${nunito.className} antialiased`}
-      > <SessionProviderWrapper>
-        <Header />
-        {children}
-        </SessionProviderWrapper>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${nunito.className} antialiased`}>
+        <ThemeProvider>
+          <SessionProviderWrapper>
+            <Header />
+            {children}
+          </SessionProviderWrapper>
+        </ThemeProvider>
       </body>
     </html>
   );
