@@ -1,15 +1,6 @@
-import { redirect } from "next/navigation";
-import { auth } from "@/auth";
 import Quote from "@/components/Quote";
 
-export default async function AuthLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const session = await auth();
-  if (session) redirect("/blogs");
-
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="grid lg:grid-cols-2 h-screen">
       {children}
