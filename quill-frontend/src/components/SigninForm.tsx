@@ -3,7 +3,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { redirect, useRouter } from "next/navigation";
 import { type SigninInput } from "@tech--tonic/medium-app-common";
-import { signinAction } from "../actions/authActions";
 import { signinSchema } from "@/utils/resolvers";
 import Button from "../atoms/Button";
 import Input from "../atoms/Input";

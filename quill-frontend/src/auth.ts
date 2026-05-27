@@ -4,6 +4,7 @@ import GitHub from "next-auth/providers/github";
 import LinkedIn from "next-auth/providers/linkedin";
 import Credentials from "next-auth/providers/credentials";
 import { z } from "zod";
+import { API_URL } from "@/utils/constants";
 
 const credentialsSchema = z.object({
   email: z.string().email(),
@@ -27,7 +28,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       clientSecret: process.env.AUTH_LINKEDIN_SECRET!,
     }),
     Credentials({
-      credentials: { //these are the main fields that will be passed to the authorize function as credentials
+      credentials: {
+        //these are the main fields that will be passed to the authorize function as credentials
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
@@ -35,7 +37,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const parsed = credentialsSchema.safeParse(credentials);
         if (!parsed.success) return null;
 
-        const res = await fetch(`${process.env.AUTH_BACKEND_URL}/user/signin`, {
+        const res = await fetch(`${API_URL}/user/signin`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(parsed.data),
@@ -58,16 +60,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
   callbacks: {
     async signIn({ user, account }) {
-    // Only run for OAuth — Credentials already gets its backendToken from authorize()
-    if (
-      account?.provider === "google" ||
-      account?.provider === "github" ||
-      account?.provider === "linkedin"
-    ) {
-      try {
-        const res = await fetch(
-          `${process.env.AUTH_BACKEND_URL}/user/oauth-sync`,
-          {
+      // Only run for OAuth — Credentials already gets its backendToken from authorize()
+      if (
+        account?.provider === "google" ||
+        account?.provider === "github" ||
+        account?.provider === "linkedin"
+      ) {
+        try {
+          const res = await fetch(`${API_URL}/user/oauth-sync`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -75,35 +75,39 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               name: user.name,
               avatar: user.image,
             }),
+          });
+          if (!res.ok) {
+            console.error("[signIn] oauth-sync failed:", await res.text());
+            return false; // blocks the sign-in
           }
-        );
-        if (!res.ok) {
-          console.error("[signIn] oauth-sync failed:", await res.text());
-          return false; // blocks the sign-in
+          const data = await res.json();
+          // Stash backend data onto the user object — jwt callback will pick it up
+          user.id = data.user.id;
+          user.backendToken = data.token;
+        } catch (err) {
+          console.error("[signIn] oauth-sync error:", err);
+          return false;
         }
-        const data = await res.json();
-        // Stash backend data onto the user object — jwt callback will pick it up
-        user.id = data.user.id;
-        user.backendToken = data.token;
-      } catch (err) {
-        console.error("[signIn] oauth-sync error:", err);
-        return false;
       }
-    }
-    return true; // allow sign-in to proceed
-  },
+      return true; // allow sign-in to proceed
+    },
     async jwt({ token, user }) {
       if (user) {
         token.id = (user as { id?: string }).id;
         token.backendToken = (user as { backendToken?: string }).backendToken;
+        // Persist name/image so they survive a cookie-decoded reload
+        // (when `user` is undefined and we only have the token).
+        if (user.name) token.name = user.name;
+        if (user.image) token.picture = user.image;
       }
       return token;
     },
     async session({ session, token }) {
       if (token.id) session.user.id = token.id as string;
+      if (token.name) session.user.name = token.name;
+      if (token.picture) session.user.image = token.picture as string;
       session.backendToken = token.backendToken as string | undefined;
       return session;
     },
-  
   },
 });
