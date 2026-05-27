@@ -7,7 +7,6 @@ export const revalidate = 300;
 export default async function BlogHub() {
   // Fetch data on the server
   const data = await getBulkBlogs();
-  console.log(data)
   const blogs = data?.blogs || [];
 
   return (

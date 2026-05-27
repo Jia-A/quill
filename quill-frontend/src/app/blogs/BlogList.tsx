@@ -47,7 +47,6 @@ export default function BlogList({ blogs }: BlogListProps) {
             month: "long", 
             day: "numeric" 
           }) : ""
-        console.log(article)
         return (
           <motion.article
             key={article.id || idx}

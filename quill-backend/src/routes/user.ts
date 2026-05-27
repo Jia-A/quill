@@ -48,20 +48,20 @@ userRouter.post("/signin", async (c) => {
   const body = await c.req.json();
 
   try {
-    const userExists = await prisma.user.findFirst({
+    const user = await prisma.user.findFirst({
       where: {
         email: body?.email,
         password: body?.password,
       },
     });
-    if (!userExists) {
+    if (!user) {
       return c.json({ error: "User not found" }, 404);
     }
-    const token = await sign({ id: userExists.id }, c.env.JWT_SECRET, "HS256");
+    const token = await sign({ id: user.id }, c.env.JWT_SECRET, "HS256");
     setCookie(c, "token", token, { sameSite : "None", secure : false, path : "/"})
     return c.json({
       message: "User signed in successfully",
-      userExists,
+      user,
       token,
     });
   } catch (error) {
@@ -69,3 +69,43 @@ userRouter.post("/signin", async (c) => {
   }
 });
 
+userRouter.post("/oauth-sync", async (c) =>{
+  const prisma = new PrismaClient({
+    accelerateUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+
+  const body = await c.req.json();
+  const { email, name, avatar } = body;
+
+  if (!email) {
+    return c.json({ error: "Email is required" }, 400);
+  }
+
+    try {
+    // Upsert: create if not exists, otherwise return existing user
+    const user = await prisma.user.upsert({
+      where: { email },
+      update: {
+        // refresh name/avatar in case they changed on the provider side
+        name: name ?? undefined,
+        avatar: avatar ?? undefined,
+      },
+      create: {
+        email,
+        name: name ?? null,
+        avatar: avatar ?? null,
+        // no password — OAuth users don't have one
+      },
+    });
+
+    const token = await sign({ id: user.id }, c.env.JWT_SECRET, "HS256");
+
+    return c.json({
+      message: "OAuth user synced",
+      user,
+      token,
+    });
+  } catch (error: any) {
+    return c.json({ error: error?.message ?? "Sync failed" }, 500);
+  }
+});

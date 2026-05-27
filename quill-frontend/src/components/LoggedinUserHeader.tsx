@@ -1,22 +1,21 @@
 "use client";
 import Avatar from "@/atoms/Avatar";
 import Button from "@/atoms/Button";
-import { useCustomer } from "@/hooks/useCustomer";
 import { PencilSquareIcon } from "@heroicons/react/24/outline";
+import { Session } from "next-auth";
+import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import { useState } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
-const LoggedinUserHeader = () => {
-  const { customer } = useCustomer();
-  console.log(customer);
+const LoggedinUserHeader = ({ session }: { session: Session }) => {
+  const { name, image } = session?.user || {};
   const [showUserMenu, setShowUserMenu] = useState(false);
   const router = useRouter();
   const handleLogout = () => {
-    localStorage.removeItem("customer");
-    localStorage.removeItem("token");
-    router.push("/");
-    window.location.reload();
+    if (session) {
+      signOut({ callbackUrl: "/" });
+    }
   };
   return (
     <header className="w-full flex justify-between items-center px-6 py-2 bg-background border-b border-border sticky top-0 z-50">
@@ -37,9 +36,9 @@ const LoggedinUserHeader = () => {
         />
         <Avatar
           size="sm"
-          avImage={customer?.avatar}
-          alt={customer?.name}
-          name={customer?.name}
+          avImage={image}
+          alt={name}
+          name={name}
           onClick={() => setShowUserMenu(!showUserMenu)}
         />
         {showUserMenu && (
@@ -49,9 +48,7 @@ const LoggedinUserHeader = () => {
           >
             <>
               <div className="px-4 py-2 border-b border-border">
-                <span className="text-sm font-medium">
-                  Hi {customer?.name || "User"} 👋
-                </span>
+                <span className="text-sm font-medium block truncate">Hi {name || "User"} 👋</span>
               </div>
               <button
                 onClick={handleLogout}

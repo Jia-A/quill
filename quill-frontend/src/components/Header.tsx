@@ -1,18 +1,22 @@
-'use client'
-import { useCustomer } from '@/hooks/useCustomer'
-import React from 'react'
-import LoggedinUserHeader from './LoggedinUserHeader'
-import HomepageHeader from './HomepageHeader'
+"use client";
+import LoggedinUserHeader from "./LoggedinUserHeader";
+import HomepageHeader from "./HomepageHeader";
+import { useSession } from "next-auth/react";
 
 const Header = () => {
-const {isLogin, isLoading}= useCustomer()
-console.log(isLogin, isLoading)
+  const { status, data: session } = useSession();
+
+  // Avoid flashing the logged-out header while the session is still resolving.
+  if (status === "loading") {
+    return (
+      <div className="w-full h-[57px] bg-background border-b border-border sticky top-0 z-50" />
+    );
+  }
+
   return (
     <div>
-      {!isLoading && 
-      (isLogin ? <LoggedinUserHeader /> : <HomepageHeader />)}
-      
+      {status === "authenticated" ? <LoggedinUserHeader session={session} /> : <HomepageHeader />}
     </div>
-  )
-}
-export default Header
+  );
+};
+export default Header;

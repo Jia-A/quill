@@ -4,9 +4,7 @@ import useSWR from "swr"
 
 // Fetcher function for SWR
 const fetcher = async (url: string) => {
-    console.log("Fetching data from:", url)
     const response = await axios.get(url)
-    console.log(response)
     if (response.status === 200) {
         return response.data?.blogs
     } else {

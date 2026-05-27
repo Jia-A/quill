@@ -3,16 +3,18 @@ import axios from "axios";
 
 // Keep the original function for backward compatibility if needed
 export const getBulkBlogs = async () => {
-  const response = await fetch(`${API_URL}/blog/bulk`, {
-    next: { revalidate: 300 } // Enable ISR with 5-minute revalidation
-  });
-  console.log(response);
-  if (response.ok) {
-    return await response.json();
-  } else {
-    // throw new Error("Can't fetch blogs right now!");
-    console.log("Error fetching blogs:", response);
+  try {
+    const response = await fetch(`${API_URL}/blog/bulk`, {
+      next: { revalidate: 300 }, // Enable ISR with 5-minute revalidation
+    });
+    if (response.ok) {
+      return await response.json();
+    }
+    console.log("Error fetching blogs:", response.status);
+  } catch (err) {
+    console.log("Error fetching blogs:", err);
   }
+  return { blogs: [] };
 };
 
 export const postBlog = async (payload: {
