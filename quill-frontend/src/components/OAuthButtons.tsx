@@ -26,7 +26,7 @@ const OAuthButtons = ({ callbackUrl = "/blogs" }: OAuthButtonsProps) => {
           size="sm"
           className="w-full justify-center"
           onClick={() => signIn("google", { callbackUrl })}
-          icon={<FcGoogle size={18} />}
+          icon={<FcGoogle className="w-[18px] h-[18px]" />}
         />
         <Button
           label="GitHub"
@@ -34,7 +34,7 @@ const OAuthButtons = ({ callbackUrl = "/blogs" }: OAuthButtonsProps) => {
           size="sm"
           className="w-full justify-center"
           onClick={() => signIn("github", { callbackUrl })}
-          icon={<FaGithub size={16} />}
+          icon={<FaGithub className="w-[18px] h-[18px]" />}
         />
         <Button
           label="LinkedIn"
@@ -42,7 +42,7 @@ const OAuthButtons = ({ callbackUrl = "/blogs" }: OAuthButtonsProps) => {
           size="sm"
           className="w-full justify-center"
           onClick={() => signIn("linkedin", { callbackUrl })}
-          icon={<FaLinkedin size={16} color="#0A66C2" />}
+          icon={<FaLinkedin className="w-[18px] h-[18px]" color="#0A66C2" />}
         />
       </div>
     </div>

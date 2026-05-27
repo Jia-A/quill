@@ -8,12 +8,12 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
-const LoggedinUserHeader = ({session} : {session: Session}) => {
+const LoggedinUserHeader = ({ session }: { session: Session }) => {
   const { name, image } = session?.user || {};
   const [showUserMenu, setShowUserMenu] = useState(false);
   const router = useRouter();
   const handleLogout = () => {
-    if(session){
+    if (session) {
       signOut({ callbackUrl: "/" });
     }
   };
@@ -48,9 +48,7 @@ const LoggedinUserHeader = ({session} : {session: Session}) => {
           >
             <>
               <div className="px-4 py-2 border-b border-border">
-                <span className="text-sm font-medium">
-                  Hi {name || "User"} 👋
-                </span>
+                <span className="text-sm font-medium block truncate">Hi {name || "User"} 👋</span>
               </div>
               <button
                 onClick={handleLogout}
