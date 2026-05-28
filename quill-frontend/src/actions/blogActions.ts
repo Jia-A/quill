@@ -17,15 +17,18 @@ export const getBulkBlogs = async () => {
   return { blogs: [] };
 };
 
-export const postBlog = async (payload: {
-  title: string;
-  content: string;
-  image: string;
-  published: boolean;
-}) => {
+export const postBlog = async (
+  payload: {
+    title: string;
+    content: string;
+    image: string;
+    published: boolean;
+  },
+  token: string
+) => {
   try {
     const response = await axios.post(`${API_URL}/blog/`, payload, {
-      headers: { authorization: `${localStorage.getItem("token")}` },
+      headers: { authorization: token },
     });
     if (response.status === 200) {
       return response.data;
