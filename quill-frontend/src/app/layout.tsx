@@ -1,15 +1,33 @@
 import type { Metadata } from "next";
 import "./globals.css";
-// import { Nunito } from "next/font/google";
-import { Inter } from "next/font/google";
+import { Inter, Newsreader, JetBrains_Mono } from "next/font/google";
 import Header from "@/components/Header";
 import SessionProviderWrapper from "@/components/SessionProviderWrapper";
 import { ThemeProvider } from "@/components/ThemeProvider";
 
-const nunito = Inter({
+// Body text — clean, neutral sans.
+const inter = Inter({
   subsets: ["latin"],
-  weight: ["400", "700"], // Specify desired weights (e.g., regular and bold)
-  display: "swap", // Optimizes font loading behavior
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+  variable: "--font-sans",
+});
+
+// Editorial display serif — the "I want to write" face.
+const newsreader = Newsreader({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
+  style: ["normal", "italic"],
+  display: "swap",
+  variable: "--font-serif",
+});
+
+// Mono — section numbers, labels, meta, code.
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  display: "swap",
+  variable: "--font-mono",
 });
 
 export const metadata: Metadata = {
@@ -26,8 +44,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${nunito.className} antialiased`}>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${inter.variable} ${newsreader.variable} ${jetbrainsMono.variable}`}
+    >
+      <body className="font-sans antialiased">
         <ThemeProvider>
           <SessionProviderWrapper>
             <Header />

@@ -2,8 +2,11 @@ import { ButtonProps } from "@/types/ButtonProps";
 import classNames from "classnames";
 
 const Spinner = () => (
-  <span className="ml-2 inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+  <span className="ml-2 inline-block w-3.5 h-3.5 border-[1.5px] border-current border-t-transparent rounded-full animate-spin" />
 );
+
+const base =
+  "group relative inline-flex items-center justify-center font-medium tracking-wide uppercase select-none cursor-pointer transition-colors duration-300 ease-out disabled:opacity-50 disabled:cursor-not-allowed";
 
 const Button = ({
   label,
@@ -20,46 +23,62 @@ const Button = ({
   let sizeClasses = "";
   switch (size) {
     case "sm":
-      sizeClasses = "text-sm py-1.5 px-2.5";
+      sizeClasses = "text-[11px] py-2 px-3.5";
       break;
     case "md":
-      sizeClasses = "text-md py-2.5 px-4.5";
+      sizeClasses = "text-xs py-3 px-5";
       break;
     case "lg":
-      sizeClasses = "text-lg py-4 px-8";
+      sizeClasses = "text-sm py-4 px-8";
       break;
   }
+
+  const content = (
+    <>
+      <span className="relative z-10 flex items-center font-mono">
+        {label}
+        {loading ? <Spinner /> : icon ? <span className="ml-2">{icon}</span> : null}
+      </span>
+    </>
+  );
+
   switch (variant) {
     case "primary":
+      // Solid ink button with an ember fill that sweeps up on hover.
       return (
         <button
           type={type}
           disabled={isDisabled}
           className={classNames(
-            "bg-[#02111B] dark:bg-primary self-center rounded-md text-white dark:text-primary-foreground w-auto cursor-pointer transition transform duration-200 ease-in-out hover:scale-105 hover:shadow-lg hover:bg-[#0a2435] dark:hover:bg-primary/90 flex items-center disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100",
+            base,
+            "overflow-hidden bg-foreground text-background",
             sizeClasses,
             className
           )}
           {...rest}
         >
-          {label}
-          {loading ? <Spinner /> : icon ? <span className="ml-2">{icon}</span> : null}
+          <span className="absolute inset-0 z-0 origin-bottom scale-y-0 bg-accent transition-transform duration-300 ease-out group-hover:scale-y-100 group-active:scale-y-100" />
+          <span className="relative z-10 flex items-center font-mono group-hover:text-accent-foreground group-active:text-accent-foreground transition-colors duration-300">
+            {label}
+            {loading ? <Spinner /> : icon ? <span className="ml-2">{icon}</span> : null}
+          </span>
         </button>
       );
     case "secondary":
+      // Hairline-bordered button; border + text shift to ember on hover.
       return (
         <button
           type={type}
           disabled={isDisabled}
           className={classNames(
-            "bg-white dark:bg-transparent self-center border-[1.5px] border-[#8f8dac] dark:border-border font-semibold rounded-md text-[#02111B] dark:text-foreground w-auto cursor-pointer transition transform duration-200 ease-in-out hover:scale-101 hover:shadow-md dark:hover:bg-muted flex items-center disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100",
+            base,
+            "border border-foreground/30 text-foreground hover:border-accent hover:text-accent active:border-accent active:text-accent",
             sizeClasses,
             className
           )}
           {...rest}
         >
-          {label}
-          {loading ? <Spinner /> : icon ? <span className="ml-2">{icon}</span> : null}
+          {content}
         </button>
       );
     case "iconOnly":
@@ -67,7 +86,7 @@ const Button = ({
         <button
           type={type}
           className={classNames(
-            "rounded-full text-white  w-full cursor-pointer",
+            "inline-flex items-center justify-center text-foreground hover:text-accent transition-colors cursor-pointer",
             sizeClasses,
             className
           )}

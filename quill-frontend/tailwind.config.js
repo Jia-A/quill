@@ -42,13 +42,33 @@ const config = {
       },
       borderRadius: {
         lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        md: "var(--radius)",
+        sm: "var(--radius)",
+      },
+      fontFamily: {
+        sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
+        serif: ["var(--font-serif)", "Georgia", "serif"],
+        mono: ["var(--font-mono)", "ui-monospace", "monospace"],
+      },
+      letterSpacing: {
+        tightest: "-0.03em",
+      },
+      typography: {
+        DEFAULT: {
+          css: {
+            "--tw-prose-body": "hsl(var(--foreground))",
+            "--tw-prose-headings": "hsl(var(--foreground))",
+            "--tw-prose-links": "hsl(var(--accent))",
+            "--tw-prose-quotes": "hsl(var(--muted-foreground))",
+            "--tw-prose-bold": "hsl(var(--foreground))",
+            maxWidth: "none",
+          },
+        },
       },
     },
   },
   plugins: [typography],
-	darkMode: 'selector'
+  darkMode: "selector",
 };
 
 export default config;

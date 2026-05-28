@@ -10,16 +10,14 @@ interface OAuthButtonsProps {
 
 const OAuthButtons = ({ callbackUrl = "/blogs" }: OAuthButtonsProps) => {
   return (
-    <div className="w-[350px] mt-6">
+    <div className="w-full mt-8">
       <div className="relative flex items-center">
-        <div className="flex-grow border-t border-gray-300" />
-        <span className="mx-3 text-xs text-gray-500 uppercase tracking-wider">
-          Or continue with
-        </span>
-        <div className="flex-grow border-t border-gray-300" />
+        <div className="flex-grow border-t border-border" />
+        <span className="mx-3 eyebrow">Or continue with</span>
+        <div className="flex-grow border-t border-border" />
       </div>
 
-      <div className="grid grid-cols-3 gap-2 mt-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-5">
         <Button
           label="Google"
           variant="secondary"

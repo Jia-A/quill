@@ -48,7 +48,7 @@ const SigninForm = () => {
 
   return (
     <form onSubmit={handleSubmit(signinHandler)}>
-      <span className="flex flex-col gap-3 w-[350px] mt-4">
+      <span className="flex flex-col gap-5 w-full mt-8">
         <Input label="Email" register={register("email")} />
         {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
         <Input label="Password" type="password" register={register("password")} />

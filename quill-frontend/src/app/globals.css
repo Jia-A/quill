@@ -2,45 +2,186 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+  Quill — editorial design system.
+  Sharp edges, warm paper, ember-crimson accent. Three faces:
+  serif (Newsreader) for display, sans (Inter) for body, mono for meta.
+  Color tokens are HSL channels consumed via hsl(var(--token)).
+*/
+
 :root {
-  --radius: 0.5rem;
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
-  --card: 0 0% 100%;
-  --card-foreground: 222.2 84% 4.9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 222.2 84% 4.9%;
-  --primary: 222.2 47.4% 11.2%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 210 40% 96%;
-  --secondary-foreground: 222.2 47.4% 11.2%;
-  --muted: 210 40% 96%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --accent: 210 40% 96%;
-  --accent-foreground: 222.2 47.4% 11.2%;
-  --destructive: 0 84.2% 60.2%;
-  --border: 214.3 31.8% 91.4%;
-  --input: 214.3 31.8% 91.4%;
-  --ring: 222.2 84% 4.9%;
+  --radius: 0rem;
+
+  /* Light — warm paper / near-black ink */
+  --background: 40 33% 97%; /* #FAF8F4 warm paper */
+  --foreground: 30 18% 8%; /* #16130F near-black ink */
+  --card: 40 33% 97%;
+  --card-foreground: 30 18% 8%;
+  --popover: 40 33% 99%;
+  --popover-foreground: 30 18% 8%;
+
+  --primary: 30 18% 8%; /* ink */
+  --primary-foreground: 40 33% 97%;
+  --secondary: 38 24% 92%;
+  --secondary-foreground: 30 18% 8%;
+
+  --muted: 38 22% 91%;
+  --muted-foreground: 32 8% 40%;
+  --accent: 9 65% 48%; /* #C8442B ember crimson */
+  --accent-foreground: 40 33% 97%;
+
+  --destructive: 0 70% 45%;
+  --destructive-foreground: 40 33% 97%;
+
+  --border: 32 14% 84%; /* warm hairline */
+  --input: 32 14% 80%;
+  --ring: 9 65% 48%; /* accent focus ring */
+
+  --paper: 40 33% 97%;
 }
 
 .dark {
-  --background: 222.2 84% 4.9%;
-  --foreground: 210 20% 92%;
-  --card: 222.2 84% 4.9%;
-  --card-foreground: 210 20% 92%;
-  --popover: 222.2 84% 4.9%;
-  --popover-foreground: 210 20% 92%;
-  --primary: 210 20% 92%;
-  --primary-foreground: 222.2 47.4% 11.2%;
-  --secondary: 217.2 32.6% 17.5%;
-  --secondary-foreground: 210 20% 92%;
-  --muted: 217.2 32.6% 17.5%;
-  --muted-foreground: 215 15% 60%;
-  --accent: 217.2 32.6% 17.5%;
-  --accent-foreground: 210 20% 92%;
-  --destructive: 0 62.8% 30.6%;
-  --border: 217.2 32.6% 22%;
-  --input: 217.2 32.6% 22%;
-  --ring: 212.7 20% 78%;
+  /* Dark — warm near-black / off-white ink */
+  --background: 30 8% 5%; /* #0E0D0C */
+  --foreground: 38 18% 90%; /* warm off-white */
+  --card: 30 8% 7%;
+  --card-foreground: 38 18% 90%;
+  --popover: 30 8% 8%;
+  --popover-foreground: 38 18% 90%;
+
+  --primary: 38 18% 90%;
+  --primary-foreground: 30 8% 5%;
+  --secondary: 30 6% 13%;
+  --secondary-foreground: 38 18% 90%;
+
+  --muted: 30 6% 13%;
+  --muted-foreground: 36 8% 58%;
+  --accent: 9 72% 56%; /* brighter ember on dark */
+  --accent-foreground: 30 8% 5%;
+
+  --destructive: 0 65% 55%;
+  --destructive-foreground: 38 18% 90%;
+
+  --border: 30 6% 17%;
+  --input: 30 6% 20%;
+  --ring: 9 72% 56%;
+
+  --paper: 30 8% 5%;
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-feature-settings:
+      "liga" 1,
+      "calt" 1;
+  }
+  ::selection {
+    background-color: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+  }
+  /* Thin, editorial scrollbar */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border: 3px solid hsl(var(--background));
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground));
+  }
+}
+
+@layer components {
+  /* Mono eyebrow label — section numbers, kickers, meta */
+  .eyebrow {
+    font-family: var(--font-mono), monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: hsl(var(--muted-foreground));
+  }
+  .accent-text {
+    color: hsl(var(--accent));
+  }
+
+  /* Animated underline link — sharp, editorial */
+  .link-underline {
+    position: relative;
+  }
+  .link-underline::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -2px;
+    height: 1px;
+    width: 100%;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .link-underline:hover::after {
+    transform: scaleX(1);
+    transform-origin: left;
+  }
+
+  /* Hairline rule used as a section divider */
+  .rule {
+    height: 1px;
+    width: 100%;
+    background: hsl(var(--border));
+  }
+}
+
+/* Editor / blog prose tuned for the editorial serif look */
+.prose,
+.tiptap {
+  font-family: var(--font-serif), Georgia, serif;
+}
+.prose h1,
+.prose h2,
+.prose h3,
+.tiptap h1,
+.tiptap h2,
+.tiptap h3 {
+  font-family: var(--font-serif), Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+/* Reveal-on-load keyframes for editorial entrances */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-rise {
+  animation: rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.animate-marquee {
+  animation: marquee 28s linear infinite;
 }

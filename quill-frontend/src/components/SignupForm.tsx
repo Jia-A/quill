@@ -51,7 +51,7 @@ const SignupForm = () => {
 
   return (
     <form onSubmit={handleSubmit(signupHandler)}>
-      <span className="flex flex-col gap-3 w-[350px] mt-4">
+      <span className="flex flex-col gap-5 w-full mt-8">
         <Input label="Full name" register={register("name")} />
         {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
         <Input label="Email" register={register("email")} />

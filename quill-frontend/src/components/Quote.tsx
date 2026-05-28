@@ -1,17 +1,33 @@
-'use client'
+"use client";
+
+/** Side panel on auth pages — the editorial quote on an ember-ink field. */
 const Quote = () => {
   return (
-    <div className="h-screen flex justify-center items-center bg-[#E3D0D8] dark:bg-[#2e1b24] flex-col text-left">
-      <div className="flex flex-col max-w-md">
-        <span className="text-3xl text-foreground">We write to taste life twice, in the moment and in retrospect.</span>
-      <span className="text-md mt-3 mb-1 text-foreground">
-        -- Anaïs Nin
+    <div className="h-full flex flex-col justify-between bg-foreground text-background p-12">
+      <span className="font-mono text-[0.72rem] tracking-[0.18em] uppercase text-background/50">
+        [ Quill — a place to write ]
       </span>
-      <span className="text-xs text-muted-foreground">Writer and philosopher</span>
-      </div>
-      
-    </div>
-  )
-}
 
-export default Quote
+      <blockquote className="max-w-md">
+        <p className="font-serif font-light leading-[1.1] tracking-tightest text-4xl xl:text-5xl">
+          &ldquo;We write to taste life twice, in the moment{" "}
+          <span className="italic text-accent">and in retrospect.</span>&rdquo;
+        </p>
+        <footer className="mt-8 flex items-baseline gap-3">
+          <span className="font-mono text-sm uppercase tracking-[0.18em] text-background/80">
+            Anaïs Nin
+          </span>
+          <span className="font-mono text-[0.72rem] uppercase tracking-[0.18em] text-background/40">
+            Writer
+          </span>
+        </footer>
+      </blockquote>
+
+      <span className="font-mono text-[0.72rem] tracking-[0.18em] uppercase text-background/40">
+        &copy; {new Date().getFullYear()}
+      </span>
+    </div>
+  );
+};
+
+export default Quote;

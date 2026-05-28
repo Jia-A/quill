@@ -9,7 +9,7 @@ const Header = () => {
   // Avoid flashing the logged-out header while the session is still resolving.
   if (status === "loading") {
     return (
-      <div className="w-full h-[57px] bg-background border-b border-border sticky top-0 z-50" />
+      <div className="w-full h-[61px] bg-background/80 backdrop-blur border-b border-border sticky top-0 z-50" />
     );
   }
 

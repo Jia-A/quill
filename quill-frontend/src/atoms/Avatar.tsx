@@ -25,7 +25,7 @@ const Avatar = ({ size = "md", avImage, alt, name, onClick }: AvatarProps) => {
   return (
     <button
       type="button"
-      className={`relative rounded-full overflow-hidden border-2 border-border cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${sizeClasses}`}
+      className={`relative overflow-hidden border border-foreground/30 hover:border-accent transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent ${sizeClasses}`}
       onClick={onClick}
     >
       {avImage ? (
@@ -36,7 +36,7 @@ const Avatar = ({ size = "md", avImage, alt, name, onClick }: AvatarProps) => {
           fill
         />
       ) : (
-        <span className="flex items-center justify-center w-full h-full bg-muted text-foreground">
+        <span className="flex items-center justify-center w-full h-full bg-foreground text-background font-serif">
           {name?.charAt(0)}
         </span>
       )}

@@ -5,18 +5,29 @@ import BlogList from "./BlogList";
 export const revalidate = 300;
 
 export default async function BlogHub() {
-  // Fetch data on the server
   const data = await getBulkBlogs();
   const blogs = data?.blogs || [];
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Main Content */}
-      <main className="max-w-3xl mx-auto px-6 py-10">
-        <h2 className="text-3xl font-bold mb-8">Latest Articles</h2>
+      <main className="max-w-3xl mx-auto px-6 md:px-10 py-16 md:py-24">
+        {/* Masthead */}
+        <header className="mb-16">
+          <div className="flex items-center gap-4 mb-8">
+            <span className="eyebrow">[ The reading room ]</span>
+            <span className="flex-1 rule" />
+          </div>
+          <h1 className="font-serif font-light text-[clamp(2.5rem,7vw,5rem)] leading-[0.95] tracking-tightest">
+            Latest <span className="italic accent-text">stories</span>
+          </h1>
+          <p className="mt-5 text-muted-foreground max-w-md">
+            Words from the Quill community. {blogs.length}{" "}
+            {blogs.length === 1 ? "story" : "stories"} to read.
+          </p>
+        </header>
+
         <BlogList blogs={blogs} />
       </main>
     </div>
   );
 }
-

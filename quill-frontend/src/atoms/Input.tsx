@@ -17,15 +17,18 @@ const Input = ({
   const inputType = isPassword && showPassword ? "text" : type;
 
   return (
-    <span className="flex flex-col w-full">
-      <label htmlFor={label} className="text-sm mb-1 text-foreground">
+    <span className="flex flex-col w-full group">
+      <label
+        htmlFor={label}
+        className="eyebrow mb-2 transition-colors group-focus-within:text-accent"
+      >
         {label}
       </label>
       <span className="relative w-full">
         <input
           id={label}
           type={inputType}
-          className="border border-border dark:border-muted-foreground/40 rounded p-2 w-full bg-background dark:bg-muted text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          className="w-full bg-transparent border-b border-border py-2 pr-8 text-foreground text-base focus:outline-none focus:border-accent transition-colors placeholder:text-muted-foreground"
           {...register}
         />
         {isPassword && (
@@ -33,9 +36,9 @@ const Input = ({
             type="button"
             onClick={() => setShowPassword((prev) => !prev)}
             aria-label={showPassword ? "Hide password" : "Show password"}
-            className="absolute inset-y-0 right-2 flex items-center text-muted-foreground hover:text-foreground"
+            className="absolute inset-y-0 right-0 flex items-center text-muted-foreground hover:text-accent transition-colors"
           >
-            {showPassword ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+            {showPassword ? <EyeSlashIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
           </button>
         )}
       </span>
