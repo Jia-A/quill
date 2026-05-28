@@ -10,8 +10,10 @@ import Image from "next/image";
 import Button from "@/atoms/Button";
 import { postBlog } from "@/actions/blogActions";
 import { Upload, X, ImageIcon, Link as LinkIcon } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 export default function BlogEditor() {
+  const { data: session } = useSession();
   const [title, setTitle] = useState("");
   const [isError, setIsError] = useState({ element: "", message: "" });
   const [imageUrl, setImageUrl] = useState("");
@@ -132,8 +134,12 @@ export default function BlogEditor() {
       setIsError({ element: "content", message: "Content is required" });
       return;
     }
+    if (!session?.backendToken) {
+      setIsError({ element: "auth", message: "You must be signed in to publish" });
+      return;
+    }
     try {
-      const response = await postBlog(payload);
+      const response = await postBlog(payload, session.backendToken);
       console.log(response); // You can add a success message or redirect the user after successful publish
     } catch (error) {
       console.log(error);
