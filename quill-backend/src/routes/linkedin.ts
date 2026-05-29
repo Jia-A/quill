@@ -40,8 +40,15 @@ linkedinRouter.get("/connect", async (c) => {
     return c.json({ error: "Invalid token" }, 401);
   }
 
-  // Signed state so we can trust userId on callback without a session
-  const state = await sign({ userId, t: Date.now() }, c.env.JWT_SECRET, "HS256");
+  // Optional: the post the user is sharing, so we can return them to it after OAuth
+  const postId = c.req.query("postId");
+
+  // Signed state so we can trust userId (and where to return) on callback without a session
+  const state = await sign(
+    { userId, postId: postId ?? null, t: Date.now() },
+    c.env.JWT_SECRET,
+    "HS256"
+  );
   const redirectUri = getRedirectUri(c);
 
   const url = new URL("https://www.linkedin.com/oauth/v2/authorization");
@@ -68,13 +75,21 @@ linkedinRouter.get("/callback", async (c) => {
   }
 
   let userId: string;
+  let postId: string | null = null;
   try {
     const decoded = await verify(state, c.env.JWT_SECRET, "HS256");
     userId = decoded.userId as string;
+    postId = (decoded.postId as string | null) ?? null;
     if (!userId) throw new Error();
   } catch {
     return c.redirect(`${frontend}/?linkedin=invalid_state`);
   }
+
+  // Where to send the user when we're done: back to the post if we know it, else home.
+  const returnTo = (status: string) =>
+    postId
+      ? `${frontend}/blog/${postId}?linkedin=${status}&share=1`
+      : `${frontend}/?linkedin=${status}`;
 
   const redirectUri = getRedirectUri(c);
 
@@ -92,7 +107,7 @@ linkedinRouter.get("/callback", async (c) => {
   });
   if (!tokenRes.ok) {
     console.error("LinkedIn token exchange failed", await tokenRes.text());
-    return c.redirect(`${frontend}/?linkedin=token_error`);
+    return c.redirect(returnTo("token_error"));
   }
   const tokenData: any = await tokenRes.json();
   const accessToken: string = tokenData.access_token;
@@ -104,7 +119,7 @@ linkedinRouter.get("/callback", async (c) => {
   });
   if (!userRes.ok) {
     console.error("LinkedIn userinfo failed", await userRes.text());
-    return c.redirect(`${frontend}/?linkedin=userinfo_error`);
+    return c.redirect(returnTo("userinfo_error"));
   }
   const userInfo: any = await userRes.json();
   const linkedinUrn = `urn:li:person:${userInfo.sub}`;
@@ -117,7 +132,7 @@ linkedinRouter.get("/callback", async (c) => {
     update: { accessToken, expiresAt, linkedinUrn },
   });
 
-  return c.redirect(`${frontend}/?linkedin=connected`);
+  return c.redirect(returnTo("connected"));
 });
 
 // Status check, used by the panel to decide which button to show

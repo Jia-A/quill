@@ -40,8 +40,9 @@ export const getLinkedInStatus = async (token: string) => {
   return response.data as { connected: boolean };
 };
 
-export const linkedInConnectUrl = (token: string) =>
-  `${API_URL}/linkedin/connect?token=${encodeURIComponent(token)}`;
+export const linkedInConnectUrl = (token: string, postId?: string) =>
+  `${API_URL}/linkedin/connect?token=${encodeURIComponent(token)}` +
+  (postId ? `&postId=${encodeURIComponent(postId)}` : "");
 
 export type PublishResult =
   | { ok: true; permalink: string | null; shareUrn?: string }

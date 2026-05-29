@@ -69,9 +69,14 @@ const SocialDraftsPanel = ({ postId, authorId }: Props) => {
     const params = new URLSearchParams(window.location.search);
     const flag = params.get("linkedin");
     if (!flag) return;
-    if (flag === "connected") setOpen(true);
+    // We were redirected back here from the LinkedIn OAuth round-trip — reopen the panel.
+    setOpen(true);
+    if (flag !== "connected") {
+      setError("Couldn't connect LinkedIn. Please try again.");
+    }
     // clean the URL so a refresh doesn't re-trigger
     params.delete("linkedin");
+    params.delete("share");
     const newSearch = params.toString();
     const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : "");
     window.history.replaceState({}, "", newUrl);
@@ -119,7 +124,7 @@ const SocialDraftsPanel = ({ postId, authorId }: Props) => {
 
   const handleConnect = () => {
     if (!token) return;
-    window.location.href = linkedInConnectUrl(token);
+    window.location.href = linkedInConnectUrl(token, postId);
   };
 
   const handlePublish = async () => {
