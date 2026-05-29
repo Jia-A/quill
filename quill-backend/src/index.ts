@@ -24,7 +24,7 @@ app.use(
   "/*",
   cors({
     credentials: true,
-    origin: ["http://localhost:3000", "https://your-frontend.vercel.app"],
+    origin: ["http://localhost:3000", "https://lets-quill.vercel.app/"],
   })
 );
 app.route("/api/v1/user/", userRouter);
