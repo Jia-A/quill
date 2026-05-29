@@ -3,9 +3,11 @@ import {
   AlignLeft,
   AlignRight,
   Bold,
+  Code2,
   Heading2,
   Heading3,
   Highlighter,
+  ImagePlus,
   Italic,
   List,
   ListOrdered,
@@ -82,12 +84,50 @@ export default function MenuBar({ editor }: { editor: Editor | null }) {
         pressed: editor.isActive("orderedList"),
       },
     ],
+    [
+      {
+        icon: <Code2 className="size-4" />,
+        onClick: () => editor.chain().focus().toggleCodeBlock().run(),
+        pressed: editor.isActive("codeBlock"),
+      },
+      {
+        icon: <ImagePlus className="size-4" />,
+        onClick: () => {
+          const url = window.prompt(
+            "Paste a direct image URL (must end in .jpg, .png, .webp, etc.)"
+          );
+          if (!url) return;
+          const trimmed = url.trim();
+          if (!trimmed) return;
+          try {
+            const parsed = new URL(trimmed);
+            if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+              window.alert("URL must start with http:// or https://");
+              return;
+            }
+            const pathname = parsed.pathname.toLowerCase();
+            const looksLikeImage = /\.(jpe?g|png|gif|webp|svg|avif|bmp)(\?.*)?$/.test(pathname);
+            if (!looksLikeImage) {
+              const proceed = window.confirm(
+                "That URL doesn't look like a direct image link (no .jpg/.png/etc.). It might be a webpage. Insert anyway?"
+              );
+              if (!proceed) return;
+            }
+          } catch {
+            window.alert("That's not a valid URL.");
+            return;
+          }
+          editor.chain().focus().setImage({ src: trimmed }).run();
+        },
+        pressed: false,
+      },
+    ],
   ];
 
   return (
-    <div className="flex flex-wrap items-center gap-px border border-border bg-background sticky top-[61px] z-30">
+    <div className="flex items-center gap-px border border-border bg-background sticky top-[61px] z-30 overflow-x-auto whitespace-nowrap scrollbar-thin">
       {groups.map((group, gi) => (
-        <div key={gi} className="flex items-center border-r border-border last:border-r-0">
+        <div key={gi} className="flex items-center border-r border-border last:border-r-0 shrink-0">
           {group.map((option, index) => (
             <button
               key={index}

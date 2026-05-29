@@ -2,8 +2,63 @@ import { getBlogById } from "@/actions/blogActions";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
+import SocialDraftsPanel from "@/components/SocialDraftsPanel";
+import type { Metadata } from "next";
 
 export const revalidate = 300;
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
+function stripHtml(html: string): string {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  try {
+    const response = await getBlogById(id);
+    const blog = response?.blog;
+    if (!blog) return { title: "Story not found — Quill" };
+
+    const description =
+      blog.summary || (blog.content ? stripHtml(blog.content).slice(0, 200) : "Read on Quill.");
+    const url = `${SITE_URL}/blog/${id}`;
+    const images = blog.image ? [{ url: blog.image }] : undefined;
+    const authorName = blog.author?.name || "Anonymous";
+
+    return {
+      title: `${blog.title} — Quill`,
+      description,
+      alternates: { canonical: url },
+      openGraph: {
+        title: blog.title,
+        description,
+        url,
+        siteName: "Quill",
+        type: "article",
+        authors: [authorName],
+        images,
+      },
+      twitter: {
+        card: images ? "summary_large_image" : "summary",
+        title: blog.title,
+        description,
+        images: images?.map((i) => i.url),
+      },
+    };
+  } catch {
+    return { title: "Quill" };
+  }
+}
 
 const page = async ({ params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params;
@@ -59,7 +114,7 @@ const page = async ({ params }: { params: Promise<{ id: string }> }) => {
                 alt={blog.title}
                 width={1200}
                 height={600}
-                className="w-full h-[26rem] object-cover"
+                className="w-full aspect-[16/9] md:aspect-auto md:h-[26rem] object-cover"
                 priority
               />
             </div>
@@ -92,13 +147,18 @@ const page = async ({ params }: { params: Promise<{ id: string }> }) => {
               </div>
             )}
 
-            <Link
-              href="/blogs"
-              className="group inline-flex items-center gap-3 eyebrow bg-foreground text-background px-6 py-4 mt-12 hover:bg-accent hover:text-accent-foreground transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-              Back to all stories
-            </Link>
+            <div className="flex flex-wrap items-center gap-4 mt-12">
+              <Link
+                href="/blogs"
+                className="group inline-flex items-center gap-3 eyebrow bg-foreground text-background px-6 py-4 hover:bg-accent hover:text-accent-foreground transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+                Back to all stories
+              </Link>
+              {blog.author?.id && blog.published && (
+                <SocialDraftsPanel postId={blog.id} authorId={blog.author.id} />
+              )}
+            </div>
           </footer>
         </article>
       </div>

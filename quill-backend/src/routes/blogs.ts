@@ -43,7 +43,7 @@ blogRouter.post("/", async (c) => {
         image: body.image,
         published: body.published,
         authorId: userId,
-        publishedDate: new Date(),
+        publishedDate: body.published ? new Date() : null,
       },
     });
 
@@ -101,7 +101,7 @@ blogRouter.put("/:id", async (c) => {
       },
     });
     return c.json({
-        message : "Blog updated successfully",
+      message: "Blog updated successfully",
       blog,
     });
   } catch (error) {
@@ -110,12 +110,12 @@ blogRouter.put("/:id", async (c) => {
 });
 
 blogRouter.get("/bulk", async (c) => {
- const prisma = new PrismaClient({
+  const prisma = new PrismaClient({
     accelerateUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());
 
   const blogs = await prisma.post.findMany({
-    select : {
+    select: {
       id: true,
       title: true,
       content: true,
@@ -127,9 +127,9 @@ blogRouter.get("/bulk", async (c) => {
           name: true,
         },
       },
-    }
-  })
-    return c.json({
-        blogs,
-    });
+    },
+  });
+  return c.json({
+    blogs,
+  });
 });

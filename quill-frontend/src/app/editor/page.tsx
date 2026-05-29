@@ -6,11 +6,13 @@ import StarterKit from "@tiptap/starter-kit";
 import MenuBar from "@/components/EditorMenuBar";
 import TextAlign from "@tiptap/extension-text-align";
 import Highlight from "@tiptap/extension-highlight";
+import ImageExtension from "@tiptap/extension-image";
 import Image from "next/image";
 import Button from "@/atoms/Button";
 import { postBlog } from "@/actions/blogActions";
 import { Upload, X, ImageIcon, Link as LinkIcon } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function BlogEditor() {
   const { data: session } = useSession();
@@ -22,6 +24,7 @@ export default function BlogEditor() {
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [tempImageUrl, setTempImageUrl] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
   const onChange = (content: string) => {
     setContent(content);
@@ -104,6 +107,11 @@ export default function BlogEditor() {
         types: ["heading", "paragraph"],
       }),
       Highlight,
+      ImageExtension.configure({
+        HTMLAttributes: {
+          class: "rounded-md border border-border my-6 mx-auto block max-w-[480px] w-full h-auto",
+        },
+      }),
     ],
     // Remove content property to start with truly empty editor
     immediatelyRender: false,
@@ -140,6 +148,7 @@ export default function BlogEditor() {
     }
     try {
       const response = await postBlog(payload, session.backendToken);
+      router.push(`/blog/${response.blog.id}`);
       console.log(response); // You can add a success message or redirect the user after successful publish
     } catch (error) {
       console.log(error);
