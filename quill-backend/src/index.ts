@@ -23,8 +23,9 @@ const app = new Hono<{
 app.use(
   "/*",
   cors({
-    credentials: true,
-    origin: ["http://localhost:3000", "https://lets-quill.vercel.app/"],
+    origin: ["http://localhost:3000", "https://lets-quill.vercel.app"],
+    allowHeaders: ["Content-Type", "Authorization"],
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   })
 );
 app.route("/api/v1/user/", userRouter);
