@@ -1,12 +1,14 @@
 <div align="center">
 
+<img src="quill-frontend/public/quill-logo-circle.png" alt="Quill logo" width="120" />
+
 # Quill
 
 **A modern, Medium-inspired publishing platform for writers who love clean tools.**
 
-Write. Publish. Read. Repeat.
+Write. Publish. Share. Repeat.
 
-[Features](#features) · [Screenshots](#screenshots) · [Tech Stack](#tech-stack) · [Architecture](#architecture) · [Project Structure](#project-structure) · [Getting Started](#getting-started)
+[Features](#features) · [Tech Stack](#tech-stack) · [Architecture](#architecture) · [Project Structure](#project-structure) · [Getting Started](#getting-started) · [API](#api-reference)
 
 </div>
 
@@ -14,135 +16,168 @@ Write. Publish. Read. Repeat.
 
 ## Overview
 
-**Quill** is a full-stack blogging platform that pairs a polished Next.js reading and writing experience with a fast, serverless Hono API running on Cloudflare Workers. It ships with a rich Tiptap editor, JWT-based auth, author profiles, and a Postgres data layer powered by Prisma Accelerate — designed to feel as smooth as Medium, but yours to own.
+**Quill** is a full-stack blogging platform that pairs a polished Next.js reading and writing experience with a fast, serverless Hono API running on Cloudflare Workers. It ships with a rich Tiptap editor, NextAuth-based authentication (email/password **and** OAuth), author profiles, a Postgres data layer powered by Prisma Accelerate, and AI-generated social posts that turn a published article into a ready-to-share LinkedIn draft.
+
+This is a **pnpm workspace** monorepo with two packages: `quill-frontend` (Next.js) and `quill-backend` (Hono on Cloudflare Workers).
 
 ## Features
 
 ### ✍️ Rich Writing Experience
-- **Tiptap-powered editor** with headings, bold, italic, underline, highlights, and text alignment.
+
+- **Tiptap-powered editor** with headings, bold, italic, underline, highlights, text alignment, and image uploads.
 - **Distraction-free writing** with a clean, focused composer UI.
 - **Cover images & summaries** to make every post feel like a real publication.
-- **Drafts & publishing** — save your work in progress, publish when it's ready.
+- **Drafts & publishing** — save work in progress, publish when it's ready (publish date is set only when a post goes live).
+
+### 🤖 AI Social Drafts
+
+- **One-click LinkedIn drafts** generated from a post's title, content, and summary using **Cloudflare Workers AI** (`@cf/meta/llama-3.1-8b-instruct`).
+- **Engagement-tuned prompt** — strong hooks, concrete examples, format/character limits, and an auto-included code snippet when the article has one.
+- **Editable & regenerable** drafts, persisted per post + platform (`SocialDraft`), managed from a drafts panel in the editor.
+- **Publish to LinkedIn** directly via connected-account OAuth.
 
 ### 📖 Beautiful Reading
+
 - **Typography-first design** using Tailwind Typography for effortless readability.
-- **Responsive layouts** that look great from mobile to desktop.
-- **Framer Motion micro-interactions** for a smooth, app-like feel.
+- **Responsive layouts** and **Framer Motion** micro-interactions for an app-like feel.
+- **Light/dark theme toggle** and a redesigned landing experience.
 - **Per-author post listings** to binge a writer's work in one place.
 
 ### 👤 Author Profiles
+
 - **Avatars, names, and bios** ("About the Author") attached to every post.
 - **Profile pages** showcasing an author's published work.
 
 ### 🔐 Authentication
-- **Email/password sign-up and sign-in** with JWT-based sessions.
+
+- **NextAuth (Auth.js v5)** sessions on the frontend.
+- **Email/password** sign-up and sign-in, plus **OAuth** via GitHub, Google, and LinkedIn.
+- **JWT** issued for the backend API; the same `JWT_SECRET` signs on the frontend and verifies on the backend.
 - **Middleware-protected routes** so the editor and dashboard stay private.
-- **Form validation** end-to-end with React Hook Form + Zod.
+- **Zod-validated** inputs on both client and server.
 
 ### ⚡ Performance
-- **Edge-fast API** — Hono on Cloudflare Workers means global, low-latency responses.
+
+- **Edge-fast API** — Hono on Cloudflare Workers for global, low-latency responses.
 - **Prisma Accelerate** for cached, connection-pooled Postgres queries.
 - **Next.js 16 App Router** with React 19 and SWR for snappy client navigation.
 
-### 🛠 Developer Experience
-- **Type-safe across the stack** — TypeScript everywhere, shared types via a common package.
-- **Zod-validated inputs** on both client and server.
-- **Prisma schema-driven** data layer with migrations checked in.
-- **One-command deploys** to Cloudflare Workers.
-
-## Screenshots
-
-> _Coming soon — screenshots and demo videos will be added here._
-
-<!-- ![Landing page](docs/landing.png) -->
-<!-- ![Editor](docs/editor.png) -->
-<!-- ![Reading view](docs/reading.png) -->
-
 ## Tech Stack
 
-| Layer | Stack |
-|------|-------|
-| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS, Tiptap, SWR, Framer Motion, React Hook Form + Zod |
-| Backend | Hono, Cloudflare Workers, Prisma 7 + Accelerate, Wrangler |
-| Database | PostgreSQL (via Prisma Accelerate) |
-| Shared | `@tech--tonic/medium-app-common` (validation schemas/types) |
+| Layer    | Stack                                                                                                          |
+| -------- | -------------------------------------------------------------------------------------------------------------- |
+| Frontend | Next.js 16, React 19, TypeScript, Tailwind CSS, Tiptap, SWR, Framer Motion, React Hook Form + Zod, NextAuth v5 |
+| Backend  | Hono, Cloudflare Workers, Prisma 7 + Accelerate, Wrangler, Workers AI                                          |
+| Database | PostgreSQL (via Prisma Accelerate)                                                                             |
+| Tooling  | pnpm workspaces, Husky + lint-staged, Prettier                                                                 |
 
 ## Architecture
 
 ```
 ┌──────────────────────┐        HTTPS / JSON        ┌─────────────────────────┐
 │  quill-frontend      │  ───────────────────────►  │  quill-backend          │
-│  Next.js 16 (App     │                            │  Hono on Cloudflare     │
+│  Next.js 16 (App     │      Bearer JWT auth       │  Hono on Cloudflare     │
 │  Router) · React 19  │  ◄───────────────────────  │  Workers                │
-│  Tiptap · Tailwind   │                            │  Prisma + Accelerate    │
-└──────────────────────┘                            └───────────┬─────────────┘
-                                                                │
-                                                                ▼
-                                                       ┌────────────────┐
-                                                       │  PostgreSQL    │
-                                                       └────────────────┘
+│  Tiptap · NextAuth   │                            │  Prisma + Accelerate    │
+└──────────────────────┘                            └─────┬──────────────┬────┘
+                                                          │              │
+                                                          ▼              ▼
+                                                  ┌────────────┐  ┌────────────┐
+                                                  │ PostgreSQL │  │ Workers AI │
+                                                  └────────────┘  └────────────┘
+                                                                       │
+                                                                       ▼
+                                                                ┌────────────┐
+                                                                │  LinkedIn  │
+                                                                │   OAuth    │
+                                                                └────────────┘
 ```
 
 ## Project Structure
 
 ```
-quill/
-├── quill-frontend/           # Next.js App Router app
-│   ├── src/
-│   │   ├── app/              # Routes: /, /auth, /blogs, /blog/[id], /editor
-│   │   ├── components/       # UI + feature components
-│   │   ├── actions/          # Server actions
-│   │   ├── hooks/            # Custom React hooks
-│   │   ├── atoms/            # Small primitive components
-│   │   ├── lib/ · utils/     # Helpers, API client, utilities
-│   │   └── types/            # Shared TypeScript types
-│   └── middleware.ts         # Route protection
+quill/                            # pnpm workspace root
+├── package.json                  # workspace scripts (dev runs both apps)
+├── pnpm-workspace.yaml
 │
-└── quill-backend/            # Hono API on Cloudflare Workers
+├── quill-frontend/               # Next.js App Router app
+│   └── src/
+│       ├── app/                  # Routes: /, /auth, /blogs, /blog/[id], /editor
+│       │   └── api/auth/[...nextauth]/   # NextAuth route handler
+│       ├── auth.ts               # NextAuth config (credentials + OAuth)
+│       ├── actions/              # Server actions (authActions, socialActions)
+│       ├── components/           # UI + feature components (OAuthButtons, SocialDraftsPanel, …)
+│       ├── atoms/                # Small primitive components
+│       ├── hooks/ · lib/ · utils/
+│       ├── types/                # Shared + next-auth type augmentation
+│       └── middleware.ts         # Route protection
+│
+└── quill-backend/                # Hono API on Cloudflare Workers
     ├── src/
-    │   ├── index.ts          # App entrypoint
-    │   └── routes/
-    │       ├── user.ts       # signup / signin / profile
-    │       └── blogs.ts      # CRUD for posts
+    │   ├── index.ts              # App entrypoint, CORS, route mounts
+    │   ├── routes/
+    │   │   ├── user.ts           # signup / signin / profile
+    │   │   ├── blogs.ts          # CRUD for posts
+    │   │   ├── social.ts         # generate / read / update / delete social drafts
+    │   │   └── linkedin.ts       # LinkedIn OAuth connect + publish
+    │   └── lib/                  # generateSocial, socialPrompt, stripHtml
     ├── prisma/
-    │   ├── schema.prisma     # User & Post models
+    │   ├── schema.prisma         # User, Post, SocialDraft, LinkedInAccount
     │   └── migrations/
-    └── wrangler.jsonc        # Cloudflare Worker config
+    └── wrangler.jsonc            # Cloudflare Worker config + AI binding
 ```
 
 ## Data Model
 
 ```prisma
 model User {
-  id           String  @id @default(cuid())
-  email        String  @unique
-  name         String?
-  avatar       String?
-  password     String?
-  aboutAuthor  String?
-  posts        Post[]
+  id              String           @id @default(cuid())
+  email           String           @unique
+  name            String?
+  avatar          String?
+  password        String?
+  aboutAuthor     String?
+  posts           Post[]
+  linkedinAccount LinkedInAccount?
 }
 
 model Post {
-  id            String    @id @default(cuid())
+  id            String        @id @default(cuid())
   title         String
   content       String?
   image         String?
   summary       String?
-  published     Boolean   @default(false)
-  publishedDate DateTime? @db.Date
+  published     Boolean       @default(false)
+  publishedDate DateTime?     @db.Date
   authorId      String
-  author        User      @relation(fields: [authorId], references: [id])
+  author        User          @relation(fields: [authorId], references: [id])
+  socialDrafts  SocialDraft[]
+}
+
+model SocialDraft {
+  id        String   @id @default(cuid())
+  postId    String
+  platform  String                         // e.g. "linkedin"
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, platform])
+  @@index([postId])
+}
+
+model LinkedInAccount {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  accessToken String
+  expiresAt   DateTime
+  linkedinUrn String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 ```
-
-## Roadmap Ideas
-
-- Comments and reactions
-- Tags and topic feeds
-- Image uploads via R2
-- Reading time estimates
-- RSS feed per author
 
 ---
 
@@ -150,93 +185,161 @@ model Post {
 
 ### Prerequisites
 
-- Node.js 20+
-- npm (or your package manager of choice)
-- A PostgreSQL database URL (Neon, Supabase, or any Postgres host)
-- A [Prisma Accelerate](https://www.prisma.io/data-platform/accelerate) connection string
-- A Cloudflare account (for deploying the backend)
+- **Node.js 20+**
+- **pnpm 9+** (the repo enforces pnpm via an `only-allow` preinstall hook — `npm install` will fail)
+- A **PostgreSQL** database (Neon, Supabase, or any Postgres host)
+- A **[Prisma Accelerate](https://www.prisma.io/data-platform/accelerate)** connection string
+- A **Cloudflare account** (for the backend Worker + Workers AI)
+- OAuth app credentials for **GitHub**, **Google**, and **LinkedIn** (optional, for social sign-in / publishing)
 
-### 1. Clone
+### 1. Clone & install
+
+From the repo root, a single install bootstraps both packages:
 
 ```bash
 git clone <your-repo-url> quill
 cd quill
+pnpm install
 ```
 
-### 2. Backend — `quill-backend`
+> `postinstall` in the backend runs `prisma generate` automatically.
+
+### 2. Configure the backend — `quill-backend`
+
+Create `quill-backend/.dev.vars` (gitignored) for local Wrangler dev:
+
+```ini
+DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=..."  # Accelerate URL
+JWT_SECRET="a-long-random-secret"        # MUST match the frontend's AUTH_SECRET signing
+LINKEDIN_CLIENT_ID="..."                 # for publishing to LinkedIn
+LINKEDIN_CLIENT_SECRET="..."
+FRONTEND_URL="http://localhost:3000"     # optional (defaults to this)
+BACKEND_URL="http://localhost:8787"      # optional (defaults to this)
+```
+
+Make sure the **Workers AI binding** is enabled in `quill-backend/wrangler.jsonc` (required for AI drafts):
+
+```jsonc
+"ai": {
+  "binding": "AI"
+}
+```
+
+Apply migrations:
 
 ```bash
 cd quill-backend
-npm install
+pnpm prisma migrate deploy
 ```
 
-Create a `.dev.vars` file for local Wrangler dev:
+### 3. Configure the frontend — `quill-frontend`
 
-```
-DATABASE_URL="postgresql://USER:PASSWORD@HOST/DB"
-ACCELERATE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=..."
-JWT_SECRET="a-long-random-secret"
+Create `quill-frontend/.env.local`:
+
+```ini
+NEXT_PUBLIC_API_URL="http://localhost:8787"   # backend Worker URL (exposed to the browser)
+
+AUTH_SECRET="a-long-random-secret"            # NextAuth session secret (== backend JWT_SECRET)
+
+# OAuth providers (optional)
+AUTH_GITHUB_ID="..."
+AUTH_GITHUB_SECRET="..."
+AUTH_GOOGLE_ID="..."
+AUTH_GOOGLE_SECRET="..."
+AUTH_LINKEDIN_ID="..."
+AUTH_LINKEDIN_SECRET="..."
 ```
 
-Generate the Prisma client and run migrations:
+### 4. Run everything
+
+From the **repo root**, start both apps together:
 
 ```bash
-npx prisma generate --no-engine
-npx prisma migrate deploy
+pnpm dev
 ```
 
-Start the worker locally:
+- Frontend → http://localhost:3000
+- Backend → http://localhost:8787
 
-```bash
-npm run dev
-```
+Or run them individually: `pnpm dev:frontend` / `pnpm dev:backend`.
 
-The API will be available at `http://127.0.0.1:8787`.
+---
 
-### 3. Frontend — `quill-frontend`
+## Scripts
 
-```bash
-cd ../quill-frontend
-npm install
-```
+**Root** (`/`)
 
-Create a `.env.local` file:
-
-```
-NEXT_PUBLIC_API_URL=http://127.0.0.1:8787
-```
-
-Run the dev server:
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) and start writing.
-
-### Scripts
-
-**Frontend** (`quill-frontend/`)
-
-| Command | What it does |
-|---------|--------------|
-| `npm run dev` | Start Next.js in dev mode |
-| `npm run build` | Production build |
-| `npm run start` | Serve the production build |
-| `npm run lint` | ESLint |
+| Command                                  | What it does                        |
+| ---------------------------------------- | ----------------------------------- |
+| `pnpm dev`                               | Run frontend + backend concurrently |
+| `pnpm dev:frontend` / `pnpm dev:backend` | Run one app                         |
+| `pnpm build:frontend`                    | Production build of the frontend    |
+| `pnpm deploy:backend`                    | Deploy the Worker                   |
+| `pnpm lint`                              | Lint all packages                   |
+| `pnpm format`                            | Prettier across the repo            |
 
 **Backend** (`quill-backend/`)
 
-| Command | What it does |
-|---------|--------------|
-| `npm run dev` | Start the Worker locally with Wrangler |
-| `npm run deploy` | Deploy to Cloudflare Workers (minified) |
-| `npm run cf-typegen` | Regenerate Cloudflare binding types |
+| Command           | What it does                            |
+| ----------------- | --------------------------------------- |
+| `pnpm dev`        | Start the Worker locally with Wrangler  |
+| `pnpm deploy`     | Deploy to Cloudflare Workers (minified) |
+| `pnpm cf-typegen` | Regenerate Cloudflare binding types     |
 
-### Deployment
+**Frontend** (`quill-frontend/`)
 
-- **Backend** → `cd quill-backend && npm run deploy` to ship the Worker. Set secrets with `npx wrangler secret put DATABASE_URL` / `ACCELERATE_URL` / `JWT_SECRET`.
-- **Frontend** → Deploy to Vercel, Cloudflare Pages, or any Node host. Set `NEXT_PUBLIC_API_URL` to the deployed Worker URL.
+| Command      | What it does               |
+| ------------ | -------------------------- |
+| `pnpm dev`   | Start Next.js in dev mode  |
+| `pnpm build` | Production build           |
+| `pnpm start` | Serve the production build |
+| `pnpm lint`  | ESLint                     |
+
+---
+
+## API Reference
+
+All routes are mounted under `/api/v1` and (except auth) expect an `Authorization: <JWT>` header.
+
+| Method           | Path                                   | Description                              |
+| ---------------- | -------------------------------------- | ---------------------------------------- |
+| `POST`           | `/api/v1/user/signup`                  | Create an account                        |
+| `POST`           | `/api/v1/user/signin`                  | Sign in, returns a JWT                   |
+| `GET` / `PUT`    | `/api/v1/user/...`                     | Profile read / update                    |
+| `POST` / `PUT`   | `/api/v1/blog/`                        | Create / update a post                   |
+| `GET`            | `/api/v1/blog/bulk`                    | List posts                               |
+| `GET`            | `/api/v1/blog/:id`                     | Read a post                              |
+| `GET`            | `/api/v1/social/:postId`               | Generate/fetch a social draft for a post |
+| `PUT` / `DELETE` | `/api/v1/social/:postId`               | Edit / remove a draft                    |
+| `GET`            | `/api/v1/linkedin/connect?token=<jwt>` | Start LinkedIn OAuth                     |
+| `GET`            | `/api/v1/linkedin/callback`            | OAuth callback                           |
+| `POST`           | `/api/v1/linkedin/...`                 | Publish a draft to LinkedIn              |
+
+> Ownership is enforced server-side: social/blog mutations return `403` for posts you don't own and `404` for missing posts.
+
+---
+
+## Deployment
+
+- **Backend** → `cd quill-backend && pnpm deploy`. Set production secrets (not in `wrangler.jsonc`):
+  ```bash
+  npx wrangler secret put DATABASE_URL
+  npx wrangler secret put JWT_SECRET
+  npx wrangler secret put LINKEDIN_CLIENT_ID
+  npx wrangler secret put LINKEDIN_CLIENT_SECRET
+  npx wrangler secret put FRONTEND_URL
+  npx wrangler secret put BACKEND_URL
+  ```
+  Ensure the `AI` binding is present in `wrangler.jsonc`.
+- **Frontend** → Deploy to Vercel, Cloudflare Pages, or any Node host. Set `NEXT_PUBLIC_API_URL` to the deployed Worker URL and configure `AUTH_SECRET` + OAuth provider secrets.
+
+## Roadmap Ideas
+
+- More social platforms (X/Bluesky) on top of the existing `SocialDraft` model
+- Comments and reactions
+- Tags and topic feeds
+- Reading time estimates
+- RSS feed per author
 
 ## License
 
@@ -245,5 +348,5 @@ MIT — do what you love with it.
 ---
 
 <div align="center">
-Built with 🧠 using Next.js, Hono, Prisma, and Cloudflare Workers.
+Built with 🧠 using Next.js, Hono, Prisma, Workers AI, and Cloudflare Workers.
 </div>
