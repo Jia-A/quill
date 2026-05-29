@@ -2,6 +2,7 @@ import { PrismaClient } from "../generated/prisma/client";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { Hono } from "hono";
 import { sign, verify } from "hono/jwt";
+import { encryptSecret } from "../lib/crypto";
 
 export const linkedinRouter = new Hono<{
   Bindings: {
@@ -9,6 +10,7 @@ export const linkedinRouter = new Hono<{
     JWT_SECRET: string;
     LINKEDIN_CLIENT_ID: string;
     LINKEDIN_CLIENT_SECRET: string;
+    TOKEN_ENC_KEY: string;
     FRONTEND_URL?: string;
     BACKEND_URL?: string;
   };
@@ -126,10 +128,13 @@ linkedinRouter.get("/callback", async (c) => {
 
   const prisma = getPrisma(c.env.DATABASE_URL);
   const expiresAt = new Date(Date.now() + expiresIn * 1000);
+  // Encrypt the token before it touches the DB — a DB leak must not expose
+  // usable LinkedIn credentials. The key lives only as a Workers secret.
+  const encryptedToken = await encryptSecret(accessToken, c.env.TOKEN_ENC_KEY);
   await prisma.linkedInAccount.upsert({
     where: { userId },
-    create: { userId, accessToken, expiresAt, linkedinUrn },
-    update: { accessToken, expiresAt, linkedinUrn },
+    create: { userId, accessToken: encryptedToken, expiresAt, linkedinUrn },
+    update: { accessToken: encryptedToken, expiresAt, linkedinUrn },
   });
 
   return c.redirect(returnTo("connected"));
