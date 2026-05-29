@@ -21,6 +21,18 @@ model User {
   password String?
   posts Post[]
   aboutAuthor String?
+  linkedinAccount LinkedInAccount?
+}
+
+model LinkedInAccount {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  accessToken String
+  expiresAt   DateTime
+  linkedinUrn String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Post {
@@ -33,4 +45,18 @@ model Post {
   authorId String
   author User @relation(fields: [authorId], references: [id])
   summary String?
+  socialDrafts SocialDraft[]
+}
+
+model SocialDraft {
+  id        String   @id @default(cuid())
+  postId    String
+  platform  String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, platform])
+  @@index([postId])
 }
