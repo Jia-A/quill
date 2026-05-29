@@ -16,6 +16,7 @@
     "@tailwindcss/typography": "^0.5.16",
     "@tech--tonic/medium-app-common": "^1.0.2",
     "@tiptap/extension-highlight": "^3.4.2",
+    "@tiptap/extension-image": "^3.23.6",
     "@tiptap/extension-text-align": "^3.4.2",
     "@tiptap/extension-underline": "^3.4.1",
     "@tiptap/pm": "^3.4.1",
