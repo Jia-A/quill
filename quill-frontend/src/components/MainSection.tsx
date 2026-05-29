@@ -1,27 +1,48 @@
-import Button from "@/atoms/Button";
 import Link from "next/link";
-import React from "react";
 
 const MainSection = () => {
-
   return (
-    <section className="relative flex flex-col items-center justify-center text-center px-6 h-[90vh] max-w-4xl mx-auto">
-      <h1 className="text-5xl md:text-6xl font-bold leading-tight mb-6">
-        Write. Publish. Share. <br /> All in One Click.
-      </h1>
-      <p className="text-lg text-[var(--color-primary-light)] mb-10 max-w-2xl">
-        From blogs to community posts to AI-powered LinkedIn & Twitter updates -
-        all with a single click.
-      </p>
-      {/* <button className="px-10 py-4 rounded-2xl bg-gradient-to-r from-[var(--color-pink)] via-[var(--color-purple)] to-[var(--color-blue)] text-[var(--color-primary-dark)] font-semibold shadow-lg hover:opacity-90 transition text-lg">
-        Get Started Free →
-      </button> */}
-      <Link href={"/blogs"}>
-        <Button variant="primary" size="lg" label="Get Started Free →" />
-      </Link>
+    <section className="relative px-6 md:px-10 pt-24 pb-28 md:pt-36 md:pb-40 max-w-6xl mx-auto">
+      {/* Kicker */}
+      <div className="flex items-center gap-4 mb-10 animate-rise">
+        <span className="eyebrow">[ 01 — A writing surface ]</span>
+        <span className="flex-1 rule" />
+      </div>
 
-      {/* Subtle Gradient Accent */}
-      <div className="absolute -z-10 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-gradient-to-r from-[var(--color-blue)] via-[var(--color-pink)] to-[var(--color-purple)] opacity-20 blur-3xl" />
+      {/* Display headline — editorial serif, oversized */}
+      <h1
+        className="font-serif font-light leading-[0.95] tracking-tightest text-[clamp(2.75rem,9vw,7.5rem)] animate-rise"
+        style={{ animationDelay: "0.05s" }}
+      >
+        Write to taste
+        <br />
+        life <span className="italic accent-text">twice.</span>
+      </h1>
+
+      <div
+        className="mt-12 grid md:grid-cols-[1.4fr_1fr] gap-10 items-end animate-rise"
+        style={{ animationDelay: "0.12s" }}
+      >
+        <p className="max-w-xl text-lg md:text-xl leading-relaxed text-muted-foreground">
+          Quill is a clean, distraction-free home for your words. Draft, publish, and share
+          long-form writing &mdash; no clutter, no noise. Just you and the page.
+        </p>
+
+        <div className="flex flex-col gap-4 md:items-end">
+          <Link href="/auth/signup">
+            <span className="group inline-flex items-center gap-3 eyebrow bg-foreground text-background px-6 py-4 hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer">
+              Start writing
+              <span className="transition-transform group-hover:translate-x-1">&rarr;</span>
+            </span>
+          </Link>
+          <Link
+            href="/blogs"
+            className="eyebrow link-underline text-muted-foreground hover:text-foreground transition-colors"
+          >
+            or read the latest
+          </Link>
+        </div>
+      </div>
     </section>
   );
 };

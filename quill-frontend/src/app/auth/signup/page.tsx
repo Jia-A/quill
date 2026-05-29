@@ -4,20 +4,18 @@ import OAuthButtons from "@/components/OAuthButtons";
 
 export default function SignupPage() {
   return (
-    <div className="h-screen flex justify-center items-center p-3">
-      <div className="flex flex-col gap-2">
-        <span className="text-3xl font-extrabold text-center">
-          Create new account
-        </span>
-        <div className="flex gap-2 mb-3 text-center justify-center">
-          <span>Already have an account?</span>
-          <Link
-            href="/auth/signin"
-            className="underline font-bold cursor-pointer"
-          >
-            Signin here
+    <div className="flex justify-center items-center px-6 py-16">
+      <div className="w-full max-w-[380px]">
+        <span className="eyebrow">[ Begin writing ]</span>
+        <h1 className="font-serif font-light text-4xl tracking-tightest mt-4">
+          Create your account
+        </h1>
+        <p className="mt-3 text-muted-foreground text-sm">
+          Already have an account?{" "}
+          <Link href="/auth/signin" className="text-foreground link-underline font-medium">
+            Sign in
           </Link>
-        </div>
+        </p>
 
         <SignupForm />
         <OAuthButtons callbackUrl="/blogs" />

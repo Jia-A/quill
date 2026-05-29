@@ -6,11 +6,13 @@ import StarterKit from "@tiptap/starter-kit";
 import MenuBar from "@/components/EditorMenuBar";
 import TextAlign from "@tiptap/extension-text-align";
 import Highlight from "@tiptap/extension-highlight";
+import ImageExtension from "@tiptap/extension-image";
 import Image from "next/image";
 import Button from "@/atoms/Button";
 import { postBlog } from "@/actions/blogActions";
 import { Upload, X, ImageIcon, Link as LinkIcon } from "lucide-react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 export default function BlogEditor() {
   const { data: session } = useSession();
@@ -22,6 +24,7 @@ export default function BlogEditor() {
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [tempImageUrl, setTempImageUrl] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
   const onChange = (content: string) => {
     setContent(content);
@@ -104,13 +107,18 @@ export default function BlogEditor() {
         types: ["heading", "paragraph"],
       }),
       Highlight,
+      ImageExtension.configure({
+        HTMLAttributes: {
+          class: "rounded-md border border-border my-6 mx-auto block max-w-[480px] w-full h-auto",
+        },
+      }),
     ],
     // Remove content property to start with truly empty editor
     immediatelyRender: false,
     editorProps: {
       attributes: {
         class:
-          "prose dark:prose-invert max-w-none w-full min-h-[500px] border border-border rounded-md bg-muted py-2 px-3 text-foreground",
+          "tiptap prose prose-lg dark:prose-invert max-w-none w-full min-h-[460px] bg-transparent py-6 text-foreground focus:outline-none",
       },
     },
     onUpdate: ({ editor }) => {
@@ -140,6 +148,7 @@ export default function BlogEditor() {
     }
     try {
       const response = await postBlog(payload, session.backendToken);
+      router.push(`/blog/${response.blog.id}`);
       console.log(response); // You can add a success message or redirect the user after successful publish
     } catch (error) {
       console.log(error);
@@ -148,212 +157,161 @@ export default function BlogEditor() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-4xl mx-auto py-8 px-6">
-        {/* Header */}
-        <div className="mb-8 text-center">
-          <h1 className="text-4xl font-bold text-foreground mb-2">Create Your Story</h1>
-          <p className="text-muted-foreground">Share your thoughts with the world</p>
-        </div>
-
-        {/* Publish Button */}
-        <div className="mb-8 flex justify-center">
-          <Button
-            label="Publish Post"
-            variant="primary"
-            className="px-8 py-3 text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200"
-            onClick={handlePublish}
-          />
-        </div>
-
-        {/* Main Editor Container */}
-        <div className="bg-card rounded-2xl shadow-xl border border-border overflow-hidden">
-          {/* Blog Title Input */}
-          <div className="p-6 border-b border-border">
-            <label htmlFor="title" className="block text-sm font-semibold text-foreground mb-3">
-              Article Title
-            </label>
-            <input
-              id="title"
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter a compelling title..."
-              className="w-full text-2xl font-bold border-none outline-none placeholder-muted-foreground bg-transparent text-foreground"
-            />
-            {isError.element === "title" && (
-              <span className="text-red-500 text-sm mt-2 block">{isError.message}</span>
-            )}
+      <div className="max-w-3xl mx-auto py-14 px-6 md:px-10">
+        {/* Masthead row */}
+        <div className="flex items-center justify-between gap-6 mb-12">
+          <div className="flex items-center gap-4 min-w-0">
+            <span className="eyebrow whitespace-nowrap">[ Draft ]</span>
+            <span className="flex-1 rule" />
           </div>
+          <Button label="Publish" variant="primary" onClick={handlePublish} />
+        </div>
 
-          {/* Enhanced Image Upload Section */}
-          <div className="p-6 border-b border-border">
-            <label className="block text-sm font-semibold text-foreground mb-3">
-              Featured Image
-            </label>
+        {/* Title */}
+        <input
+          id="title"
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Untitled story"
+          className="w-full font-serif font-light text-[clamp(2.25rem,6vw,4rem)] leading-[1] tracking-tightest border-none outline-none placeholder:text-muted-foreground/50 bg-transparent text-foreground"
+        />
+        {isError.element === "title" && (
+          <span className="text-destructive eyebrow mt-3 block">{isError.message}</span>
+        )}
 
-            {!imageUrl ? (
-              <div className="space-y-4">
-                {/* Drag and Drop Area */}
-                <div
-                  className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 ${
-                    isDragOver
-                      ? "border-blue-500 bg-blue-50 dark:bg-blue-950 scale-105"
-                      : "border-border hover:border-muted-foreground hover:bg-muted"
-                  }`}
-                  onDragEnter={handleDragEnter}
-                  onDragLeave={handleDragLeave}
-                  onDragOver={handleDragOver}
-                  onDrop={handleDrop}
-                >
-                  <div className="flex flex-col items-center space-y-4">
-                    <div
-                      className={`w-16 h-16 rounded-full flex items-center justify-center ${
-                        isDragOver
-                          ? "bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300"
-                          : "bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      <Upload className="w-8 h-8" />
-                    </div>
+        {/* Featured image */}
+        <div className="mt-10">
+          <span className="eyebrow block mb-4">Featured image</span>
 
-                    <div>
-                      <h3 className="text-lg font-semibold text-foreground mb-2">
-                        {isDragOver ? "Drop your image here!" : "Drop your image here"}
-                      </h3>
-                      <p className="text-muted-foreground text-sm">or click to browse your files</p>
-                    </div>
-
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileSelect}
-                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    />
-                  </div>
-                </div>
-
-                {/* Alternative Options */}
-                <div className="flex items-center gap-4">
-                  <div className="flex-1 h-px bg-border"></div>
-                  <span className="text-sm text-muted-foreground font-medium">or</span>
-                  <div className="flex-1 h-px bg-border"></div>
-                </div>
-
-                {/* URL Input Toggle */}
-                {!showUrlInput ? (
-                  <button
-                    onClick={() => setShowUrlInput(true)}
-                    className="w-full flex items-center justify-center gap-2 py-3 px-4 border border-border rounded-lg hover:bg-muted text-foreground transition-colors"
-                  >
-                    <LinkIcon className="w-4 h-4" />
-                    Add image from URL
-                  </button>
-                ) : (
-                  <div className="flex gap-2">
-                    <input
-                      type="url"
-                      value={tempImageUrl}
-                      onChange={(e) => setTempImageUrl(e.target.value)}
-                      placeholder="https://example.com/image.jpg"
-                      className="flex-1 px-4 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
-                    <Button
-                      onClick={handleUrlSubmit}
-                      label="Add"
-                      variant="primary"
-                      className="px-6 py-2 text-white"
-                    >
-                      Add
-                    </Button>
-                    <button
-                      onClick={() => {
-                        setShowUrlInput(false);
-                        setTempImageUrl("");
-                      }}
-                      className="px-4 py-2 text-muted-foreground hover:text-foreground"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              /* Image Preview */
-              <div className="relative group">
-                <div className="relative w-full h-64 rounded-xl overflow-hidden bg-muted">
-                  <Image
-                    src={imageUrl}
-                    alt="Featured image preview"
-                    fill
-                    className="object-cover"
-                    unoptimized
+          {!imageUrl ? (
+            <div className="space-y-4">
+              <div
+                className={`relative border border-dashed p-10 text-center transition-colors ${
+                  isDragOver
+                    ? "border-accent bg-accent/5"
+                    : "border-border hover:border-muted-foreground"
+                }`}
+                onDragEnter={handleDragEnter}
+                onDragLeave={handleDragLeave}
+                onDragOver={handleDragOver}
+                onDrop={handleDrop}
+              >
+                <div className="flex flex-col items-center gap-4">
+                  <Upload
+                    className={`w-7 h-7 ${isDragOver ? "text-accent" : "text-muted-foreground"}`}
                   />
-                  {/* Remove Button */}
+                  <p className="eyebrow">
+                    {isDragOver ? "Drop it" : "Drop an image, or click to browse"}
+                  </p>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="flex-1 h-px bg-border" />
+                <span className="eyebrow">or</span>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+
+              {!showUrlInput ? (
+                <button
+                  onClick={() => setShowUrlInput(true)}
+                  className="w-full flex items-center justify-center gap-2 py-3 px-4 border border-border hover:border-accent hover:text-accent text-foreground transition-colors eyebrow"
+                >
+                  <LinkIcon className="w-4 h-4" />
+                  Add image from URL
+                </button>
+              ) : (
+                <div className="flex gap-2 items-end">
+                  <input
+                    type="url"
+                    value={tempImageUrl}
+                    onChange={(e) => setTempImageUrl(e.target.value)}
+                    placeholder="https://example.com/image.jpg"
+                    className="flex-1 bg-transparent border-b border-border py-2 text-foreground focus:outline-none focus:border-accent transition-colors"
+                  />
+                  <Button onClick={handleUrlSubmit} label="Add" variant="secondary" size="sm" />
                   <button
-                    onClick={removeImage}
-                    className="absolute top-3 right-3 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                    onClick={() => {
+                      setShowUrlInput(false);
+                      setTempImageUrl("");
+                    }}
+                    className="p-2 text-muted-foreground hover:text-accent transition-colors"
                   >
                     <X className="w-4 h-4" />
                   </button>
                 </div>
-                <p className="text-sm text-muted-foreground mt-2 text-center">
-                  Image ready! Click the × to remove and choose a different one.
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Editor Section */}
-          <div className="p-6">
-            <label className="block text-sm font-semibold text-foreground mb-3">Content</label>
-            <MenuBar editor={editor} />
-            <EditorContent editor={editor} />
-            {isError.element === "content" && (
-              <span className="text-red-500 text-sm mt-2 block">{isError.message}</span>
-            )}
-          </div>
-        </div>
-
-        {/* Preview Section */}
-        <div className="mt-12 bg-card rounded-2xl shadow-xl border border-border overflow-hidden">
-          <div className="p-6 bg-muted border-b border-border">
-            <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
-              <ImageIcon className="w-6 h-6" />
-              Live Preview
-            </h2>
-            <p className="text-muted-foreground mt-1">See how your post will look</p>
-          </div>
-
-          <div className="p-6 min-h-[200px]">
-            {/* Preview Title */}
-            {title && (
-              <h1 className="text-4xl font-bold mb-6 text-foreground leading-tight">{title}</h1>
-            )}
-
-            {/* Preview Image */}
-            {imageUrl && (
-              <div className="mb-8 relative w-full h-80 rounded-xl overflow-hidden bg-muted">
+              )}
+            </div>
+          ) : (
+            <div className="relative group">
+              <div className="relative w-full h-72 overflow-hidden border border-border bg-muted">
                 <Image
                   src={imageUrl}
-                  alt={title || "Blog featured image"}
+                  alt="Featured image preview"
                   fill
                   className="object-cover"
                   unoptimized
                 />
+                <button
+                  onClick={removeImage}
+                  className="absolute top-3 right-3 w-8 h-8 bg-foreground text-background flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:bg-accent hover:text-accent-foreground active:bg-accent active:text-accent-foreground"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-            )}
+            </div>
+          )}
+        </div>
 
-            {/* Preview Content */}
-            <div
-              className="prose prose-lg prose-gray dark:prose-invert max-w-none"
-              dangerouslySetInnerHTML={{
-                __html:
-                  content ||
-                  "<p class='text-muted-foreground italic'>Start writing to see your content here...</p>",
-              }}
-            ></div>
+        {/* Editor */}
+        <div className="mt-10">
+          <MenuBar editor={editor} />
+          <EditorContent editor={editor} />
+          {isError.element === "content" && (
+            <span className="text-destructive eyebrow mt-2 block">{isError.message}</span>
+          )}
+        </div>
+
+        {/* Live preview */}
+        <div className="mt-20 border-t border-border pt-10">
+          <div className="flex items-center gap-3 mb-8">
+            <ImageIcon className="w-4 h-4 text-accent" />
+            <span className="eyebrow">Live preview</span>
+            <span className="flex-1 rule" />
           </div>
+
+          {title && (
+            <h1 className="font-serif font-light text-4xl md:text-5xl mb-8 text-foreground leading-tight tracking-tightest">
+              {title}
+            </h1>
+          )}
+          {imageUrl && (
+            <div className="mb-10 relative w-full h-80 overflow-hidden border border-border bg-muted">
+              <Image
+                src={imageUrl}
+                alt={title || "Blog featured image"}
+                fill
+                className="object-cover"
+                unoptimized
+              />
+            </div>
+          )}
+          <div
+            className="prose prose-lg dark:prose-invert max-w-none"
+            dangerouslySetInnerHTML={{
+              __html:
+                content ||
+                "<p class='text-muted-foreground italic'>Start writing to see your story here…</p>",
+            }}
+          />
         </div>
       </div>
     </div>
