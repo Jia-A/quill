@@ -73,24 +73,27 @@ This is a **pnpm workspace** monorepo with two packages: `quill-frontend` (Next.
 
 ## Architecture
 
-```
-┌──────────────────────┐        HTTPS / JSON        ┌─────────────────────────┐
-│  quill-frontend      │  ───────────────────────►  │  quill-backend          │
-│  Next.js 16 (App     │      Bearer JWT auth       │  Hono on Cloudflare     │
-│  Router) · React 19  │  ◄───────────────────────  │  Workers                │
-│  Tiptap · NextAuth   │                            │  Prisma + Accelerate    │
-└──────────────────────┘                            └─────┬──────────────┬────┘
-                                                          │              │
-                                                          ▼              ▼
-                                                  ┌────────────┐  ┌────────────┐
-                                                  │ PostgreSQL │  │ Workers AI │
-                                                  └────────────┘  └────────────┘
-                                                                       │
-                                                                       ▼
-                                                                ┌────────────┐
-                                                                │  LinkedIn  │
-                                                                │   OAuth    │
-                                                                └────────────┘
+```mermaid
+flowchart LR
+    subgraph FE["quill-frontend · Next.js 16"]
+        UI["App Router · React 19<br/>Tiptap editor · NextAuth"]
+        Panel["SocialDraftsPanel"]
+    end
+
+    subgraph BE["quill-backend · Hono on Cloudflare Workers"]
+        Routes["routes: user · blogs<br/>social · linkedin"]
+    end
+
+    UI -- "HTTPS / JSON<br/>(Bearer JWT)" --> Routes
+    Routes -- "responses" --> UI
+
+    Routes -- "persistence<br/>(Prisma + Accelerate)" --> DB[("PostgreSQL<br/>Post · SocialDraft · LinkedInAccount")]
+    Routes -- "generate draft" --> AI["Workers AI<br/>Llama 3.1 8B"]
+    Routes -- "publish (share)" --> LI["LinkedIn<br/>OAuth + Share API"]
+
+    AI -- "draft text" --> Routes
+    Routes -- "save as SocialDraft" --> DB
+    Panel -. "edit, then publish" .-> Routes
 ```
 
 ## Project Structure
