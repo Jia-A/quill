@@ -4,6 +4,7 @@ import React, { useState, useRef, DragEvent } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import MenuBar from "@/components/EditorMenuBar";
+import { sanitizeBlogHtml } from "@/utils/sanitize";
 import TextAlign from "@tiptap/extension-text-align";
 import Highlight from "@tiptap/extension-highlight";
 import ImageExtension from "@tiptap/extension-image";
@@ -307,9 +308,9 @@ export default function BlogEditor() {
           <div
             className="prose prose-lg dark:prose-invert max-w-none"
             dangerouslySetInnerHTML={{
-              __html:
-                content ||
-                "<p class='text-muted-foreground italic'>Start writing to see your story here…</p>",
+              __html: content
+                ? sanitizeBlogHtml(content)
+                : "<p class='text-muted-foreground italic'>Start writing to see your story here…</p>",
             }}
           />
         </div>

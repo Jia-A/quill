@@ -4,6 +4,7 @@ import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 import SocialDraftsPanel from "@/components/SocialDraftsPanel";
 import type { Metadata } from "next";
+import { sanitizeBlogHtmlServer } from "@/utils/sanitizeServer";
 
 export const revalidate = 300;
 
@@ -82,6 +83,10 @@ const page = async ({ params }: { params: Promise<{ id: string }> }) => {
     const wordCount = blog.content ? blog.content.replace(/<[^>]*>/g, "").split(/\s+/).length : 0;
     const readingTime = Math.max(1, Math.ceil(wordCount / 200));
 
+    // Defense in depth: content is sanitized by the backend on write, but we
+    // sanitize again at the render boundary before dangerouslySetInnerHTML.
+    const safeContent = await sanitizeBlogHtmlServer(blog.content || "");
+
     const meta = [blog.author?.name || "Anonymous", publishedDate, `${readingTime} min read`]
       .filter(Boolean)
       .join("  /  ");
@@ -125,7 +130,7 @@ const page = async ({ params }: { params: Promise<{ id: string }> }) => {
           {/* Body */}
           <div
             className="prose prose-lg dark:prose-invert max-w-none"
-            dangerouslySetInnerHTML={{ __html: blog.content || "" }}
+            dangerouslySetInnerHTML={{ __html: safeContent }}
           />
 
           {/* Footer / author */}

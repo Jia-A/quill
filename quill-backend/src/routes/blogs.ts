@@ -2,6 +2,7 @@ import { PrismaClient } from "../generated/prisma/client";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { Hono } from "hono";
 import { verify } from "hono/jwt";
+import { sanitizeBlogHtml } from "../lib/sanitizeHtml";
 
 export const blogRouter = new Hono<{
   Bindings: {
@@ -39,7 +40,7 @@ blogRouter.post("/", async (c) => {
     const blog = await prisma.post.create({
       data: {
         title: body.title,
-        content: body.content,
+        content: await sanitizeBlogHtml(body.content),
         image: body.image,
         published: body.published,
         authorId: userId,
@@ -97,7 +98,7 @@ blogRouter.put("/:id", async (c) => {
       },
       data: {
         title: body.title,
-        content: body.content,
+        content: await sanitizeBlogHtml(body.content),
       },
     });
     return c.json({
