@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "media.licdn.com" },
       { protocol: "https", hostname: "pagepro.co" },
       { protocol: "https", hostname: "owlcation.com" },
+      { protocol: "https", hostname: "res.cloudinary.com" },
     ],
   },
 };

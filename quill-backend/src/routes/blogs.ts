@@ -53,7 +53,7 @@ blogRouter.post("/", async (c) => {
       blog,
     });
   } catch (error) {
-    return c.json({ error: error }, 500);
+    return c.json({ error: "Failed to create blog, author does not exist" }, 500);
   }
 });
 
@@ -81,7 +81,7 @@ blogRouter.get("/single/:id", async (c) => {
       blog,
     });
   } catch (error) {
-    return c.json({ error: error }, 500);
+    return c.json({ error: "Failed to fetch blog" }, 500);
   }
 });
 
@@ -106,7 +106,7 @@ blogRouter.put("/:id", async (c) => {
       blog,
     });
   } catch (error) {
-    return c.json({ error: error }, 500);
+    return c.json({ error: "Failed to update blog" }, 500);
   }
 });
 
