@@ -4,6 +4,7 @@ import React, { useState, useRef, DragEvent } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import MenuBar from "@/components/EditorMenuBar";
+import { sanitizeBlogHtml } from "@/utils/sanitize";
 import TextAlign from "@tiptap/extension-text-align";
 import Highlight from "@tiptap/extension-highlight";
 import ImageExtension from "@tiptap/extension-image";
@@ -13,6 +14,7 @@ import { postBlog } from "@/actions/blogActions";
 import { Upload, X, ImageIcon, Link as LinkIcon } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { API_URL } from "@/utils/constants";
 
 export default function BlogEditor() {
   const { data: session } = useSession();
@@ -25,6 +27,7 @@ export default function BlogEditor() {
   const [tempImageUrl, setTempImageUrl] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+  const [isUploading, setIsUploading] = useState(false);
 
   const onChange = (content: string) => {
     setContent(content);
@@ -48,7 +51,30 @@ export default function BlogEditor() {
     e.stopPropagation();
   };
 
-  const handleDrop = (e: DragEvent) => {
+  const uploadImage = async (file: File): Promise<string> => {
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const response = await fetch(`${API_URL}/image/upload`, {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Upload failed");
+      return data.url;
+    } catch (error) {
+      console.error("Image upload error:", error);
+      setIsError({ element: "image", message: "Image upload failed. Please try again." });
+      return "";
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDrop = async (e: DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
@@ -59,18 +85,18 @@ export default function BlogEditor() {
     if (imageFile) {
       // For demo purposes, we'll create a URL for the dropped image
       // In a real app, you'd upload this to a cloud service
-      const imageUrl = URL.createObjectURL(imageFile);
-      setImageUrl(imageUrl);
+      const url = await uploadImage(imageFile);
+      setImageUrl(url);
     }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file && file.type.startsWith("image/")) {
       // For demo purposes, we'll create a URL for the selected image
       // In a real app, you'd upload this to a cloud service
-      const imageUrl = URL.createObjectURL(file);
-      setImageUrl(imageUrl);
+      const url = await uploadImage(file);
+      setImageUrl(url);
     }
   };
 
@@ -146,12 +172,15 @@ export default function BlogEditor() {
       setIsError({ element: "auth", message: "You must be signed in to publish" });
       return;
     }
+    setIsUploading(true);
     try {
       const response = await postBlog(payload, session.backendToken);
       router.push(`/blog/${response.blog.id}`);
       console.log(response); // You can add a success message or redirect the user after successful publish
     } catch (error) {
       console.log(error);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -164,7 +193,13 @@ export default function BlogEditor() {
             <span className="eyebrow whitespace-nowrap">[ Draft ]</span>
             <span className="flex-1 rule" />
           </div>
-          <Button label="Publish" variant="primary" onClick={handlePublish} />
+          <Button
+            label="Publish"
+            variant="primary"
+            onClick={handlePublish}
+            loading={isUploading}
+            disabled={isUploading}
+          />
         </div>
 
         {/* Title */}
@@ -307,9 +342,9 @@ export default function BlogEditor() {
           <div
             className="prose prose-lg dark:prose-invert max-w-none"
             dangerouslySetInnerHTML={{
-              __html:
-                content ||
-                "<p class='text-muted-foreground italic'>Start writing to see your story here…</p>",
+              __html: content
+                ? sanitizeBlogHtml(content)
+                : "<p class='text-muted-foreground italic'>Start writing to see your story here…</p>",
             }}
           />
         </div>

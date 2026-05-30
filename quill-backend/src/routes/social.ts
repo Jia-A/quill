@@ -3,12 +3,14 @@ import { withAccelerate } from "@prisma/extension-accelerate";
 import { Hono } from "hono";
 import { verify } from "hono/jwt";
 import { generateSocialDraft, PLATFORM_CAPS, Platform } from "../lib/generateSocial";
+import { decryptSecret } from "../lib/crypto";
 
 export const socialRouter = new Hono<{
   Bindings: {
     DATABASE_URL: string;
     JWT_SECRET: string;
     AI: Ai;
+    TOKEN_ENC_KEY: string;
     FRONTEND_URL?: string;
   };
   Variables: {
@@ -148,6 +150,15 @@ socialRouter.post("/:postId/publish", async (c) => {
     return c.json({ error: "linkedin_not_connected" }, 412);
   }
 
+  let accessToken: string;
+  try {
+    accessToken = await decryptSecret(account.accessToken, c.env.TOKEN_ENC_KEY);
+  } catch {
+    // Token can't be decrypted (key rotated, corrupt, or legacy plaintext row).
+    // Treat as disconnected so the user re-authorizes rather than 500-ing.
+    return c.json({ error: "linkedin_not_connected" }, 412);
+  }
+
   const origin = (c.env.FRONTEND_URL ?? "http://localhost:3000").replace(/\/$/, "");
   const postUrl = `${origin}/blog/${postId}`;
 
@@ -176,7 +187,7 @@ socialRouter.post("/:postId/publish", async (c) => {
   const res = await fetch("https://api.linkedin.com/v2/ugcPosts", {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${account.accessToken}`,
+      Authorization: `Bearer ${accessToken}`,
       "Content-Type": "application/json",
       "X-Restli-Protocol-Version": "2.0.0",
     },

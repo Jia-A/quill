@@ -2,6 +2,7 @@ import { PrismaClient } from "../generated/prisma/client";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { Hono } from "hono";
 import { verify } from "hono/jwt";
+import { sanitizeBlogHtml } from "../lib/sanitizeHtml";
 
 export const blogRouter = new Hono<{
   Bindings: {
@@ -39,7 +40,7 @@ blogRouter.post("/", async (c) => {
     const blog = await prisma.post.create({
       data: {
         title: body.title,
-        content: body.content,
+        content: await sanitizeBlogHtml(body.content),
         image: body.image,
         published: body.published,
         authorId: userId,
@@ -52,7 +53,7 @@ blogRouter.post("/", async (c) => {
       blog,
     });
   } catch (error) {
-    return c.json({ error: error }, 500);
+    return c.json({ error: "Failed to create blog, author does not exist" }, 500);
   }
 });
 
@@ -80,7 +81,7 @@ blogRouter.get("/single/:id", async (c) => {
       blog,
     });
   } catch (error) {
-    return c.json({ error: error }, 500);
+    return c.json({ error: "Failed to fetch blog" }, 500);
   }
 });
 
@@ -97,7 +98,7 @@ blogRouter.put("/:id", async (c) => {
       },
       data: {
         title: body.title,
-        content: body.content,
+        content: await sanitizeBlogHtml(body.content),
       },
     });
     return c.json({
@@ -105,7 +106,7 @@ blogRouter.put("/:id", async (c) => {
       blog,
     });
   } catch (error) {
-    return c.json({ error: error }, 500);
+    return c.json({ error: "Failed to update blog" }, 500);
   }
 });
 
@@ -115,6 +116,9 @@ blogRouter.get("/bulk", async (c) => {
   }).$extends(withAccelerate());
 
   const blogs = await prisma.post.findMany({
+    where: {
+      published: true,
+    },
     select: {
       id: true,
       title: true,
