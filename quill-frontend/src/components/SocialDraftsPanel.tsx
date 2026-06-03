@@ -35,6 +35,10 @@ type Props = {
 const SocialDraftsPanel = ({ postId, authorId }: Props) => {
   const { data: session } = useSession();
   const [open, setOpen] = useState(false);
+  // `render` keeps the panel in the DOM while the close animation plays.
+  // `entered` drives the open/closed CSS state (fade + slide) one frame after mount.
+  const [render, setRender] = useState(false);
+  const [entered, setEntered] = useState(false);
   const [content, setContent] = useState("");
   const [saved, setSaved] = useState("");
   const [loading, setLoading] = useState(false);
@@ -47,6 +51,19 @@ const SocialDraftsPanel = ({ postId, authorId }: Props) => {
 
   const isOwner = session?.user?.id === authorId;
   const token = session?.backendToken;
+
+  // Drive enter/exit transitions: mount → next frame flips `entered` to true
+  // (slide in); on close, flip `entered` off, then unmount after the transition.
+  useEffect(() => {
+    if (open) {
+      setRender(true);
+      const id = requestAnimationFrame(() => setEntered(true));
+      return () => cancelAnimationFrame(id);
+    }
+    setEntered(false);
+    const t = setTimeout(() => setRender(false), 300);
+    return () => clearTimeout(t);
+  }, [open]);
 
   useEffect(() => {
     if (!open || !token) return;
@@ -154,16 +171,26 @@ const SocialDraftsPanel = ({ postId, authorId }: Props) => {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="group inline-flex items-center gap-3 eyebrow border border-foreground text-foreground px-6 py-4 hover:bg-foreground hover:text-background transition-colors"
+        className="group inline-flex items-center gap-3 eyebrow bg-foreground text-background border border-border px-6 py-4 hover:bg-accent hover:text-accent-foreground hover:border-accent transition-colors"
       >
         <Linkedin className="w-4 h-4" />
         Share on socials
       </button>
 
-      {open && (
+      {render && (
         <div className="fixed inset-0 z-50 flex">
-          <div className="flex-1 bg-black/40" onClick={() => setOpen(false)} aria-hidden />
-          <aside className="w-full max-w-xl bg-background border-l border-border h-full overflow-y-auto flex flex-col">
+          <div
+            className={`flex-1 bg-black/40 transition-opacity duration-500 ease-out ${
+              entered ? "opacity-100" : "opacity-0"
+            }`}
+            onClick={() => setOpen(false)}
+            aria-hidden
+          />
+          <aside
+            className={`w-full max-w-xl bg-background border-l border-border h-full overflow-y-auto flex flex-col transition-transform duration-500 ease-out ${
+              entered ? "translate-x-0" : "translate-x-full"
+            }`}
+          >
             <header className="flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b border-border">
               <div className="flex items-center gap-3">
                 <Linkedin className="w-5 h-5" />

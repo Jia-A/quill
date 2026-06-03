@@ -1,7 +1,7 @@
 "use client";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { redirect, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { type SigninInput } from "@tech--tonic/medium-app-common";
 import { signinSchema } from "@/utils/resolvers";
 import Button from "../atoms/Button";
@@ -34,14 +34,16 @@ const SigninForm = () => {
       });
       if (response?.error) {
         console.error("Signin error:", response.error);
+        setIsSubmitting(false); // failed — stop the loader so they can retry
         return;
       }
+      // Success: keep the loader spinning through the redirect (the component
+      // unmounts on navigation, so we deliberately don't reset isSubmitting).
       reset();
       router.push("/blogs");
       router.refresh();
     } catch (error) {
       console.error("Signin error:", error);
-    } finally {
       setIsSubmitting(false);
     }
   };

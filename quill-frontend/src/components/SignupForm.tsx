@@ -37,14 +37,16 @@ const SignupForm = () => {
       });
       if (response?.error) {
         console.error("Auto sign-in after signup failed:", response.error);
+        setIsSubmitting(false); // failed — stop the loader so they can retry
         return;
       }
+      // Success: keep the loader spinning through the redirect (the component
+      // unmounts on navigation, so we deliberately don't reset isSubmitting).
       reset();
       router.push("/blogs");
       router.refresh();
     } catch (error) {
       console.error("Signup error:", error);
-    } finally {
       setIsSubmitting(false);
     }
   };

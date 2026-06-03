@@ -109,6 +109,11 @@ const page = async ({ params }: { params: Promise<{ id: string }> }) => {
             <h1 className="font-serif font-light text-[clamp(2.5rem,7vw,5rem)] leading-[0.98] tracking-tightest text-foreground">
               {blog.title}
             </h1>
+            {blog.author?.id && blog.published && (
+              <div className="mt-8">
+                <SocialDraftsPanel postId={blog.id} authorId={blog.author.id} />
+              </div>
+            )}
           </header>
 
           {/* Featured image */}
@@ -160,9 +165,6 @@ const page = async ({ params }: { params: Promise<{ id: string }> }) => {
                 <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
                 Back to all stories
               </Link>
-              {blog.author?.id && blog.published && (
-                <SocialDraftsPanel postId={blog.id} authorId={blog.author.id} />
-              )}
             </div>
           </footer>
         </article>
