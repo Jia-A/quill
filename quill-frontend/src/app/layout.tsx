@@ -49,6 +49,12 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${inter.variable} ${newsreader.variable} ${jetbrainsMono.variable}`}
     >
+      <head>
+        <meta
+          name="google-site-verification"
+          content="ctW8OTLXYxgBM1wI3bTyqLmyiij2A8JXi5uu384VR_c"
+        />
+      </head>
       <body className="font-sans antialiased">
         <ThemeProvider>
           <SessionProviderWrapper>
