@@ -85,7 +85,7 @@ blogRouter.get("/single/:id", async (c) => {
   }
 });
 
-blogRouter.put("/:id", async (c) => {
+blogRouter.put("/:postId", async (c) => {
   const prisma = new PrismaClient({
     accelerateUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());
@@ -94,18 +94,22 @@ blogRouter.put("/:id", async (c) => {
   try {
     const blog = await prisma.post.update({
       where: {
-        id: c.req.param("id"),
+        id: c.req.param("postId"),
+        authorId: c.get("userId") as string,
       },
       data: {
         title: body.title,
         content: await sanitizeBlogHtml(body.content),
+        image: body.image,
       },
     });
     return c.json({
       message: "Blog updated successfully",
       blog,
+      id: c.req.param("postId"),
     });
-  } catch (error) {
+  } catch (error: any) {
+    if (error.code === "P2025") return c.json({ error: "Not found" }, 404);
     return c.json({ error: "Failed to update blog" }, 500);
   }
 });

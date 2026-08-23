@@ -48,3 +48,26 @@ export const getBlogById = async (id: string) => {
     throw new Error("Error fetching blog by ID");
   }
 };
+
+export const editBlog = async (
+  postId: string,
+  payload: {
+    title?: string;
+    content?: string;
+    image?: string;
+    published: boolean;
+    authorId?: string;
+  },
+  token: string
+) => {
+  try {
+    const response = await axios.put(`${API_URL}/blog/${postId}`, payload, {
+      headers: { authorization: token },
+    });
+    if (response.status === 200) {
+      return response.data;
+    }
+  } catch {
+    throw new Error("Error editing blog");
+  }
+};
