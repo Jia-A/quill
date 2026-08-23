@@ -3,14 +3,13 @@ import React, { useRef, useState, DragEvent } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import { StarterKit } from "@tiptap/starter-kit";
 import MenuBar from "./EditorMenuBar";
-import { sanitizeBlogHtml } from "@/utils/sanitize";
 import TextAlign from "@tiptap/extension-text-align";
 import Highlight from "@tiptap/extension-highlight";
 import ImageExtension from "@tiptap/extension-image";
 import Image from "next/image";
 import Button from "@/atoms/Button";
 import { postBlog, editBlog } from "@/actions/blogActions";
-import { Upload, LinkIcon, X, ImageIcon } from "lucide-react";
+import { Upload, LinkIcon, X } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { API_URL } from "@/utils/constants";
@@ -343,40 +342,6 @@ export default function BlogEditor({ post }) {
           {isError.element === "content" && (
             <span className="text-destructive eyebrow mt-2 block">{isError.message}</span>
           )}
-        </div>
-
-        {/* Live preview */}
-        <div className="mt-20 border-t border-border pt-10">
-          <div className="flex items-center gap-3 mb-8">
-            <ImageIcon className="w-4 h-4 text-accent" />
-            <span className="eyebrow">Live preview</span>
-            <span className="flex-1 rule" />
-          </div>
-
-          {title && (
-            <h1 className="font-serif font-light text-4xl md:text-5xl mb-8 text-foreground leading-tight tracking-tightest">
-              {title}
-            </h1>
-          )}
-          {imageUrl && (
-            <div className="mb-10 relative w-full h-80 overflow-hidden border border-border bg-muted">
-              <Image
-                src={imageUrl}
-                alt={title || "Blog featured image"}
-                fill
-                className="object-cover"
-                unoptimized
-              />
-            </div>
-          )}
-          <div
-            className="prose prose-lg dark:prose-invert max-w-none"
-            dangerouslySetInnerHTML={{
-              __html: content
-                ? sanitizeBlogHtml(content)
-                : "<p class='text-muted-foreground italic'>Start writing to see your story here…</p>",
-            }}
-          />
         </div>
       </div>
     </div>
