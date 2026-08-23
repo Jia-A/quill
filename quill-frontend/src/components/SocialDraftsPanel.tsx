@@ -171,7 +171,7 @@ const SocialDraftsPanel = ({ postId, authorId }: Props) => {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="group inline-flex items-center gap-3 eyebrow bg-foreground text-background border border-border px-6 py-4 hover:bg-accent hover:text-accent-foreground hover:border-accent transition-colors"
+        className="group inline-flex items-center gap-3 eyebrow bg-foreground text-background px-6 py-4 hover:bg-accent hover:text-accent-foreground hover:border-accent transition-colors"
       >
         <Linkedin className="w-4 h-4" />
         Share on socials

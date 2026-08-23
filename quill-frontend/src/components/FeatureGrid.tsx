@@ -1,4 +1,5 @@
 "use client";
+import LinkButton from "@/atoms/Link";
 import { motion } from "framer-motion";
 import Link from "next/link";
 
@@ -54,12 +55,12 @@ const FeatureGrid = () => {
           <br />
           starts here.
         </h2>
-        <Link href="/auth/signup">
-          <span className="group inline-flex items-center gap-3 eyebrow bg-foreground text-background px-6 py-4 hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer whitespace-nowrap">
+        <LinkButton href="/auth/signup">
+          <span className="cursor-pointer whitespace-nowrap">
             Start writing
             <span className="transition-transform group-hover:translate-x-1">&rarr;</span>
           </span>
-        </Link>
+        </LinkButton>
       </div>
     </section>
   );

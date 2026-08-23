@@ -6,6 +6,7 @@ import SocialDraftsPanel from "@/components/SocialDraftsPanel";
 import type { Metadata } from "next";
 import { sanitizeBlogHtmlServer } from "@/utils/sanitizeServer";
 import EditButton from "./EditButton";
+import LinkButton from "@/atoms/Link";
 
 export const revalidate = 300;
 
@@ -160,13 +161,13 @@ const Blog = async ({ params }: { params: Promise<{ id: string }> }) => {
             )}
 
             <div className="flex flex-wrap items-center gap-4 mt-12">
-              <Link
+              <LinkButton
                 href="/blogs"
-                className="group inline-flex items-center gap-3 eyebrow bg-foreground text-background px-6 py-4 hover:bg-accent hover:text-accent-foreground transition-colors"
+                // className="group inline-flex items-center gap-3 eyebrow bg-foreground text-background px-6 py-4 hover:bg-accent hover:text-accent-foreground transition-colors"
               >
                 <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
                 Back to all stories
-              </Link>
+              </LinkButton>
             </div>
           </footer>
         </article>
@@ -184,13 +185,13 @@ const Blog = async ({ params }: { params: Promise<{ id: string }> }) => {
           <p className="text-muted-foreground mb-10 leading-relaxed">
             The story you&apos;re looking for doesn&apos;t exist or may have been moved.
           </p>
-          <Link
+          <LinkButton
             href="/blogs"
-            className="group inline-flex items-center gap-3 eyebrow bg-foreground text-background px-6 py-4 hover:bg-accent hover:text-accent-foreground transition-colors"
+            // className="group inline-flex items-center gap-3 eyebrow bg-foreground text-background px-6 py-4 hover:bg-accent hover:text-accent-foreground transition-colors"
           >
             <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
             Browse all stories
-          </Link>
+          </LinkButton>
         </div>
       </div>
     );

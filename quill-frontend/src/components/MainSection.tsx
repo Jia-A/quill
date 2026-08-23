@@ -1,3 +1,4 @@
+import LinkButton from "@/atoms/Link";
 import Link from "next/link";
 
 const MainSection = () => {
@@ -29,12 +30,12 @@ const MainSection = () => {
         </p>
 
         <div className="flex flex-col gap-4 md:items-end">
-          <Link href="/auth/signup">
-            <span className="group inline-flex items-center gap-3 eyebrow bg-foreground text-background px-6 py-4 hover:bg-accent hover:text-accent-foreground transition-colors cursor-pointer">
+          <LinkButton href="/auth/signup">
+            <span className="cursor-pointer">
               Start writing
               <span className="transition-transform group-hover:translate-x-1">&rarr;</span>
             </span>
-          </Link>
+          </LinkButton>
           <Link
             href="/blogs"
             className="eyebrow link-underline text-muted-foreground hover:text-foreground transition-colors"
