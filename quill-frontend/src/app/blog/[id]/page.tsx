@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import SocialDraftsPanel from "@/components/SocialDraftsPanel";
 import type { Metadata } from "next";
 import { sanitizeBlogHtmlServer } from "@/utils/sanitizeServer";
+import EditButton from "./EditButton";
 
 export const revalidate = 300;
 
@@ -61,7 +62,7 @@ export async function generateMetadata({
   }
 }
 
-const page = async ({ params }: { params: Promise<{ id: string }> }) => {
+const Blog = async ({ params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params;
 
   try {
@@ -110,8 +111,9 @@ const page = async ({ params }: { params: Promise<{ id: string }> }) => {
               {blog.title}
             </h1>
             {blog.author?.id && blog.published && (
-              <div className="mt-8">
+              <div className="mt-8 flex gap-3">
                 <SocialDraftsPanel postId={blog.id} authorId={blog.author.id} />
+                <EditButton blog={blog} />
               </div>
             )}
           </header>
@@ -195,4 +197,4 @@ const page = async ({ params }: { params: Promise<{ id: string }> }) => {
   }
 };
 
-export default page;
+export default Blog;
