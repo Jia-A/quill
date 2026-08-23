@@ -16,6 +16,8 @@ const app = new Hono<{
     LINKEDIN_CLIENT_ID: string;
     LINKEDIN_CLIENT_SECRET: string;
     CLOUDINARY_CLOUD_NAME: string;
+    CLOUDINARY_API_KEY: string;
+    CLOUDINARY_API_SECRET: string;
   };
   Variables: {
     userId: string;
