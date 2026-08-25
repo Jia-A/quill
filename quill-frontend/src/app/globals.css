@@ -185,3 +185,13 @@
 .animate-marquee {
   animation: marquee 28s linear infinite;
 }
+
+.prose img,
+.tiptap img {
+  display: block;
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  margin-left: auto;
+  margin-right: auto;
+}
