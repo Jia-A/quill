@@ -71,6 +71,56 @@ async function checkQuota(prisma: QuotaClient, userId: string) {
   return null;
 }
 
+imageRouter.delete("/delete", async (c) => {
+  const prisma = new PrismaClient({
+    accelerateUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+
+  const userId = c.get("userId");
+  const { url } = await c.req.json<{ url?: string }>();
+
+  if (!url) return c.json({ error: "No url provided" }, 400);
+
+  // Scoping by userId means another user's image is simply not found.
+  const record = await prisma.imageUpload.findFirst({
+    where: { url, userId },
+  });
+
+  if (!record) return c.json({ error: "No image found!" }, 404);
+
+  const timestamp = Math.floor(Date.now() / 1000).toString();
+  const signedParams = {
+    public_id: record.publicId,
+    timestamp,
+  };
+  const signature = await sign(signedParams, c.env.CLOUDINARY_API_SECRET);
+
+  const cloudinaryForm = new FormData();
+  for (const [k, v] of Object.entries(signedParams)) cloudinaryForm.append(k, v);
+  cloudinaryForm.append("api_key", c.env.CLOUDINARY_API_KEY);
+  cloudinaryForm.append("signature", signature);
+
+  const response = await fetch(
+    `https://api.cloudinary.com/v1_1/${c.env.CLOUDINARY_CLOUD_NAME}/image/destroy`,
+    {
+      method: "POST",
+      body: cloudinaryForm,
+    }
+  );
+
+  const data = (await response.json()) as any;
+
+  // Cloudinary answers 200 with result "not found" for an already-deleted asset;
+  // that still means it is gone, so treat it as success.
+  if (!response.ok || (data.result !== "ok" && data.result !== "not found")) {
+    return c.json({ error: data.error?.message ?? "Could not delete image" }, 500);
+  }
+
+  await prisma.imageUpload.delete({ where: { id: record.id } });
+
+  return c.json({ success: true });
+});
+
 imageRouter.post("/upload", async (c) => {
   const prisma = new PrismaClient({
     accelerateUrl: c.env.DATABASE_URL,

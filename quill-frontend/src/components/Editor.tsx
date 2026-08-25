@@ -13,6 +13,7 @@ import { Upload, LinkIcon, X } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { API_URL } from "@/utils/constants";
+import { deleteImageFromCloudinary } from "@/actions/imageActions";
 
 export default function BlogEditor({ post }) {
   const initialContent = post?.content || "";
@@ -28,6 +29,8 @@ export default function BlogEditor({ post }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const [isUploading, setIsUploading] = useState(false);
+  // Cloudinary URLs removed/replaced in this session, destroyed only once the post saves.
+  const [pendingDeletes, setPendingDeletes] = useState<string[]>([]);
 
   const onChange = (content: string) => {
     setContent(content);
@@ -51,6 +54,14 @@ export default function BlogEditor({ post }) {
     e.stopPropagation();
   };
 
+  const deleteImage = async (url: string) => {
+    try {
+      await deleteImageFromCloudinary(session.backendToken, url);
+    } catch (error) {
+      console.error("Image delete error:", error);
+    }
+  };
+
   const uploadImage = async (file: File): Promise<string> => {
     setIsUploading(true);
     try {
@@ -68,7 +79,10 @@ export default function BlogEditor({ post }) {
       return data.url;
     } catch (error) {
       console.error("Image upload error:", error);
-      setIsError({ element: "image", message: "Image upload failed. Please try again." });
+      setIsError({
+        element: "image",
+        message: error instanceof Error ? error.message : "Image upload failed. Please try again.",
+      });
       return "";
     } finally {
       setIsUploading(false);
@@ -87,7 +101,7 @@ export default function BlogEditor({ post }) {
       // For demo purposes, we'll create a URL for the dropped image
       // In a real app, you'd upload this to a cloud service
       const url = await uploadImage(imageFile);
-      setImageUrl(url);
+      if (url) setImageUrl(url);
     }
   };
 
@@ -97,7 +111,7 @@ export default function BlogEditor({ post }) {
       // For demo purposes, we'll create a URL for the selected image
       // In a real app, you'd upload this to a cloud service
       const url = await uploadImage(file);
-      setImageUrl(url);
+      if (url) setImageUrl(url);
     }
   };
 
@@ -117,7 +131,10 @@ export default function BlogEditor({ post }) {
       console.error("Image upload error:", error);
       setIsError({
         element: "image",
-        message: "Couldn't import that image URL. Please check the link and try again.",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Couldn't import that image URL. Please check the link and try again.",
       });
       return "";
     } finally {
@@ -136,6 +153,9 @@ export default function BlogEditor({ post }) {
   };
 
   const removeImage = () => {
+    if (imageUrl) {
+      setPendingDeletes((queued) => [...queued, imageUrl]);
+    }
     setImageUrl("");
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
@@ -204,6 +224,12 @@ export default function BlogEditor({ post }) {
       const response = post
         ? await editBlog(post.id, { ...payload, authorId: post.authorId }, session.backendToken)
         : await postBlog(payload, session.backendToken);
+
+      // Only once the post is safely saved is the old image unreferenced.
+      const toDelete = pendingDeletes.filter((url) => url !== imageUrl);
+      setPendingDeletes([]);
+      await Promise.all(toDelete.map(deleteImage));
+
       router.push(`/blog/${response.blog.id}`);
       console.log(response); // You can add a success message or redirect the user after successful publish
     } catch (error) {
