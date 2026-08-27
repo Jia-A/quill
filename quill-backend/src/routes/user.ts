@@ -56,7 +56,25 @@ userRouter.post("/signup", async (c) => {
       token,
     });
   } catch (err: any) {
-    return c.json({ error: err?.message });
+    if (err?.code === "P2002")
+      return c.json(
+        {
+          error: {
+            code: "Email_Taken",
+            message: "Please try another email since this one is taken",
+          },
+        },
+        409
+      );
+    return c.json(
+      {
+        error: {
+          code: "Internal_Server_Error",
+          message: "There has been an internal server error, please try again later.",
+        },
+      },
+      500
+    );
   }
 });
 
