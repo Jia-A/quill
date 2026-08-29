@@ -13,6 +13,7 @@
     "cloudinary": "^2.10.0",
     "dotenv": "^17.2.3",
     "hono": "^4.11.1",
+    "jose": "6.2.3",
     "ultrahtml": "1.6.0"
   },
   "devDependencies": {
