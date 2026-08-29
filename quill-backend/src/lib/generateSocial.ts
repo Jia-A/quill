@@ -1,6 +1,10 @@
 import { buildLinkedInMessages, SocialPromptInput } from "./socialPrompt";
 
-const MODEL = "@cf/meta/llama-3.1-8b-instruct";
+// Workers AI deprecated the llama-3.1-8b-instruct alias on 2026-05-30 (it
+// resolved to @cf/meta/infire-llama-3.1-8b-instruct, which was retired), so
+// calls against it now fail with AiError 5028. Verify a replacement is live
+// before changing this: several catalog-listed models are also deprecated.
+const MODEL = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 const LINKEDIN_HARD_CAP = 1300;
 
 export type Platform = "linkedin";
@@ -25,9 +29,9 @@ function sanitize(raw: string): string {
   return t.trim();
 }
 
-function truncateAtSentence(text: string, cap: number): string {
-  if (text.length <= cap) return text;
-  const slice = text.slice(0, cap);
+function cutBody(body: string, cap: number): string {
+  if (body.length <= cap) return body;
+  const slice = body.slice(0, cap);
   const lastStop = Math.max(
     slice.lastIndexOf(". "),
     slice.lastIndexOf("! "),
@@ -36,6 +40,20 @@ function truncateAtSentence(text: string, cap: number): string {
   );
   if (lastStop > cap * 0.6) return slice.slice(0, lastStop + 1).trim();
   return slice.trim();
+}
+function truncateAtSentence(text: string, cap: number): string {
+  if (text.length <= cap) return text;
+
+  const readMoreAt = text.lastIndexOf("Read more:");
+  if (readMoreAt === -1) return cutBody(text, cap);
+
+  const body = text.slice(0, readMoreAt).trim();
+  const tail = text.slice(readMoreAt).trim();
+
+  const room = cap - tail.length - 2; // 2 = the "\n\n" we rejoin with
+  if (room <= 0) return cutBody(text, cap);
+
+  return `${cutBody(body, room)}\n\n${tail}`;
 }
 
 export async function generateSocialDraft(
@@ -46,11 +64,10 @@ export async function generateSocialDraft(
   if (platform !== "linkedin") return null;
 
   const messages = buildLinkedInMessages(post);
-
   try {
     const res: any = await ai.run(MODEL, {
       messages,
-      max_tokens: 340,
+      max_tokens: 700,
       temperature: 0.6,
     });
     const text: string | undefined =
