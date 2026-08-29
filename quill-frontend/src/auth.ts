@@ -12,12 +12,13 @@ const credentialsSchema = z.object({
 });
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  session: { strategy: "jwt" },
+  session: { strategy: "jwt", maxAge: 7 * 24 * 60 * 60 },
   pages: { signIn: "/auth/signin" },
   providers: [
     Google({
       clientId: process.env.AUTH_GOOGLE_ID!,
       clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+      authorization: { params: { scope: "openid email profile" } },
     }),
     GitHub({
       clientId: process.env.AUTH_GITHUB_ID!,
@@ -71,7 +72,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              email: user.email,
+              provider: account.provider,
+              idToken: account.id_token,
+              accessToken: account.access_token,
               name: user.name,
               avatar: user.image,
             }),
