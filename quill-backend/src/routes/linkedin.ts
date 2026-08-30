@@ -47,7 +47,7 @@ linkedinRouter.get("/connect", async (c) => {
 
   // Signed state so we can trust userId (and where to return) on callback without a session
   const state = await sign(
-    { userId, postId: postId ?? null, t: Date.now() },
+    { userId, postId: postId ?? null, exp: Math.floor(Date.now() / 1000) + 600 },
     c.env.JWT_SECRET,
     "HS256"
   );
@@ -83,8 +83,10 @@ linkedinRouter.get("/callback", async (c) => {
     userId = decoded.userId as string;
     postId = (decoded.postId as string | null) ?? null;
     if (!userId) throw new Error();
-  } catch {
-    return c.redirect(`${frontend}/?linkedin=invalid_state`);
+  } catch (err: unknown) {
+    if (err instanceof Error && err?.name === "JwtTokenExpired")
+      return c.redirect(`${frontend}/?linkedin=token_expired`);
+    else return c.redirect(`${frontend}/?linkedin=invalid_state`);
   }
 
   // Where to send the user when we're done: back to the post if we know it, else home.
