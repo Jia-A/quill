@@ -30,7 +30,7 @@ function getRedirectUri(c: any) {
 
 // Kick off OAuth: requires the user's app JWT in ?token=... since we can't set headers on a redirect.
 linkedinRouter.get("/connect", async (c) => {
-  const token = c.req.query("token");
+  const token = c.req.header("authorization") || "";
   if (!token) return c.json({ error: "Missing token" }, 401);
 
   let userId: string;
@@ -60,7 +60,7 @@ linkedinRouter.get("/connect", async (c) => {
   url.searchParams.set("scope", "openid profile email w_member_social");
   url.searchParams.set("state", state);
 
-  return c.redirect(url.toString());
+  return c.json({ url: url.toString() });
 });
 
 linkedinRouter.get("/callback", async (c) => {
