@@ -50,11 +50,14 @@ userRouter.post("/signup", async (c) => {
     const token = await sign({ id: user.id }, c.env.JWT_SECRET, "HS256");
     setCookie(c, "token", token, { sameSite: "None", secure: true, path: "/" });
     const { password: _pw, ...safeUser } = user;
-    return c.json({
-      message: "User created successfully",
-      user: safeUser,
-      token,
-    });
+    return c.json(
+      {
+        message: "User created successfully",
+        user: safeUser,
+        token,
+      },
+      201
+    );
   } catch (err: any) {
     if (err?.code === "P2002")
       return c.json(
@@ -101,13 +104,17 @@ userRouter.post("/signin", async (c) => {
     const token = await sign({ id: user.id }, c.env.JWT_SECRET, "HS256");
     setCookie(c, "token", token, { sameSite: "None", secure: false, path: "/" });
     const { password: _pw, ...safeUser } = user;
-    return c.json({
-      message: "User signed in successfully",
-      user: safeUser,
-      token,
-    });
+    return c.json(
+      {
+        message: "User signed in successfully",
+        user: safeUser,
+        token,
+      },
+      200
+    );
   } catch (error) {
-    return c.json({ error: error }, 500);
+    console.error("ERROR HAPPENED in /signin", error);
+    return c.json({ error: { message: "Internal server error happened" } }, 500);
   }
 });
 
@@ -120,7 +127,7 @@ userRouter.post("/oauth-sync", async (c) => {
   const { email, name, avatar } = body;
 
   if (!email) {
-    return c.json({ error: "Email is required" }, 400);
+    return c.json({ error: "Bad request, email not found!" }, 400);
   }
 
   try {
@@ -143,12 +150,16 @@ userRouter.post("/oauth-sync", async (c) => {
     const token = await sign({ id: user.id }, c.env.JWT_SECRET, "HS256");
 
     const { password: _pw, ...safeUser } = user;
-    return c.json({
-      message: "OAuth user synced",
-      user: safeUser,
-      token,
-    });
-  } catch (error: any) {
-    return c.json({ error: error?.message ?? "Sync failed" }, 500);
+    return c.json(
+      {
+        message: "OAuth user synced",
+        user: safeUser,
+        token,
+      },
+      200
+    );
+  } catch (error) {
+    console.error("ERROR HAPPENED in /oauth-sync", error);
+    return c.json({ error: "Internal server error, OAuth sync failed" }, 500);
   }
 });
