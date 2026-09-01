@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import { setCookie } from "hono/cookie";
 import { sign } from "hono/jwt";
 import { hashPassword, verifyPassword } from "../lib/password";
+import { verifyOAuthToken, isSupportedProvider } from "../lib/verifyOAuth";
 
 // Server-side mirror of the frontend password policy. The client schema can be
 // bypassed by calling this endpoint directly, so the rule is enforced here too.
@@ -21,6 +22,8 @@ export const userRouter = new Hono<{
   Bindings: {
     DATABASE_URL: string;
     JWT_SECRET: string;
+    GOOGLE_CLIENT_ID: string;
+    LINKEDIN_CLIENT_ID: string;
   };
   Variables: {
     userId: string;
@@ -123,26 +126,49 @@ userRouter.post("/oauth-sync", async (c) => {
     accelerateUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());
 
-  const body = await c.req.json();
-  const { email, name, avatar } = body;
-
-  if (!email) {
-    return c.json({ error: "Bad request, email not found!" }, 400);
-  }
-
   try {
+    // Parsed inside the try so a malformed body is a 400, not an unhandled 500.
+    const body = await c.req.json().catch(() => null);
+    if (!body || typeof body !== "object") {
+      return c.json({ error: "Invalid request body" }, 400);
+    }
+
+    // NOTE: we deliberately do NOT read an email from the body. The caller's
+    // claim about who they are is unverifiable over the network; the email must
+    // come out of the provider credential we verify below. Reintroducing
+    // body.email here would restore an account-takeover vulnerability.
+    const { provider, idToken, accessToken, name, avatar } = body as Record<string, unknown>;
+
+    if (!isSupportedProvider(provider)) {
+      return c.json({ error: "Unsupported provider" }, 400);
+    }
+
+    // GitHub has no ID token — it is verified by spending its access token.
+    const credential = provider === "github" ? accessToken : idToken;
+
+    const email = await verifyOAuthToken(provider, credential, c.env);
+    if (!email) {
+      return c.json({ error: "Could not verify provider identity" }, 401);
+    }
+
+    // name/avatar stay caller-supplied on purpose: they are cosmetic profile
+    // fields, and a forged display name grants no authority. Only the email is
+    // security-relevant, because it is the upsert key.
+    const safeName = typeof name === "string" ? name : null;
+    const safeAvatar = typeof avatar === "string" ? avatar : null;
+
     // Upsert: create if not exists, otherwise return existing user
     const user = await prisma.user.upsert({
       where: { email },
       update: {
         // refresh name/avatar in case they changed on the provider side
-        name: name ?? undefined,
-        avatar: avatar ?? undefined,
+        name: safeName ?? undefined,
+        avatar: safeAvatar ?? undefined,
       },
       create: {
         email,
-        name: name ?? null,
-        avatar: avatar ?? null,
+        name: safeName,
+        avatar: safeAvatar,
         // no password — OAuth users don't have one
       },
     });

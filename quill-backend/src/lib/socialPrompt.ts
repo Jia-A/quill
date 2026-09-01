@@ -21,8 +21,8 @@ VOICE & ENGAGEMENT (most important):
 - Theory-only posts are forbidden. If the article has code or a worked example, show it. If not, ground every claim in something concrete.
 
 HARD FORMAT RULES:
-- 900–1300 characters total (URL and code snippet count).
-- 2–4 short paragraphs separated by blank lines.
+- LENGTH IS CRITICAL: the post MUST be between 600 and 1300 characters, including the URL and any code snippet. A post under 600 characters is a failure. Aim for roughly 800 characters. Develop each point with concrete detail instead of summarizing.
+- Exactly 3-5 paragraphs separated by blank lines. Each body paragraph should be 3 to 5 sentences, not 1 or 2.
 - Plain prose. No markdown headers, no bullet symbols, no <br>.
 - Emoji: 0 by default, 2 maximum, only if they genuinely add something.
 - NEVER use em-dashes (—) or en-dashes (–). Use commas, periods, or parentheses instead.
@@ -36,7 +36,9 @@ STRUCTURE (in this exact order, no labels in output):
 5. The exact line: Read more: <URL>
 6. Final line: 1 to 3 relevant hashtags.
 
-Return ONLY the post body starting with the hook. Nothing else.`;
+Return ONLY the post body starting with the hook. Nothing else.
+
+FINAL REMINDER: the post must be at least 600 characters. Short posts are rejected. Develop your points with concrete detail rather than summarizing.`;
 
 export function buildLinkedInMessages(input: SocialPromptInput): ChatMessage[] {
   const snippets = extractCodeSnippets(input.content);
