@@ -32,6 +32,15 @@ app.use(
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   })
 );
+
+app.notFound((c) => {
+  return c.json({ error: { code: "NOT_FOUND", message: "Route not found" } }, 404);
+});
+
+app.onError((err, c) => {
+  console.error("ERROR HAPPENED : ", err);
+  return c.json({ error: { code: "INTERNAL_ERROR", message: "Internal server error" } }, 500);
+});
 app.route("/api/v1/user/", userRouter);
 app.route("/api/v1/blog/", blogRouter);
 app.route("/api/v1/linkedin/", linkedinRouter);
