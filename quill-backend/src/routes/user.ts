@@ -53,13 +53,34 @@ userRouter.post("/signup", async (c) => {
     const token = await sign({ id: user.id }, c.env.JWT_SECRET, "HS256");
     setCookie(c, "token", token, { sameSite: "None", secure: true, path: "/" });
     const { password: _pw, ...safeUser } = user;
-    return c.json({
-      message: "User created successfully",
-      user: safeUser,
-      token,
-    });
+    return c.json(
+      {
+        message: "User created successfully",
+        user: safeUser,
+        token,
+      },
+      201
+    );
   } catch (err: any) {
-    return c.json({ error: err?.message });
+    if (err?.code === "P2002")
+      return c.json(
+        {
+          error: {
+            code: "Email_Taken",
+            message: "Please try another email since this one is taken",
+          },
+        },
+        409
+      );
+    return c.json(
+      {
+        error: {
+          code: "Internal_Server_Error",
+          message: "There has been an internal server error, please try again later.",
+        },
+      },
+      500
+    );
   }
 });
 
@@ -86,13 +107,17 @@ userRouter.post("/signin", async (c) => {
     const token = await sign({ id: user.id }, c.env.JWT_SECRET, "HS256");
     setCookie(c, "token", token, { sameSite: "None", secure: false, path: "/" });
     const { password: _pw, ...safeUser } = user;
-    return c.json({
-      message: "User signed in successfully",
-      user: safeUser,
-      token,
-    });
+    return c.json(
+      {
+        message: "User signed in successfully",
+        user: safeUser,
+        token,
+      },
+      200
+    );
   } catch (error) {
-    return c.json({ error: error }, 500);
+    console.error("ERROR HAPPENED in /signin", error);
+    return c.json({ error: { message: "Internal server error happened" } }, 500);
   }
 });
 
@@ -105,7 +130,7 @@ userRouter.post("/oauth-sync", async (c) => {
     // Parsed inside the try so a malformed body is a 400, not an unhandled 500.
     const body = await c.req.json().catch(() => null);
     if (!body || typeof body !== "object") {
-      return c.json({ error: "Invalid request body" }, 400);
+      return c.json({ error: { code: "BAD_REQUEST", message: "Invalid request body" } }, 400);
     }
 
     // NOTE: we deliberately do NOT read an email from the body. The caller's
@@ -151,14 +176,16 @@ userRouter.post("/oauth-sync", async (c) => {
     const token = await sign({ id: user.id }, c.env.JWT_SECRET, "HS256");
 
     const { password: _pw, ...safeUser } = user;
-    return c.json({
-      message: "OAuth user synced",
-      user: safeUser,
-      token,
-    });
+    return c.json(
+      {
+        message: "OAuth user synced",
+        user: safeUser,
+        token,
+      },
+      200
+    );
   } catch (error) {
-    // Logged server-side only — never echo internal error text to the client.
-    console.error("[oauth-sync] failed:", error);
-    return c.json({ error: "Sync failed" }, 500);
+    console.error("ERROR HAPPENED in /oauth-sync", error);
+    return c.json({ error: "Internal server error, OAuth sync failed" }, 500);
   }
 });

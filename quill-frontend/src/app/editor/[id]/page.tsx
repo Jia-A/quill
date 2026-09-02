@@ -1,20 +1,41 @@
 import { auth } from "@/auth";
+import { notFound } from "next/navigation";
 import { getBlogById } from "@/actions/blogActions";
+import PageNotice from "@/components/PageNotice";
 import EditorClient from "./ClientEditor";
 
 const EditBlog = async ({ params }: { params: { id: string } }) => {
   const { id } = await params;
   const session = await auth();
+  let post;
   try {
-    const post = await getBlogById(id);
-    // console.log("*********",post.blog.authorId, session?.user?.id)
-    if (post.blog.authorId === session?.user?.id) {
-      return <EditorClient post={post.blog} />;
-    } else return <div>You are not authorized to edit this blog.</div>;
+    post = await getBlogById(id);
   } catch (err) {
-    console.log("Error fetching blog by ID", err);
-    return <div>Error fetching blog by ID</div>;
+    console.error("Error fetching blog by ID", err);
+    return (
+      <PageNotice
+        eyebrow="[ Something went wrong ]"
+        title="Couldn't load this story"
+        message="We couldn't reach the server to load this story for editing. Please check your connection and try again."
+      />
+    );
   }
+
+  if (!post?.blog) {
+    notFound();
+  }
+  if (post.blog.authorId !== session?.user?.id) {
+    return (
+      <PageNotice
+        eyebrow="[ Not yours to edit ]"
+        title="You can't edit this story"
+        message="This story belongs to another writer. You can still read it, but only its author can make changes."
+        href={`/blog/${id}`}
+        action="Read this story"
+      />
+    );
+  }
+  return <EditorClient post={post.blog} />;
 };
 
 export default EditBlog;
