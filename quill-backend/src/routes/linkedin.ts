@@ -28,10 +28,13 @@ function getRedirectUri(c: any) {
   return `${backend.replace(/\/$/, "")}/api/v1/linkedin/callback`;
 }
 
-// Kick off OAuth: requires the user's app JWT in ?token=... since we can't set headers on a redirect.
 linkedinRouter.get("/connect", async (c) => {
   const token = c.req.header("authorization") || "";
-  if (!token) return c.json({ error: "Missing token" }, 401);
+  if (!token)
+    return c.json(
+      { error: { code: "UNAUTHORIZED", message: "Authentication token not found" } },
+      401
+    );
 
   let userId: string;
   try {
@@ -39,7 +42,7 @@ linkedinRouter.get("/connect", async (c) => {
     userId = decoded.id as string;
     if (!userId) throw new Error();
   } catch {
-    return c.json({ error: "Invalid token" }, 401);
+    return c.json({ error: { code: "UNAUTHORIZED", message: "Invalid auth token" } }, 401);
   }
 
   // Optional: the post the user is sharing, so we can return them to it after OAuth
@@ -97,47 +100,56 @@ linkedinRouter.get("/callback", async (c) => {
 
   const redirectUri = getRedirectUri(c);
 
-  // Exchange code for access token
-  const tokenRes = await fetch("https://www.linkedin.com/oauth/v2/accessToken", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "authorization_code",
-      code,
-      redirect_uri: redirectUri,
-      client_id: c.env.LINKEDIN_CLIENT_ID,
-      client_secret: c.env.LINKEDIN_CLIENT_SECRET,
-    }).toString(),
-  });
-  if (!tokenRes.ok) {
-    console.error("LinkedIn token exchange failed", await tokenRes.text());
-    return c.redirect(returnTo("token_error"));
-  }
-  const tokenData: any = await tokenRes.json();
-  const accessToken: string = tokenData.access_token;
-  const expiresIn: number = tokenData.expires_in ?? 60 * 24 * 60 * 60;
+  // A browser lands here from LinkedIn, so any throw must still redirect —
+  // otherwise app.onError answers the navigation with a JSON 500.
+  try {
+    // Exchange code for access token
+    const tokenRes = await fetch("https://www.linkedin.com/oauth/v2/accessToken", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "authorization_code",
+        code,
+        redirect_uri: redirectUri,
+        client_id: c.env.LINKEDIN_CLIENT_ID,
+        client_secret: c.env.LINKEDIN_CLIENT_SECRET,
+      }).toString(),
+    });
+    if (!tokenRes.ok) {
+      console.error("LinkedIn token exchange failed", await tokenRes.text());
+      return c.redirect(returnTo("token_error"));
+    }
+    const tokenData: any = await tokenRes.json();
+    const accessToken: string = tokenData.access_token;
+    if (!accessToken) return c.redirect(returnTo("token_error"));
+    const expiresIn: number = tokenData.expires_in ?? 60 * 24 * 60 * 60;
 
-  // Fetch user URN via OIDC userinfo
-  const userRes = await fetch("https://api.linkedin.com/v2/userinfo", {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  if (!userRes.ok) {
-    console.error("LinkedIn userinfo failed", await userRes.text());
-    return c.redirect(returnTo("userinfo_error"));
-  }
-  const userInfo: any = await userRes.json();
-  const linkedinUrn = `urn:li:person:${userInfo.sub}`;
+    // Fetch user URN via OIDC userinfo
+    const userRes = await fetch("https://api.linkedin.com/v2/userinfo", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!userRes.ok) {
+      console.error("LinkedIn userinfo failed", await userRes.text());
+      return c.redirect(returnTo("userinfo_error"));
+    }
+    const userInfo: any = await userRes.json();
+    if (!userInfo.sub) return c.redirect(returnTo("userinfo_error"));
+    const linkedinUrn = `urn:li:person:${userInfo.sub}`;
 
-  const prisma = getPrisma(c.env.DATABASE_URL);
-  const expiresAt = new Date(Date.now() + expiresIn * 1000);
-  // Encrypt the token before it touches the DB — a DB leak must not expose
-  // usable LinkedIn credentials. The key lives only as a Workers secret.
-  const encryptedToken = await encryptSecret(accessToken, c.env.TOKEN_ENC_KEY);
-  await prisma.linkedInAccount.upsert({
-    where: { userId },
-    create: { userId, accessToken: encryptedToken, expiresAt, linkedinUrn },
-    update: { accessToken: encryptedToken, expiresAt, linkedinUrn },
-  });
+    const prisma = getPrisma(c.env.DATABASE_URL);
+    const expiresAt = new Date(Date.now() + expiresIn * 1000);
+    // Encrypt the token before it touches the DB — a DB leak must not expose
+    // usable LinkedIn credentials. The key lives only as a Workers secret.
+    const encryptedToken = await encryptSecret(accessToken, c.env.TOKEN_ENC_KEY);
+    await prisma.linkedInAccount.upsert({
+      where: { userId },
+      create: { userId, accessToken: encryptedToken, expiresAt, linkedinUrn },
+      update: { accessToken: encryptedToken, expiresAt, linkedinUrn },
+    });
+  } catch (err) {
+    console.error("LinkedIn callback failed", err);
+    return c.redirect(returnTo("error"));
+  }
 
   return c.redirect(returnTo("connected"));
 });
@@ -155,7 +167,20 @@ linkedinRouter.get("/status", async (c) => {
   }
 
   const prisma = getPrisma(c.env.DATABASE_URL);
-  const account = await prisma.linkedInAccount.findUnique({ where: { userId } });
-  const connected = !!account && account.expiresAt.getTime() > Date.now();
-  return c.json({ connected });
+  try {
+    const account = await prisma.linkedInAccount.findUnique({ where: { userId } });
+    const connected = !!account && account.expiresAt.getTime() > Date.now();
+    return c.json({ connected });
+  } catch (err) {
+    console.log("ERROR HAPPENED in /linkedin/status", err);
+    return c.json(
+      {
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Cannot connect to linkedin, please try again.",
+        },
+      },
+      500
+    );
+  }
 });

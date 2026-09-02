@@ -12,6 +12,7 @@ import { useState } from "react";
 const SigninForm = () => {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
   const {
     handleSubmit,
     register,
@@ -26,6 +27,7 @@ const SigninForm = () => {
   const signinHandler = async () => {
     const { email, password } = getValues();
     setIsSubmitting(true);
+    setFormError("");
     try {
       const response = await signIn("credentials", {
         email,
@@ -34,6 +36,7 @@ const SigninForm = () => {
       });
       if (response?.error) {
         console.error("Signin error:", response.error);
+        setFormError("Invalid email or password.");
         setIsSubmitting(false); // failed — stop the loader so they can retry
         return;
       }
@@ -44,6 +47,7 @@ const SigninForm = () => {
       router.refresh();
     } catch (error) {
       console.error("Signin error:", error);
+      setFormError("Something went wrong. Please try again.");
       setIsSubmitting(false);
     }
   };
@@ -56,6 +60,7 @@ const SigninForm = () => {
         <Input label="Password" type="password" register={register("password")} />
         {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
       </span>
+      {formError && <p className="text-red-500 text-sm mt-4">{formError}</p>}
       <Button
         label={isSubmitting ? "Signing in..." : "Sign in"}
         type="submit"

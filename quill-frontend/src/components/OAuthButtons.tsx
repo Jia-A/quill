@@ -3,12 +3,22 @@ import { signIn } from "next-auth/react";
 import { FcGoogle } from "react-icons/fc";
 import { FaGithub, FaLinkedin } from "react-icons/fa";
 import Button from "../atoms/Button";
+import { useState } from "react";
 
 interface OAuthButtonsProps {
   callbackUrl?: string;
 }
 
 const OAuthButtons = ({ callbackUrl = "/blogs" }: OAuthButtonsProps) => {
+  // Which provider is mid-redirect. signIn() navigates away, so this is never
+  // cleared on success — it only needs to survive until the page unloads.
+  const [pending, setPending] = useState<"google" | "github" | "linkedin" | null>(null);
+
+  const handleSignIn = (provider: "google" | "github" | "linkedin") => {
+    setPending(provider);
+    signIn(provider, { callbackUrl });
+  };
+
   return (
     <div className="w-full mt-8">
       <div className="relative flex items-center">
@@ -23,7 +33,9 @@ const OAuthButtons = ({ callbackUrl = "/blogs" }: OAuthButtonsProps) => {
           variant="secondary"
           size="sm"
           className="w-full justify-center"
-          onClick={() => signIn("google", { callbackUrl })}
+          onClick={() => handleSignIn("google")}
+          loading={pending === "google"}
+          disabled={pending !== null}
           icon={<FcGoogle className="w-[18px] h-[18px]" />}
         />
         <Button
@@ -31,7 +43,9 @@ const OAuthButtons = ({ callbackUrl = "/blogs" }: OAuthButtonsProps) => {
           variant="secondary"
           size="sm"
           className="w-full justify-center"
-          onClick={() => signIn("github", { callbackUrl })}
+          onClick={() => handleSignIn("github")}
+          loading={pending === "github"}
+          disabled={pending !== null}
           icon={<FaGithub className="w-[18px] h-[18px]" />}
         />
         <Button
@@ -39,7 +53,9 @@ const OAuthButtons = ({ callbackUrl = "/blogs" }: OAuthButtonsProps) => {
           variant="secondary"
           size="sm"
           className="w-full justify-center"
-          onClick={() => signIn("linkedin", { callbackUrl })}
+          onClick={() => handleSignIn("linkedin")}
+          loading={pending === "linkedin"}
+          disabled={pending !== null}
           icon={<FaLinkedin className="w-[18px] h-[18px]" color="#0A66C2" />}
         />
       </div>

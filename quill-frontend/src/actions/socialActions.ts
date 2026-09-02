@@ -4,19 +4,29 @@ import axios from "axios";
 export type Platform = "linkedin";
 
 export const getDrafts = async (postId: string, token: string) => {
-  const response = await axios.get(`${API_URL}/social/${postId}`, {
-    headers: { authorization: token },
-  });
-  return response.data as { linkedin: string | null };
+  try {
+    const response = await axios.get(`${API_URL}/social/${postId}`, {
+      headers: { authorization: token },
+    });
+    return response.data as { linkedin: string | null };
+  } catch (err) {
+    console.error("Error fetching drafts:", err);
+    throw new Error("Error fetching drafts");
+  }
 };
 
 export const generateDraft = async (postId: string, platform: Platform, token: string) => {
-  const response = await axios.post(
-    `${API_URL}/social/${postId}/generate`,
-    { platform },
-    { headers: { authorization: token } }
-  );
-  return response.data as { platform: Platform; content: string };
+  try {
+    const response = await axios.post(
+      `${API_URL}/social/${postId}/generate`,
+      { platform },
+      { headers: { authorization: token } }
+    );
+    return response.data as { platform: Platform; content: string };
+  } catch (err) {
+    console.error("Error generating draft:", err);
+    throw new Error("Error generating draft");
+  }
 };
 
 export const updateDraft = async (
@@ -25,19 +35,29 @@ export const updateDraft = async (
   content: string,
   token: string
 ) => {
-  const response = await axios.put(
-    `${API_URL}/social/${postId}`,
-    { platform, content },
-    { headers: { authorization: token } }
-  );
-  return response.data as { platform: Platform; content: string };
+  try {
+    const response = await axios.put(
+      `${API_URL}/social/${postId}`,
+      { platform, content },
+      { headers: { authorization: token } }
+    );
+    return response.data as { platform: Platform; content: string };
+  } catch (err) {
+    console.error("Error updating draft:", err);
+    throw new Error("Error updating draft");
+  }
 };
 
 export const getLinkedInStatus = async (token: string) => {
-  const response = await axios.get(`${API_URL}/linkedin/status`, {
-    headers: { authorization: token },
-  });
-  return response.data as { connected: boolean };
+  try {
+    const response = await axios.get(`${API_URL}/linkedin/status`, {
+      headers: { authorization: token },
+    });
+    return response.data as { connected: boolean };
+  } catch (err) {
+    console.error("Error fetching LinkedIn status:", err);
+    throw new Error("Error fetching LinkedIn status");
+  }
 };
 
 export const linkedInConnectUrl = async (token: string, postId?: string) => {
