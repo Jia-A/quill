@@ -30,7 +30,7 @@ function getRedirectUri(c: any) {
 
 // Kick off OAuth: requires the user's app JWT in ?token=... since we can't set headers on a redirect.
 linkedinRouter.get("/connect", async (c) => {
-  const token = c.req.query("token");
+  const token = c.req.header("authorization") || "";
   if (!token)
     return c.json(
       { error: { code: "UNAUTHORIZED", message: "Authentication token not found" } },
@@ -51,7 +51,7 @@ linkedinRouter.get("/connect", async (c) => {
 
   // Signed state so we can trust userId (and where to return) on callback without a session
   const state = await sign(
-    { userId, postId: postId ?? null, t: Date.now() },
+    { userId, postId: postId ?? null, exp: Math.floor(Date.now() / 1000) + 600 },
     c.env.JWT_SECRET,
     "HS256"
   );
@@ -64,7 +64,7 @@ linkedinRouter.get("/connect", async (c) => {
   url.searchParams.set("scope", "openid profile email w_member_social");
   url.searchParams.set("state", state);
 
-  return c.redirect(url.toString());
+  return c.json({ url: url.toString() });
 });
 
 linkedinRouter.get("/callback", async (c) => {
@@ -87,8 +87,10 @@ linkedinRouter.get("/callback", async (c) => {
     userId = decoded.userId as string;
     postId = (decoded.postId as string | null) ?? null;
     if (!userId) throw new Error();
-  } catch {
-    return c.redirect(`${frontend}/?linkedin=invalid_state`);
+  } catch (err: unknown) {
+    if (err instanceof Error && err?.name === "JwtTokenExpired")
+      return c.redirect(`${frontend}/?linkedin=token_expired`);
+    else return c.redirect(`${frontend}/?linkedin=invalid_state`);
   }
 
   // Where to send the user when we're done: back to the post if we know it, else home.
