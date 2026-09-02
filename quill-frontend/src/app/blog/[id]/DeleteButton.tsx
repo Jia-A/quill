@@ -49,7 +49,10 @@ const DeleteButton = ({
   return (
     <div>
       <button
-        onClick={() => setShowDialog(true)}
+        onClick={() => {
+          setError("");
+          setShowDialog(true);
+        }}
         className="group inline-flex items-center gap-3 eyebrow bg-foreground text-background px-6 py-4 hover:bg-accent hover:text-accent-foreground hover:border-accent transition-colors"
       >
         Delete blog
@@ -84,19 +87,17 @@ const DeleteButton = ({
               <div className="flex justify-end gap-3 mt-8">
                 <button
                   onClick={() => setShowDialog(false)}
-                  className="eyebrow px-6 py-4 border border-border hover:bg-secondary transition-colors"
+                  disabled={isDeleting}
+                  className="eyebrow px-6 py-4 border border-border hover:bg-secondary transition-colors disabled:opacity-60 disabled:pointer-events-none"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={() => {
-                    handleDelete();
-                    // Add your delete logic here
-                    setShowDialog(false);
-                  }}
-                  className="eyebrow px-6 py-4 bg-foreground text-background hover:bg-accent hover:text-accent-foreground transition-colors"
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="eyebrow px-6 py-4 bg-foreground text-background hover:bg-accent hover:text-accent-foreground transition-colors disabled:opacity-60 disabled:pointer-events-none"
                 >
-                  Delete
+                  {isDeleting ? "Deleting..." : "Delete"}
                 </button>
               </div>
             </motion.div>
