@@ -31,7 +31,11 @@ function getRedirectUri(c: any) {
 // Kick off OAuth: requires the user's app JWT in ?token=... since we can't set headers on a redirect.
 linkedinRouter.get("/connect", async (c) => {
   const token = c.req.query("token");
-  if (!token) return c.json({ error: "Missing token" }, 401);
+  if (!token)
+    return c.json(
+      { error: { code: "UNAUTHORIZED", message: "Authentication token not found" } },
+      401
+    );
 
   let userId: string;
   try {
@@ -39,7 +43,7 @@ linkedinRouter.get("/connect", async (c) => {
     userId = decoded.id as string;
     if (!userId) throw new Error();
   } catch {
-    return c.json({ error: "Invalid token" }, 401);
+    return c.json({ error: { code: "UNAUTHORIZED", message: "Invalid auth token" } }, 401);
   }
 
   // Optional: the post the user is sharing, so we can return them to it after OAuth
@@ -153,7 +157,20 @@ linkedinRouter.get("/status", async (c) => {
   }
 
   const prisma = getPrisma(c.env.DATABASE_URL);
-  const account = await prisma.linkedInAccount.findUnique({ where: { userId } });
-  const connected = !!account && account.expiresAt.getTime() > Date.now();
-  return c.json({ connected });
+  try {
+    const account = await prisma.linkedInAccount.findUnique({ where: { userId } });
+    const connected = !!account && account.expiresAt.getTime() > Date.now();
+    return c.json({ connected });
+  } catch (err) {
+    console.log("ERROR HAPPENED in /linkedin/status", err);
+    return c.json(
+      {
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Cannot connect to linkedin, please try again.",
+        },
+      },
+      500
+    );
+  }
 });

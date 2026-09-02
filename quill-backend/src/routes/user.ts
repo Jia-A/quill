@@ -130,7 +130,7 @@ userRouter.post("/oauth-sync", async (c) => {
     // Parsed inside the try so a malformed body is a 400, not an unhandled 500.
     const body = await c.req.json().catch(() => null);
     if (!body || typeof body !== "object") {
-      return c.json({ error: "Invalid request body" }, 400);
+      return c.json({ error: { code: "BAD_REQUEST", message: "Invalid request body" } }, 400);
     }
 
     // NOTE: we deliberately do NOT read an email from the body. The caller's
