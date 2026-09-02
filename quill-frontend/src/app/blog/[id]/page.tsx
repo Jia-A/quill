@@ -1,6 +1,5 @@
 import { getBlogById } from "@/actions/blogActions";
 import { notFound } from "next/navigation";
-import NotFound from "@/app/not-found";
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
@@ -68,15 +67,10 @@ export async function generateMetadata({
 const Blog = async ({ params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params;
 
-  // Only the fetch is guarded: notFound() signals by throwing, so a catch around
-  // it would swallow the 404 and answer 200 instead.
-  let response;
-  try {
-    response = await getBlogById(id);
-  } catch (error) {
-    console.error(`Error fetching blog ${id}:`, error);
-    return <NotFound />;
-  }
+  // getBlogById returns null for a missing post and throws for a real failure, so
+  // a 404 and an unreachable server stay distinguishable: notFound() below renders
+  // the 404 page, while a throw falls through to error.tsx.
+  const response = await getBlogById(id);
   if (!response?.blog) {
     notFound();
   }
