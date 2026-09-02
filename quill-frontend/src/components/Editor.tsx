@@ -71,11 +71,11 @@ export default function BlogEditor({ post }) {
       const response = await fetch(`${API_URL}/image/upload`, {
         method: "POST",
         body: formData,
-        headers: { authorization: session?.backendToken },
+        headers: { authorization: session.backendToken ?? "" },
       });
 
+      if (!response.ok) throw new Error("Upload failed");
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Upload failed");
       return data.url;
     } catch (error) {
       console.error("Image upload error:", error);
@@ -120,7 +120,7 @@ export default function BlogEditor({ post }) {
     try {
       const response = await fetch(`${API_URL}/image/upload-url`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", authorization: session?.backendToken },
+        headers: { "Content-Type": "application/json", authorization: session.backendToken ?? "" },
         body: JSON.stringify({ url }),
       });
 
@@ -219,24 +219,36 @@ export default function BlogEditor({ post }) {
       setIsError({ element: "auth", message: "You must be signed in to publish" });
       return;
     }
+    setIsError({ element: "", message: "" });
     setIsUploading(true);
+
+    // Only the save itself is guarded here. Anything after it runs once the post
+    // is already stored, so folding it into this try would report a successful
+    // publish as a failure.
+    let response;
     try {
-      const response = post
+      response = post
         ? await editBlog(post.id, { ...payload, authorId: post.authorId }, session.backendToken)
         : await postBlog(payload, session.backendToken);
-
-      // Only once the post is safely saved is the old image unreferenced.
-      const toDelete = pendingDeletes.filter((url) => url !== imageUrl);
-      setPendingDeletes([]);
-      await Promise.all(toDelete.map(deleteImage));
-
-      router.push(`/blog/${response.blog.id}`);
-      console.log(response); // You can add a success message or redirect the user after successful publish
     } catch (error) {
-      console.log(error);
-    } finally {
+      console.error("Publish error:", error);
+      setIsError({
+        element: "publish",
+        message:
+          error instanceof Error && error.message
+            ? error.message
+            : "Failed to publish the blog. Please try again.",
+      });
       setIsUploading(false);
+      return;
     }
+
+    // Only once the post is safely saved is the old image unreferenced.
+    const toDelete = pendingDeletes.filter((url) => url !== imageUrl);
+    await Promise.all(toDelete.map(deleteImage));
+    setPendingDeletes([]);
+
+    router.push(`/blog/${response?.blog?.id}`);
   };
 
   return (
@@ -256,6 +268,10 @@ export default function BlogEditor({ post }) {
             disabled={isUploading}
           />
         </div>
+
+        {["publish", "auth", "image"].includes(isError.element) && (
+          <p className="text-destructive eyebrow -mt-8 mb-8 text-right">{isError.message}</p>
+        )}
 
         {/* Title */}
         <input
