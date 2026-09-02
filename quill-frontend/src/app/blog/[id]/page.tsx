@@ -9,6 +9,7 @@ import type { Metadata } from "next";
 import { sanitizeBlogHtmlServer } from "@/utils/sanitizeServer";
 import EditButton from "./EditButton";
 import LinkButton from "@/atoms/Link";
+import DeleteButton from "./DeleteButton";
 
 export const revalidate = 300;
 
@@ -123,6 +124,7 @@ const Blog = async ({ params }: { params: Promise<{ id: string }> }) => {
             <div className="mt-8 flex gap-3">
               <SocialDraftsPanel postId={blog.id} authorId={blog.author.id} />
               <EditButton blog={blog} />
+              <DeleteButton blog={blog} />
             </div>
           )}
         </header>

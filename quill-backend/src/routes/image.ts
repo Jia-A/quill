@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { verify } from "hono/jwt";
 import { PrismaClient } from "../generated/prisma/client";
 import { withAccelerate } from "@prisma/extension-accelerate";
+import { deleteCloudinaryImage, sign } from "../lib/deleteCloudinaryImage";
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
@@ -42,16 +43,6 @@ imageRouter.use("/*", async (c, next) => {
   }
   await next();
 });
-
-async function sign(params: Record<string, string>, secret: string) {
-  const toSign =
-    Object.keys(params)
-      .sort()
-      .map((k) => `${k}=${params[k]}`)
-      .join("&") + secret;
-  const buf = await crypto.subtle.digest("SHA-1", new TextEncoder().encode(toSign));
-  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
 
 const MAX_UPLOADS_PER_USER = 30;
 const USER_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
@@ -94,67 +85,12 @@ imageRouter.delete("/delete", async (c) => {
 
   if (!url) return c.json({ error: { code: "BAD_REQUEST", message: "No url provided" } }, 400);
 
-  // Scoping by userId means another user's image is simply not found.
-  const record = await prisma.imageUpload.findFirst({
-    where: { url, userId },
-  });
+  const result = await deleteCloudinaryImage({ prisma, userId, url, env: c.env });
 
-  if (!record)
-    return c.json(
-      { error: { code: "NOT_FOUND", message: "No image found with the given url!" } },
-      404
-    );
+  if (!result.ok)
+    return c.json({ error: { code: result.code, message: result.message } }, result.status);
 
-  const timestamp = Math.floor(Date.now() / 1000).toString();
-  const signedParams = {
-    public_id: record.publicId,
-    timestamp,
-  };
-  const signature = await sign(signedParams, c.env.CLOUDINARY_API_SECRET);
-
-  const cloudinaryForm = new FormData();
-  for (const [k, v] of Object.entries(signedParams)) cloudinaryForm.append(k, v);
-  cloudinaryForm.append("api_key", c.env.CLOUDINARY_API_KEY);
-  cloudinaryForm.append("signature", signature);
-  const response = await fetch(
-    `https://api.cloudinary.com/v1_1/${c.env.CLOUDINARY_CLOUD_NAME}/image/destroy`,
-    {
-      method: "POST",
-      body: cloudinaryForm,
-    }
-  );
-
-  const data = (await response.json()) as any;
-
-  // Cloudinary answers 200 with result "not found" for an already-deleted asset;
-  // that still means it is gone, so treat it as success.
-  if (!response.ok || (data.result !== "ok" && data.result !== "not found")) {
-    console.error("ERROR HAPPENED in /image/delete", data?.erorr?.message);
-    return c.json(
-      {
-        error: {
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Could not delete image from cloudinary, please try again later",
-        },
-      },
-      500
-    );
-  }
-  try {
-    await prisma.imageUpload.delete({ where: { id: record.id } });
-    return c.json({ success: true }, 200);
-  } catch (err) {
-    console.error("ERROR HAPPENED while deleting image from database.");
-    return c.json(
-      {
-        error: {
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Could not delete image from database, please try again later",
-        },
-      },
-      500
-    );
-  }
+  return c.json({ success: true }, 200);
 });
 
 imageRouter.post("/upload", async (c) => {
