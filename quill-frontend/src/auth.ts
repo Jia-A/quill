@@ -8,7 +8,7 @@ import { API_URL } from "@/utils/constants";
 
 const credentialsSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(6),
+  password: z.string().min(8),
 });
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
