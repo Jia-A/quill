@@ -139,9 +139,11 @@ const SocialDraftsPanel = ({ postId, authorId }: Props) => {
     await navigator.clipboard.writeText(content);
   };
 
-  const handleConnect = () => {
+  const handleConnect = async () => {
     if (!token) return;
-    window.location.href = linkedInConnectUrl(token, postId);
+    const response = await linkedInConnectUrl(token, postId);
+    const url = response.url;
+    window.location.href = url;
   };
 
   const handlePublish = async () => {

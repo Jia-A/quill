@@ -40,9 +40,15 @@ export const getLinkedInStatus = async (token: string) => {
   return response.data as { connected: boolean };
 };
 
-export const linkedInConnectUrl = (token: string, postId?: string) =>
-  `${API_URL}/linkedin/connect?token=${encodeURIComponent(token)}` +
-  (postId ? `&postId=${encodeURIComponent(postId)}` : "");
+export const linkedInConnectUrl = async (token: string, postId?: string) => {
+  const response = await axios.get(
+    `${API_URL}/linkedin/connect` + (postId ? `?postId=${postId}` : ""),
+    {
+      headers: { authorization: token },
+    }
+  );
+  return response.data;
+};
 
 export type PublishResult =
   | { ok: true; permalink: string | null; shareUrn?: string }
