@@ -28,7 +28,6 @@ function getRedirectUri(c: any) {
   return `${backend.replace(/\/$/, "")}/api/v1/linkedin/callback`;
 }
 
-// Kick off OAuth: requires the user's app JWT in ?token=... since we can't set headers on a redirect.
 linkedinRouter.get("/connect", async (c) => {
   const token = c.req.header("authorization") || "";
   if (!token)
