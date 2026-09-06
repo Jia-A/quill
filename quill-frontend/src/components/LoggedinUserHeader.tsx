@@ -4,13 +4,15 @@ import Button from "@/atoms/Button";
 import { PencilSquareIcon } from "@heroicons/react/24/outline";
 import { Session } from "next-auth";
 import { signOut } from "next-auth/react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import Wordmark from "@/components/Wordmark";
+import { useUserProfile } from "@/components/UserProfileProvider";
 
 const LoggedinUserHeader = ({ session }: { session: Session }) => {
-  const { name, image } = session?.user || {};
+  const { userData } = useUserProfile();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const router = useRouter();
   const handleLogout = () => {
@@ -32,9 +34,9 @@ const LoggedinUserHeader = ({ session }: { session: Session }) => {
         />
         <Avatar
           size="sm"
-          avImage={image}
-          alt={name}
-          name={name}
+          avImage={userData?.avatar}
+          alt={userData?.name || "User Avatar"}
+          name={userData?.name}
           onClick={() => setShowUserMenu(!showUserMenu)}
         />
         {showUserMenu && (
@@ -51,8 +53,15 @@ const LoggedinUserHeader = ({ session }: { session: Session }) => {
             >
               <div className="px-4 py-3 border-b border-border">
                 <span className="eyebrow block">Signed in as</span>
-                <span className="text-sm font-serif block truncate mt-1">{name || "User"}</span>
+                <span className="text-sm font-serif block truncate mt-1">{userData?.name}</span>
               </div>
+              <Link
+                href="/profile"
+                onClick={() => setShowUserMenu(false)}
+                className="block w-full text-left px-4 py-3 eyebrow hover:text-accent transition-colors cursor-pointer border-b border-border"
+              >
+                Profile
+              </Link>
               <button
                 onClick={handleLogout}
                 className="w-full text-left px-4 py-3 eyebrow hover:text-accent transition-colors cursor-pointer"

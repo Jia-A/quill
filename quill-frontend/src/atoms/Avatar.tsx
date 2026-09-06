@@ -18,7 +18,7 @@ const Avatar = ({ size = "md", avImage, alt, name, onClick }: AvatarProps) => {
       break;
     }
     case "xl": {
-      sizeClasses = "w-24 h-24 text-2xl";
+      sizeClasses = "w-28 h-28 text-2xl";
       break;
     }
   }

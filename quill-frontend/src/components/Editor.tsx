@@ -9,11 +9,17 @@ import ImageExtension from "@tiptap/extension-image";
 import Image from "next/image";
 import Button from "@/atoms/Button";
 import { postBlog, editBlog } from "@/actions/blogActions";
-import { Upload, LinkIcon, X } from "lucide-react";
+import { Upload, LinkIcon, X, Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { API_URL } from "@/utils/constants";
-import { deleteImageFromCloudinary } from "@/actions/imageActions";
+import {
+  deleteImageFromCloudinary,
+  uploadImageToCloudinary,
+  isImageFile,
+  isCloudinaryUrl,
+  resolvePendingDeletes,
+} from "@/actions/imageActions";
 
 export default function BlogEditor({ post }) {
   const initialContent = post?.content || "";
@@ -28,7 +34,8 @@ export default function BlogEditor({ post }) {
   const [tempImageUrl, setTempImageUrl] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
-  const [isUploading, setIsUploading] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   // Cloudinary URLs removed/replaced in this session, destroyed only once the post saves.
   const [pendingDeletes, setPendingDeletes] = useState<string[]>([]);
 
@@ -63,20 +70,9 @@ export default function BlogEditor({ post }) {
   };
 
   const uploadImage = async (file: File): Promise<string> => {
-    setIsUploading(true);
+    setIsUploadingImage(true);
     try {
-      const formData = new FormData();
-      formData.append("image", file);
-
-      const response = await fetch(`${API_URL}/image/upload`, {
-        method: "POST",
-        body: formData,
-        headers: { authorization: session?.backendToken },
-      });
-
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "Upload failed");
-      return data.url;
+      return await uploadImageToCloudinary(session.backendToken ?? "", file);
     } catch (error) {
       console.error("Image upload error:", error);
       setIsError({
@@ -85,7 +81,7 @@ export default function BlogEditor({ post }) {
       });
       return "";
     } finally {
-      setIsUploading(false);
+      setIsUploadingImage(false);
     }
   };
 
@@ -95,11 +91,9 @@ export default function BlogEditor({ post }) {
     setIsDragOver(false);
 
     const files = Array.from(e.dataTransfer.files);
-    const imageFile = files.find((file) => file.type.startsWith("image/"));
+    const imageFile = files.find(isImageFile);
 
     if (imageFile) {
-      // For demo purposes, we'll create a URL for the dropped image
-      // In a real app, you'd upload this to a cloud service
       const url = await uploadImage(imageFile);
       if (url) setImageUrl(url);
     }
@@ -107,20 +101,18 @@ export default function BlogEditor({ post }) {
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && file.type.startsWith("image/")) {
-      // For demo purposes, we'll create a URL for the selected image
-      // In a real app, you'd upload this to a cloud service
+    if (file && isImageFile(file)) {
       const url = await uploadImage(file);
       if (url) setImageUrl(url);
     }
   };
 
   const uploadImageFromUrl = async (url: string): Promise<string> => {
-    setIsUploading(true);
+    setIsUploadingImage(true);
     try {
       const response = await fetch(`${API_URL}/image/upload-url`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", authorization: session?.backendToken },
+        headers: { "Content-Type": "application/json", authorization: session.backendToken ?? "" },
         body: JSON.stringify({ url }),
       });
 
@@ -138,7 +130,7 @@ export default function BlogEditor({ post }) {
       });
       return "";
     } finally {
-      setIsUploading(false);
+      setIsUploadingImage(false);
     }
   };
 
@@ -219,24 +211,36 @@ export default function BlogEditor({ post }) {
       setIsError({ element: "auth", message: "You must be signed in to publish" });
       return;
     }
-    setIsUploading(true);
+    setIsError({ element: "", message: "" });
+    setIsPublishing(true);
+
+    // Only the save itself is guarded here. Anything after it runs once the post
+    // is already stored, so folding it into this try would report a successful
+    // publish as a failure.
+    let response;
     try {
-      const response = post
+      response = post
         ? await editBlog(post.id, { ...payload, authorId: post.authorId }, session.backendToken)
         : await postBlog(payload, session.backendToken);
-
-      // Only once the post is safely saved is the old image unreferenced.
-      const toDelete = pendingDeletes.filter((url) => url !== imageUrl);
-      setPendingDeletes([]);
-      await Promise.all(toDelete.map(deleteImage));
-
-      router.push(`/blog/${response.blog.id}`);
-      console.log(response); // You can add a success message or redirect the user after successful publish
     } catch (error) {
-      console.log(error);
-    } finally {
-      setIsUploading(false);
+      console.error("Publish error:", error);
+      setIsError({
+        element: "publish",
+        message:
+          error instanceof Error && error.message
+            ? error.message
+            : "Failed to publish the blog. Please try again.",
+      });
+      setIsPublishing(false);
+      return;
     }
+
+    // Only once the post is safely saved is the old image unreferenced.
+    const toDelete = resolvePendingDeletes(pendingDeletes, imageUrl);
+    await Promise.all(toDelete.map(deleteImage));
+    setPendingDeletes([]);
+
+    router.push(`/blog/${response?.blog?.id}`);
   };
 
   return (
@@ -252,10 +256,14 @@ export default function BlogEditor({ post }) {
             label={post ? "Save changes" : "Publish"}
             variant="primary"
             onClick={handlePublish}
-            loading={isUploading}
-            disabled={isUploading}
+            loading={isPublishing}
+            disabled={isPublishing || isUploadingImage}
           />
         </div>
+
+        {["publish", "auth", "image"].includes(isError.element) && (
+          <p className="text-destructive eyebrow -mt-8 mb-8 text-right">{isError.message}</p>
+        )}
 
         {/* Title */}
         <input
@@ -288,19 +296,28 @@ export default function BlogEditor({ post }) {
                 onDrop={handleDrop}
               >
                 <div className="flex flex-col items-center gap-4">
-                  <Upload
-                    className={`w-7 h-7 ${isDragOver ? "text-accent" : "text-muted-foreground"}`}
-                  />
-                  <p className="eyebrow">
-                    {isDragOver ? "Drop it" : "Drop an image, or click to browse"}
-                  </p>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileSelect}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  />
+                  {isUploadingImage ? (
+                    <>
+                      <Loader2 className="w-7 h-7 text-accent animate-spin" />
+                      <p className="eyebrow">Uploading image...</p>
+                    </>
+                  ) : (
+                    <>
+                      <Upload
+                        className={`w-7 h-7 ${isDragOver ? "text-accent" : "text-muted-foreground"}`}
+                      />
+                      <p className="eyebrow">
+                        {isDragOver ? "Drop it" : "Drop an image, or click to browse"}
+                      </p>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileSelect}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      />
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -327,7 +344,14 @@ export default function BlogEditor({ post }) {
                     placeholder="https://example.com/image.jpg"
                     className="flex-1 bg-transparent border-b border-border py-2 text-foreground focus:outline-none focus:border-accent transition-colors"
                   />
-                  <Button onClick={handleUrlSubmit} label="Add" variant="secondary" size="sm" />
+                  <Button
+                    onClick={handleUrlSubmit}
+                    label={isUploadingImage ? "Adding..." : "Add"}
+                    variant="secondary"
+                    size="sm"
+                    loading={isUploadingImage}
+                    disabled={isUploadingImage}
+                  />
                   <button
                     onClick={() => {
                       setShowUrlInput(false);

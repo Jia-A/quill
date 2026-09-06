@@ -4,6 +4,7 @@ import { Inter, Newsreader, JetBrains_Mono } from "next/font/google";
 import Header from "@/components/Header";
 import SessionProviderWrapper from "@/components/SessionProviderWrapper";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import UserProfileProvider from "@/components/UserProfileProvider";
 
 // Body text — clean, neutral sans.
 const inter = Inter({
@@ -58,8 +59,10 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <ThemeProvider>
           <SessionProviderWrapper>
-            <Header />
-            {children}
+            <UserProfileProvider>
+              <Header />
+              {children}
+            </UserProfileProvider>
           </SessionProviderWrapper>
         </ThemeProvider>
       </body>

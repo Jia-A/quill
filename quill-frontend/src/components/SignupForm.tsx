@@ -13,6 +13,7 @@ import { useState } from "react";
 const SignupForm = () => {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
   const {
     handleSubmit,
     register,
@@ -28,6 +29,7 @@ const SignupForm = () => {
     const { name, email, password } = getValues();
     const payload = { name, email, password };
     setIsSubmitting(true);
+    setFormError("");
     try {
       await signupAction(payload);
       const response = await signIn("credentials", {
@@ -37,6 +39,7 @@ const SignupForm = () => {
       });
       if (response?.error) {
         console.error("Auto sign-in after signup failed:", response.error);
+        setFormError("Your account was created, but we couldn't sign you in. Please sign in.");
         setIsSubmitting(false); // failed — stop the loader so they can retry
         return;
       }
@@ -47,6 +50,9 @@ const SignupForm = () => {
       router.refresh();
     } catch (error) {
       console.error("Signup error:", error);
+      setFormError(
+        error instanceof Error && error.message ? error.message : "Signup failed. Please try again."
+      );
       setIsSubmitting(false);
     }
   };
@@ -61,6 +67,7 @@ const SignupForm = () => {
         <Input label="Password" type="password" register={register("password")} />
         {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
       </span>
+      {formError && <p className="text-red-500 text-sm mt-4">{formError}</p>}
       <Button
         label={isSubmitting ? "Signing up..." : "Signup"}
         type="submit"

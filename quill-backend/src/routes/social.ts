@@ -27,8 +27,11 @@ socialRouter.use("/*", async (c, next) => {
       await next();
       return;
     }
-  } catch {}
-  return c.json({ error: "Unauthorized" }, 401);
+  } catch (err) {
+    console.error("ERROR HAPPENED in social middleware", err);
+    return c.json({ error: { code: "UNAUTHORIZED", message: "Verification failed" } }, 401);
+  }
+  return c.json({ error: { code: "INVALID_TOKEN", message: "Invalid auth token" } }, 401);
 });
 
 function getPrisma(url: string) {
@@ -60,10 +63,17 @@ socialRouter.get("/:postId", async (c) => {
 
   const check = await assertOwnership(prisma, postId, userId);
   if ("error" in check) return c.json({ error: check.error }, check.status);
-
-  const drafts = await prisma.socialDraft.findMany({ where: { postId } });
-  const linkedin = drafts.find((d) => d.platform === "linkedin")?.content ?? null;
-  return c.json({ linkedin });
+  try {
+    const drafts = await prisma.socialDraft.findMany({ where: { postId } });
+    const linkedin = drafts.find((d) => d.platform === "linkedin")?.content ?? null;
+    return c.json({ linkedin }, 200);
+  } catch (err) {
+    console.error("ERROR HAPPENED in socialRouter.get", err);
+    return c.json(
+      { error: { code: "INTERNAL_SERVER_ERROR", message: "Internal server error happened" } },
+      500
+    );
+  }
 });
 
 socialRouter.post("/:postId/generate", async (c) => {
@@ -98,13 +108,26 @@ socialRouter.post("/:postId/generate", async (c) => {
 
   if (!content) return c.json({ error: "Generation failed" }, 502);
 
-  const saved = await prisma.socialDraft.upsert({
-    where: { postId_platform: { postId, platform } },
-    create: { postId, platform, content },
-    update: { content },
-  });
+  try {
+    const saved = await prisma.socialDraft.upsert({
+      where: { postId_platform: { postId, platform } },
+      create: { postId, platform, content },
+      update: { content },
+    });
 
-  return c.json({ platform, content: saved.content });
+    return c.json({ platform, content: saved.content }, 200);
+  } catch (err) {
+    console.log("ERROR HAPPENED in socialRouter.post/generate", err);
+    return c.json(
+      {
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Something went wrong, please try again.",
+        },
+      },
+      500
+    );
+  }
 });
 
 socialRouter.put("/:postId", async (c) => {
@@ -122,14 +145,26 @@ socialRouter.put("/:postId", async (c) => {
 
   const check = await assertOwnership(prisma, postId, userId);
   if ("error" in check) return c.json({ error: check.error }, check.status);
+  try {
+    const saved = await prisma.socialDraft.upsert({
+      where: { postId_platform: { postId, platform } },
+      create: { postId, platform, content },
+      update: { content },
+    });
 
-  const saved = await prisma.socialDraft.upsert({
-    where: { postId_platform: { postId, platform } },
-    create: { postId, platform, content },
-    update: { content },
-  });
-
-  return c.json({ platform, content: saved.content });
+    return c.json({ platform, content: saved.content }, 200);
+  } catch (error) {
+    console.log("ERROR HAPPENED in socialRouter.put", error);
+    return c.json(
+      {
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Something went wrong, please try again.",
+        },
+      },
+      500
+    );
+  }
 });
 
 socialRouter.post("/:postId/publish", async (c) => {
@@ -197,8 +232,14 @@ socialRouter.post("/:postId/publish", async (c) => {
   if (!res.ok) {
     const errText = await res.text();
     console.error("LinkedIn publish failed", res.status, errText);
-    if (res.status === 401) return c.json({ error: "linkedin_not_connected" }, 412);
-    return c.json({ error: "publish_failed", detail: errText }, 502);
+    if (res.status === 401)
+      return c.json({ error: { code: "UNAUTHORIZED", message: "Linkedin not connected" } }, 412);
+    return c.json(
+      {
+        error: { code: "PUBLISH_FAILED", message: "Failed to publish to LinkedIn" },
+      },
+      502
+    );
   }
 
   const data: any = await res.json().catch(() => ({}));
@@ -218,7 +259,19 @@ socialRouter.delete("/:postId/:platform", async (c) => {
 
   const check = await assertOwnership(prisma, postId, userId);
   if ("error" in check) return c.json({ error: check.error }, check.status);
-
-  await prisma.socialDraft.deleteMany({ where: { postId, platform } });
-  return c.json({ ok: true });
+  try {
+    await prisma.socialDraft.deleteMany({ where: { postId, platform } });
+    return c.json({ ok: true });
+  } catch (err) {
+    console.error("ERROR HAPPENED in socialRouter.delete", err);
+    return c.json(
+      {
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Something went wrong, please try again.",
+        },
+      },
+      500
+    );
+  }
 });

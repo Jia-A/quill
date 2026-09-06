@@ -4,12 +4,15 @@ import { auth } from "@/auth";
 const PROTECTED_PREFIXES = ["/editor"];
 const AUTH_PREFIXES = ["/auth"];
 
+const matchesPrefix = (pathname: string, prefixes: string[]) =>
+  prefixes.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+
 export default auth((req) => {
   const { pathname } = req.nextUrl;
   const isLoggedIn = !!req.auth;
 
-  const isProtected = PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
-  const isAuthPage = AUTH_PREFIXES.some((p) => pathname.startsWith(p));
+  const isProtected = matchesPrefix(pathname, PROTECTED_PREFIXES);
+  const isAuthPage = matchesPrefix(pathname, AUTH_PREFIXES);
 
   if (isProtected && !isLoggedIn) {
     const url = req.nextUrl.clone();
