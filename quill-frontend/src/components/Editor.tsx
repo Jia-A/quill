@@ -145,7 +145,7 @@ export default function BlogEditor({ post }) {
   };
 
   const removeImage = () => {
-    if (imageUrl && isCloudinaryUrl(imageUrl)) {
+    if (imageUrl) {
       setPendingDeletes((queued) => [...queued, imageUrl]);
     }
     setImageUrl("");

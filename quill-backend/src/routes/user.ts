@@ -271,3 +271,36 @@ userRouter.put("/me", async (c) => {
     );
   }
 });
+
+// Public author profile — no auth required. Only exposes safe fields and published posts.
+userRouter.get("/:id", async (c) => {
+  const prisma = new PrismaClient({
+    accelerateUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: c.req.param("id") },
+      select: {
+        id: true,
+        name: true,
+        avatar: true,
+        aboutAuthor: true,
+        posts: {
+          where: { published: true, private: false },
+          orderBy: { publishedDate: "desc" },
+        },
+      },
+    });
+    if (!user) {
+      return c.json({ error: { code: "USER_NOT_FOUND", message: "User not found" } }, 404);
+    }
+    return c.json({ user }, 200);
+  } catch (err) {
+    console.error("ERROR HAPPENED in /:id", err);
+    return c.json(
+      { error: { code: "INTERNAL_SERVER_ERROR", message: "Internal server error happened" } },
+      500
+    );
+  }
+});
