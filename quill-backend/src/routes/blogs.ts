@@ -3,11 +3,15 @@ import { withAccelerate } from "@prisma/extension-accelerate";
 import { Hono } from "hono";
 import { verify } from "hono/jwt";
 import { sanitizeBlogHtml } from "../lib/sanitizeHtml";
+import { deleteCloudinaryImage } from "../lib/deleteCloudinaryImage";
 
 export const blogRouter = new Hono<{
   Bindings: {
     DATABASE_URL: string;
     JWT_SECRET: string;
+    CLOUDINARY_CLOUD_NAME: string;
+    CLOUDINARY_API_KEY: string;
+    CLOUDINARY_API_SECRET: string;
   };
   Variables: {
     userId: string;
@@ -152,6 +156,62 @@ blogRouter.put("/:postId", async (c) => {
     return c.json(
       {
         message: "Blog updated successfully",
+        blog,
+        id: c.req.param("postId"),
+      },
+      200
+    );
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025")
+      return c.json(
+        { error: { code: "NOT_FOUND", message: "Post not found, invalid post id" } },
+        404
+      );
+    return c.json(
+      {
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Something went wrong on the server side.",
+        },
+      },
+      500
+    );
+  }
+});
+
+blogRouter.delete("/:postId", async (c) => {
+  const prisma = new PrismaClient({
+    accelerateUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+
+  try {
+    const blog = await prisma.post.delete({
+      where: {
+        id: c.req.param("postId"),
+        authorId: c.get("userId") as string,
+      },
+    });
+
+    // Best effort: the post is already gone, so a failed cleanup only leaves an
+    // orphaned Cloudinary asset and must not fail the request.
+    if (blog.image) {
+      try {
+        const result = await deleteCloudinaryImage({
+          prisma,
+          userId: c.get("userId") as string,
+          url: blog.image,
+          env: c.env,
+        });
+        if (!result.ok)
+          console.error("Could not clean up image for deleted post", blog.id, result.message);
+      } catch (err) {
+        console.error("Could not clean up image for deleted post", blog.id, err);
+      }
+    }
+
+    return c.json(
+      {
+        message: "Blog deleted successfully",
         blog,
         id: c.req.param("postId"),
       },

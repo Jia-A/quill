@@ -68,3 +68,14 @@ export const editBlog = async (
     throw new Error(err?.response?.data?.error?.message ?? "Failed to save your changes");
   }
 };
+
+export const deleteBlog = async (postId: string, token: string) => {
+  try {
+    const response = await axios.delete(`${API_URL}/blog/${postId}`, {
+      headers: { authorization: token },
+    });
+    return response.data;
+  } catch (err) {
+    throw new Error(err?.response?.data?.error?.message ?? "Failed to delete your post");
+  }
+};
