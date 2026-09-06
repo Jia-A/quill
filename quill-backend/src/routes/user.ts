@@ -2,12 +2,10 @@ import { PrismaClient } from "../generated/prisma/edge";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { Hono } from "hono";
 import { setCookie } from "hono/cookie";
-import { sign } from "hono/jwt";
+import { sign, verify } from "hono/jwt";
 import { hashPassword, verifyPassword } from "../lib/password";
 import { verifyOAuthToken, isSupportedProvider } from "../lib/verifyOAuth";
 
-// Server-side mirror of the frontend password policy. The client schema can be
-// bypassed by calling this endpoint directly, so the rule is enforced here too.
 function validatePassword(password: unknown): string | null {
   if (typeof password !== "string" || password.length < 8) {
     return "Password must be at least 8 characters long";
@@ -127,16 +125,11 @@ userRouter.post("/oauth-sync", async (c) => {
   }).$extends(withAccelerate());
 
   try {
-    // Parsed inside the try so a malformed body is a 400, not an unhandled 500.
     const body = await c.req.json().catch(() => null);
     if (!body || typeof body !== "object") {
       return c.json({ error: { code: "BAD_REQUEST", message: "Invalid request body" } }, 400);
     }
 
-    // NOTE: we deliberately do NOT read an email from the body. The caller's
-    // claim about who they are is unverifiable over the network; the email must
-    // come out of the provider credential we verify below. Reintroducing
-    // body.email here would restore an account-takeover vulnerability.
     const { provider, idToken, accessToken, name, avatar } = body as Record<string, unknown>;
 
     if (!isSupportedProvider(provider)) {
@@ -150,26 +143,24 @@ userRouter.post("/oauth-sync", async (c) => {
     if (!email) {
       return c.json({ error: "Could not verify provider identity" }, 401);
     }
-
-    // name/avatar stay caller-supplied on purpose: they are cosmetic profile
-    // fields, and a forged display name grants no authority. Only the email is
-    // security-relevant, because it is the upsert key.
     const safeName = typeof name === "string" ? name : null;
     const safeAvatar = typeof avatar === "string" ? avatar : null;
+
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+
+    const shouldUpdateAvatar = !existingUser || !existingUser.avatarIsCustom;
 
     // Upsert: create if not exists, otherwise return existing user
     const user = await prisma.user.upsert({
       where: { email },
       update: {
         // refresh name/avatar in case they changed on the provider side
-        name: safeName ?? undefined,
-        avatar: safeAvatar ?? undefined,
+        avatar: shouldUpdateAvatar ? (safeAvatar ?? undefined) : undefined,
       },
       create: {
         email,
         name: safeName,
         avatar: safeAvatar,
-        // no password — OAuth users don't have one
       },
     });
 
@@ -187,5 +178,129 @@ userRouter.post("/oauth-sync", async (c) => {
   } catch (error) {
     console.error("ERROR HAPPENED in /oauth-sync", error);
     return c.json({ error: "Internal server error, OAuth sync failed" }, 500);
+  }
+});
+
+userRouter.get("/me", async (c) => {
+  const prisma = new PrismaClient({
+    accelerateUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+
+  const headers = c.req.header("authorization") || "";
+  let userId;
+  try {
+    const verified = await verify(headers, c.env.JWT_SECRET, "HS256");
+    if (verified?.id) {
+      userId = verified.id as string;
+    } else {
+      return c.json({ error: { code: "INVALID_TOKEN", message: "Invalid auth token" } }, 401);
+    }
+  } catch (err) {
+    console.error("ERROR HAPPENED in /me", err);
+    return c.json({ error: { code: "UNAUTHORIZED", message: "Verification failed" } }, 401);
+  }
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+      include: { posts: true },
+    });
+    if (!user) {
+      return c.json({ error: { code: "USER_NOT_FOUND", message: "User not found" } }, 404);
+    }
+    const { password: _pw, ...safeUser } = user;
+    return c.json({ user: safeUser }, 200);
+  } catch (err) {
+    console.error("ERROR HAPPENED in /me", err);
+    return c.json(
+      { error: { code: "INTERNAL_SERVER_ERROR", message: "Internal server error happened" } },
+      500
+    );
+  }
+});
+
+userRouter.put("/me", async (c) => {
+  const prisma = new PrismaClient({
+    accelerateUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+
+  const headers = c.req.header("authorization") || "";
+
+  let userId;
+  try {
+    const verified = await verify(headers, c.env.JWT_SECRET, "HS256");
+    if (verified?.id) {
+      userId = verified.id as string;
+    } else {
+      return c.json({ error: { code: "INVALID_TOKEN", message: "Invalid auth token" } }, 401);
+    }
+  } catch (err) {
+    console.error("ERROR HAPPENED in /me", err);
+    return c.json({ error: { code: "UNAUTHORIZED", message: "Verification failed" } }, 401);
+  }
+
+  try {
+    const body = await c.req.json();
+    let customAvatar =
+      body?.avatar !== undefined && body?.avatar !== null ? Boolean(body?.avatar) : undefined;
+    const user = await prisma.user.update({
+      where: {
+        id: userId,
+      },
+      data: {
+        name: body?.name,
+        aboutAuthor: body?.aboutAuthor,
+        avatar: body?.avatar !== undefined ? body?.avatar : undefined,
+        // we need to be aware of 3 cases -
+        // user clearly added a new image, user removed the image, user kept the same image so no change
+        avatarIsCustom: customAvatar,
+      },
+    });
+    if (!user) {
+      return c.json({ error: { code: "USER_NOT_FOUND", message: "User not found" } }, 404);
+    }
+    const { password: _pw, ...safeUser } = user;
+    return c.json({ user: safeUser }, 200);
+  } catch (err) {
+    console.error("ERROR HAPPENED in /me", err);
+    return c.json(
+      { error: { code: "INTERNAL_SERVER_ERROR", message: "Internal server error happened" } },
+      500
+    );
+  }
+});
+
+// Public author profile — no auth required. Only exposes safe fields and published posts.
+userRouter.get("/:id", async (c) => {
+  const prisma = new PrismaClient({
+    accelerateUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: c.req.param("id") },
+      select: {
+        id: true,
+        name: true,
+        avatar: true,
+        aboutAuthor: true,
+        posts: {
+          where: { published: true, private: false },
+          orderBy: { publishedDate: "desc" },
+        },
+      },
+    });
+    if (!user) {
+      return c.json({ error: { code: "USER_NOT_FOUND", message: "User not found" } }, 404);
+    }
+    return c.json({ user }, 200);
+  } catch (err) {
+    console.error("ERROR HAPPENED in /:id", err);
+    return c.json(
+      { error: { code: "INTERNAL_SERVER_ERROR", message: "Internal server error happened" } },
+      500
+    );
   }
 });

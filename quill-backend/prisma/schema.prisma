@@ -18,11 +18,19 @@ model User {
   email String @unique
   name String?
   avatar String?
+  avatarIsCustom Boolean @default(false)
   password String?
   posts Post[]
   aboutAuthor String?
   linkedinAccount LinkedInAccount?
   imageUploads ImageUpload[]
+  occupation String?
+  newsletterSubscription Boolean @default(false)
+  followersCount Int @default(0)
+  followingCount Int @default(0)
+  location String?
+  linkedinProfileUrl String?
+  savedPosts Post[] @relation("SavedPosts")
 }
 
 model LinkedInAccount {
@@ -47,6 +55,9 @@ model Post {
   author User @relation(fields: [authorId], references: [id])
   summary String?
   socialDrafts SocialDraft[]
+  isPinned Boolean @default(false)
+  savedByUsers User[] @relation("SavedPosts")
+  private Boolean @default(false)
 }
 
 model SocialDraft {

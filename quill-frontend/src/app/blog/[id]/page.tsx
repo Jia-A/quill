@@ -148,20 +148,20 @@ const Blog = async ({ params }: { params: Promise<{ id: string }> }) => {
         {/* Footer / author */}
         <footer className="border-t border-border mt-20 pt-12">
           {blog.author && (
-            <div className="flex items-start gap-5">
+            <Link href={`/author/${blog.author.id}`} className="group flex items-start gap-5 w-fit">
               <div className="w-14 h-14 flex-shrink-0 bg-foreground text-background flex items-center justify-center font-serif text-2xl">
                 {blog.author.name?.charAt(0).toUpperCase() || "A"}
               </div>
               <div>
                 <span className="eyebrow">Written by</span>
-                <h3 className="font-serif text-2xl tracking-tightest mt-1">
+                <h3 className="font-serif text-2xl tracking-tightest mt-1 group-hover:text-accent transition-colors">
                   {blog.author.name || "Anonymous"}
                 </h3>
                 <p className="text-muted-foreground mt-1 text-sm max-w-md">
                   Writing on Quill — sharing stories that matter.
                 </p>
               </div>
-            </div>
+            </Link>
           )}
 
           <div className="flex flex-wrap items-center gap-4 mt-12">

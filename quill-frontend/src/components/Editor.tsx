@@ -13,7 +13,13 @@ import { Upload, LinkIcon, X, Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { API_URL } from "@/utils/constants";
-import { deleteImageFromCloudinary } from "@/actions/imageActions";
+import {
+  deleteImageFromCloudinary,
+  uploadImageToCloudinary,
+  isImageFile,
+  isCloudinaryUrl,
+  resolvePendingDeletes,
+} from "@/actions/imageActions";
 
 export default function BlogEditor({ post }) {
   const initialContent = post?.content || "";
@@ -66,18 +72,7 @@ export default function BlogEditor({ post }) {
   const uploadImage = async (file: File): Promise<string> => {
     setIsUploadingImage(true);
     try {
-      const formData = new FormData();
-      formData.append("image", file);
-
-      const response = await fetch(`${API_URL}/image/upload`, {
-        method: "POST",
-        body: formData,
-        headers: { authorization: session.backendToken ?? "" },
-      });
-
-      if (!response.ok) throw new Error("Upload failed");
-      const data = await response.json();
-      return data.url;
+      return await uploadImageToCloudinary(session.backendToken ?? "", file);
     } catch (error) {
       console.error("Image upload error:", error);
       setIsError({
@@ -96,11 +91,9 @@ export default function BlogEditor({ post }) {
     setIsDragOver(false);
 
     const files = Array.from(e.dataTransfer.files);
-    const imageFile = files.find((file) => file.type.startsWith("image/"));
+    const imageFile = files.find(isImageFile);
 
     if (imageFile) {
-      // For demo purposes, we'll create a URL for the dropped image
-      // In a real app, you'd upload this to a cloud service
       const url = await uploadImage(imageFile);
       if (url) setImageUrl(url);
     }
@@ -108,9 +101,7 @@ export default function BlogEditor({ post }) {
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && file.type.startsWith("image/")) {
-      // For demo purposes, we'll create a URL for the selected image
-      // In a real app, you'd upload this to a cloud service
+    if (file && isImageFile(file)) {
       const url = await uploadImage(file);
       if (url) setImageUrl(url);
     }
@@ -245,7 +236,7 @@ export default function BlogEditor({ post }) {
     }
 
     // Only once the post is safely saved is the old image unreferenced.
-    const toDelete = pendingDeletes.filter((url) => url !== imageUrl);
+    const toDelete = resolvePendingDeletes(pendingDeletes, imageUrl);
     await Promise.all(toDelete.map(deleteImage));
     setPendingDeletes([]);
 
