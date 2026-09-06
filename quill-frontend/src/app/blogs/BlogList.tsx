@@ -80,7 +80,7 @@ export default function BlogList({ blogs }: BlogListProps) {
                     </span>
                     <span className="eyebrow truncate min-w-0">
                       {[
-                        article.author.name,
+                        article?.author?.name,
                         publishedDate,
                         `${getReadingTime(article.content)} read`,
                       ]
