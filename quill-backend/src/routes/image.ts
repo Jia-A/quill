@@ -3,6 +3,7 @@ import { verify } from "hono/jwt";
 import { PrismaClient } from "../generated/prisma/client";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { deleteCloudinaryImage, sign } from "../lib/deleteCloudinaryImage";
+import { authMiddleware } from "../middlewares/authMiddleware";
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
@@ -19,30 +20,30 @@ export const imageRouter = new Hono<{
   };
 }>();
 
-imageRouter.use("/*", async (c, next) => {
-  const headers = c.req.header("authorization") || "";
-  try {
-    const verified = await verify(headers, c.env.JWT_SECRET, "HS256");
-    if (!verified.id)
-      return c.json(
-        { error: { code: "INVALID_TOKEN", message: "Invalid user, missing user id." } },
-        401
-      );
-    c.set("userId", verified.id as string);
-  } catch (err) {
-    console.error("ERROR HAPPENED at imageRouter middleware", err);
-    return c.json(
-      {
-        error: {
-          code: "INVALID_TOKEN",
-          message: "Invalid token for authentication",
-        },
-      },
-      401
-    );
-  }
-  await next();
-});
+// imageRouter.use("/*", async (c, next) => {
+//   const headers = c.req.header("authorization") || "";
+//   try {
+//     const verified = await verify(headers, c.env.JWT_SECRET, "HS256");
+//     if (!verified.id)
+//       return c.json(
+//         { error: { code: "INVALID_TOKEN", message: "Invalid user, missing user id." } },
+//         401
+//       );
+//     c.set("userId", verified.id as string);
+//   } catch (err) {
+//     console.error("ERROR HAPPENED at imageRouter middleware", err);
+//     return c.json(
+//       {
+//         error: {
+//           code: "INVALID_TOKEN",
+//           message: "Invalid token for authentication",
+//         },
+//       },
+//       401
+//     );
+//   }
+//   await next();
+// });
 
 const MAX_UPLOADS_PER_USER = 30;
 const USER_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
@@ -75,7 +76,7 @@ async function checkQuota(prisma: QuotaClient, userId: string) {
   return null;
 }
 
-imageRouter.delete("/delete", async (c) => {
+imageRouter.delete("/delete", authMiddleware, async (c) => {
   const prisma = new PrismaClient({
     accelerateUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());
@@ -93,7 +94,7 @@ imageRouter.delete("/delete", async (c) => {
   return c.json({ success: true }, 200);
 });
 
-imageRouter.post("/upload", async (c) => {
+imageRouter.post("/upload", authMiddleware, async (c) => {
   const prisma = new PrismaClient({
     accelerateUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());
@@ -179,7 +180,7 @@ imageRouter.post("/upload", async (c) => {
   }
 });
 
-imageRouter.post("/upload-url", async (c) => {
+imageRouter.post("/upload-url", authMiddleware, async (c) => {
   const prisma = new PrismaClient({
     accelerateUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());

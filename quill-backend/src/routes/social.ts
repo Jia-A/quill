@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import { verify } from "hono/jwt";
 import { generateSocialDraft, PLATFORM_CAPS, Platform } from "../lib/generateSocial";
 import { decryptSecret } from "../lib/crypto";
+import { authMiddleware } from "../middlewares/authMiddleware";
 
 export const socialRouter = new Hono<{
   Bindings: {
@@ -18,21 +19,21 @@ export const socialRouter = new Hono<{
   };
 }>();
 
-socialRouter.use("/*", async (c, next) => {
-  const headers = c.req.header("authorization") || "";
-  try {
-    const verified = await verify(headers, c.env.JWT_SECRET, "HS256");
-    if (verified?.id) {
-      c.set("userId", verified.id as string);
-      await next();
-      return;
-    }
-  } catch (err) {
-    console.error("ERROR HAPPENED in social middleware", err);
-    return c.json({ error: { code: "UNAUTHORIZED", message: "Verification failed" } }, 401);
-  }
-  return c.json({ error: { code: "INVALID_TOKEN", message: "Invalid auth token" } }, 401);
-});
+// socialRouter.use("/*", async (c, next) => {
+//   const headers = c.req.header("authorization") || "";
+//   try {
+//     const verified = await verify(headers, c.env.JWT_SECRET, "HS256");
+//     if (verified?.id) {
+//       c.set("userId", verified.id as string);
+//       await next();
+//       return;
+//     }
+//   } catch (err) {
+//     console.error("ERROR HAPPENED in social middleware", err);
+//     return c.json({ error: { code: "UNAUTHORIZED", message: "Verification failed" } }, 401);
+//   }
+//   return c.json({ error: { code: "INVALID_TOKEN", message: "Invalid auth token" } }, 401);
+// });
 
 function getPrisma(url: string) {
   return new PrismaClient({ accelerateUrl: url }).$extends(withAccelerate());
@@ -56,7 +57,7 @@ async function assertOwnership(
   return { post };
 }
 
-socialRouter.get("/:postId", async (c) => {
+socialRouter.get("/:postId", authMiddleware, async (c) => {
   const prisma = getPrisma(c.env.DATABASE_URL);
   const postId = c.req.param("postId");
   const userId = c.get("userId");
@@ -76,7 +77,7 @@ socialRouter.get("/:postId", async (c) => {
   }
 });
 
-socialRouter.post("/:postId/generate", async (c) => {
+socialRouter.post("/:postId/generate", authMiddleware, async (c) => {
   const prisma = getPrisma(c.env.DATABASE_URL);
   const postId = c.req.param("postId");
   const userId = c.get("userId");
@@ -130,7 +131,7 @@ socialRouter.post("/:postId/generate", async (c) => {
   }
 });
 
-socialRouter.put("/:postId", async (c) => {
+socialRouter.put("/:postId", authMiddleware, async (c) => {
   const prisma = getPrisma(c.env.DATABASE_URL);
   const postId = c.req.param("postId");
   const userId = c.get("userId");
@@ -167,7 +168,7 @@ socialRouter.put("/:postId", async (c) => {
   }
 });
 
-socialRouter.post("/:postId/publish", async (c) => {
+socialRouter.post("/:postId/publish", authMiddleware, async (c) => {
   const prisma = getPrisma(c.env.DATABASE_URL);
   const postId = c.req.param("postId");
   const userId = c.get("userId");
@@ -249,7 +250,7 @@ socialRouter.post("/:postId/publish", async (c) => {
   return c.json({ ok: true, permalink, shareUrn });
 });
 
-socialRouter.delete("/:postId/:platform", async (c) => {
+socialRouter.delete("/:postId/:platform", authMiddleware, async (c) => {
   const prisma = getPrisma(c.env.DATABASE_URL);
   const postId = c.req.param("postId");
   const platform = c.req.param("platform");
