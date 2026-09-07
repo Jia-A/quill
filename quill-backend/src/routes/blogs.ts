@@ -121,6 +121,22 @@ blogRouter.get("/single/:id", async (c) => {
     if (!blog) {
       return c.json({ error: { code: "NOT_FOUND", message: "Post not found" } }, 404);
     }
+
+    if (!blog.published) {
+      let requesterId: string | undefined;
+      const headers = c.req.header("authorization") || "";
+      try {
+        const verifiedString = await verify(headers, c.env.JWT_SECRET, "HS256");
+        requesterId = verifiedString?.id as string | undefined;
+      } catch {
+        requesterId = undefined;
+      }
+
+      if (requesterId !== blog.authorId) {
+        return c.json({ error: { code: "NOT_FOUND", message: "Post not found" } }, 404);
+      }
+    }
+
     return c.json({ blog }, 200);
   } catch (error) {
     return c.json(
@@ -142,6 +158,11 @@ blogRouter.put("/:postId", async (c) => {
   const body = await c.req.json();
 
   try {
+    const existing = await prisma.post.findFirst({
+      where: { id: c.req.param("postId"), authorId: c.get("userId") as string },
+      select: { published: true, publishedDate: true },
+    });
+
     const blog = await prisma.post.update({
       where: {
         id: c.req.param("postId"),
@@ -151,6 +172,9 @@ blogRouter.put("/:postId", async (c) => {
         title: body.title,
         content: await sanitizeBlogHtml(body.content),
         image: body.image,
+        published: body.published,
+        publishedDate:
+          body.published && !existing?.published ? new Date() : (existing?.publishedDate ?? null),
       },
     });
     return c.json(
@@ -257,6 +281,9 @@ blogRouter.get("/bulk", async (c) => {
             name: true,
           },
         },
+      },
+      orderBy: {
+        publishedDate: "desc",
       },
     });
     return c.json(

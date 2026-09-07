@@ -286,6 +286,9 @@ userRouter.get("/:id", async (c) => {
         name: true,
         avatar: true,
         aboutAuthor: true,
+        followersCount: true,
+        occupation: true,
+        location: true,
         posts: {
           where: { published: true, private: false },
           orderBy: { publishedDate: "desc" },

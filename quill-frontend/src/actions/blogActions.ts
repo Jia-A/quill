@@ -33,16 +33,17 @@ export const postBlog = async (
     });
     return response.data;
   } catch (err) {
-    throw new Error(err?.response?.data?.error?.message ?? "Failed to publish the blog");
+    throw new Error(err?.response?.data?.error?.message ?? "Failed to save the blog");
   }
 };
 
-export const getBlogById = async (id: string) => {
+export const getBlogById = async (id: string, token?: string) => {
   try {
-    const response = await axios.get(`${API_URL}/blog/single/${id}`);
+    const response = await axios.get(`${API_URL}/blog/single/${id}`, {
+      headers: token ? { authorization: token } : undefined,
+    });
     return response.data;
   } catch (err) {
-    // A missing post is a normal outcome, not an error — callers turn it into a 404.
     if (err?.response?.status === 404) return null;
     throw new Error(err?.response?.data?.error?.message ?? "Failed to load the blog");
   }

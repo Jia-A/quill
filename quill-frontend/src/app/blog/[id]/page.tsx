@@ -1,4 +1,5 @@
 import { getBlogById } from "@/actions/blogActions";
+import { auth } from "@/auth";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -30,7 +31,8 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   try {
-    const response = await getBlogById(id);
+    const session = await auth();
+    const response = await getBlogById(id, session?.backendToken);
     const blog = response?.blog;
     if (!blog) return { title: "Story not found — Quill" };
 
@@ -67,11 +69,8 @@ export async function generateMetadata({
 
 const Blog = async ({ params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params;
-
-  // getBlogById returns null for a missing post and throws for a real failure, so
-  // a 404 and an unreachable server stay distinguishable: notFound() below renders
-  // the 404 page, while a throw falls through to error.tsx.
-  const response = await getBlogById(id);
+  const session = await auth();
+  const response = await getBlogById(id, session?.backendToken);
   if (!response?.blog) {
     notFound();
   }
@@ -114,9 +113,10 @@ const Blog = async ({ params }: { params: Promise<{ id: string }> }) => {
           <h1 className="font-serif font-light text-[clamp(2.5rem,7vw,5rem)] leading-[0.98] tracking-tightest text-foreground">
             {blog.title}
           </h1>
-          {blog.author?.id && blog.published && (
+          {blog.author?.id && (
             <div className="mt-8 flex gap-3">
-              <SocialDraftsPanel postId={blog.id} authorId={blog.author.id} />
+              {blog?.published && <SocialDraftsPanel postId={blog.id} authorId={blog.author.id} />}
+
               <EditButton blog={blog} />
               <DeleteButton blog={blog} />
             </div>
