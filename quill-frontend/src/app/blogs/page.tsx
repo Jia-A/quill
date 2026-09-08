@@ -11,7 +11,6 @@ export default async function BlogHub() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <main className="max-w-3xl mx-auto px-6 md:px-10 py-16 md:py-24">
-        {/* Masthead */}
         <header className="mb-16">
           <div className="flex items-center gap-4 mb-8">
             <span className="eyebrow">[ The reading room ]</span>

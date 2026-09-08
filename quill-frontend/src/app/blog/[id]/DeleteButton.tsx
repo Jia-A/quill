@@ -4,11 +4,14 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Button from "@/atoms/Button";
 
 const DeleteButton = ({
   blog,
+  className,
 }: {
   blog: { id: string; title: string; content: string; image: string; authorId: string };
+  className?: string;
 }) => {
   const [showDialog, setShowDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -47,16 +50,16 @@ const DeleteButton = ({
   if (!isAuthor) return null;
 
   return (
-    <div>
-      <button
+    <div className={className}>
+      <Button
+        variant="secondary"
+        label="Delete blog"
+        className="justify-center w-full"
         onClick={() => {
           setError("");
           setShowDialog(true);
         }}
-        className="group inline-flex items-center gap-3 eyebrow bg-foreground text-background px-6 py-4 hover:bg-accent hover:text-accent-foreground hover:border-accent transition-colors"
-      >
-        Delete blog
-      </button>
+      />
 
       <AnimatePresence>
         {showDialog && (
@@ -84,21 +87,19 @@ const DeleteButton = ({
               </p>
               {error && <p className="accent-text mt-3">{error}</p>}
 
-              <div className="flex justify-end gap-3 mt-8">
-                <button
+              <div className="flex flex-wrap justify-end gap-3 mt-8">
+                <Button
+                  variant="primary"
+                  label="Cancel"
                   onClick={() => setShowDialog(false)}
                   disabled={isDeleting}
-                  className="eyebrow px-6 py-4 border border-border hover:bg-secondary transition-colors disabled:opacity-60 disabled:pointer-events-none"
-                >
-                  Cancel
-                </button>
-                <button
+                />
+                <Button
+                  variant="secondary"
+                  label={isDeleting ? "Deleting..." : "Delete"}
                   onClick={handleDelete}
-                  disabled={isDeleting}
-                  className="eyebrow px-6 py-4 bg-foreground text-background hover:bg-accent hover:text-accent-foreground transition-colors disabled:opacity-60 disabled:pointer-events-none"
-                >
-                  {isDeleting ? "Deleting..." : "Delete"}
-                </button>
+                  loading={isDeleting}
+                />
               </div>
             </motion.div>
           </motion.div>

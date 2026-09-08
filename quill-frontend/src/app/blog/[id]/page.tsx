@@ -8,7 +8,7 @@ import SocialDraftsPanel from "@/components/SocialDraftsPanel";
 import type { Metadata } from "next";
 import { sanitizeBlogHtmlServer } from "@/utils/sanitizeServer";
 import EditButton from "./EditButton";
-import LinkButton from "@/atoms/Link";
+import Button from "@/atoms/Button";
 import DeleteButton from "./DeleteButton";
 import Avatar from "@/atoms/Avatar";
 
@@ -88,8 +88,6 @@ const Blog = async ({ params }: { params: Promise<{ id: string }> }) => {
   const wordCount = blog.content ? blog.content.replace(/<[^>]*>/g, "").split(/\s+/).length : 0;
   const readingTime = Math.max(1, Math.ceil(wordCount / 200));
 
-  // Defense in depth: content is sanitized by the backend on write, but we
-  // sanitize again at the render boundary before dangerouslySetInnerHTML.
   const safeContent = await sanitizeBlogHtmlServer(blog.content || "");
 
   const meta = [blog.author?.name || "Anonymous", publishedDate, `${readingTime} min read`]
@@ -99,7 +97,6 @@ const Blog = async ({ params }: { params: Promise<{ id: string }> }) => {
   return (
     <div className="min-h-screen bg-background">
       <article className="max-w-3xl mx-auto px-6 md:px-10 py-16 md:py-24">
-        {/* Back link */}
         <Link
           href="/blogs"
           className="group inline-flex items-center gap-2 eyebrow text-muted-foreground hover:text-accent transition-colors mb-12"
@@ -108,23 +105,23 @@ const Blog = async ({ params }: { params: Promise<{ id: string }> }) => {
           All stories
         </Link>
 
-        {/* Header */}
         <header>
           <div className="eyebrow mb-6">{meta}</div>
           <h1 className="font-serif font-light text-[clamp(2.5rem,7vw,5rem)] leading-[0.98] tracking-tightest text-foreground">
             {blog.title}
           </h1>
           {blog.author?.id && (
-            <div className="mt-8 flex gap-3">
+            <div className="mt-8 flex flex-col sm:flex-row sm:flex-wrap gap-3">
               {blog?.published && <SocialDraftsPanel postId={blog.id} authorId={blog.author.id} />}
 
-              <EditButton blog={blog} />
-              <DeleteButton blog={blog} />
+              <div className="flex gap-3">
+                <EditButton blog={blog} className="flex-1 sm:flex-none" />
+                <DeleteButton blog={blog} className="flex-1 sm:flex-none" />
+              </div>
             </div>
           )}
         </header>
 
-        {/* Featured image */}
         {blog.image && (
           <div className="my-12 overflow-hidden border border-border bg-muted">
             <Image
@@ -140,13 +137,11 @@ const Blog = async ({ params }: { params: Promise<{ id: string }> }) => {
 
         <div className="rule my-12" />
 
-        {/* Body */}
         <div
           className="prose prose-lg dark:prose-invert max-w-none"
           dangerouslySetInnerHTML={{ __html: safeContent }}
         />
 
-        {/* Footer / author */}
         <footer className="border-t border-border mt-20 pt-12">
           {blog.author && (
             <Link href={`/author/${blog.author.id}`} className="group flex items-start gap-5 w-fit">
@@ -174,13 +169,14 @@ const Blog = async ({ params }: { params: Promise<{ id: string }> }) => {
           )}
 
           <div className="flex flex-wrap items-center gap-4 mt-12">
-            <LinkButton
+            <Button
               href="/blogs"
-              // className="group inline-flex items-center gap-3 eyebrow bg-foreground text-background px-6 py-4 hover:bg-accent hover:text-accent-foreground transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-              Back to all stories
-            </LinkButton>
+              variant="primary"
+              icon={
+                <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+              }
+              label="Back to all stories"
+            />
           </div>
         </footer>
       </article>

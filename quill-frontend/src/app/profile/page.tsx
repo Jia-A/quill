@@ -27,7 +27,7 @@ const ProfilePage = async () => {
             <span className="flex-1 rule" />
           </div>
           <p className="text-muted-foreground">
-            Couldn&apos;t load your profile right now. Please try again shortly.
+            {`Couldn't load your profile right now. Please try again shortly.`}
           </p>
         </main>
       </div>

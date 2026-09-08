@@ -2,6 +2,8 @@ import BlogList from "@/app/blogs/BlogList";
 import { getPublicUserProfile } from "@/actions/userActions";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 
 export const revalidate = 300;
 
@@ -29,6 +31,13 @@ const AuthorProfilePage = async ({ params }: { params: Promise<{ id: string }> }
   return (
     <div className="min-h-screen bg-background text-foreground">
       <main className="max-w-3xl mx-auto px-6 md:px-10 py-16 md:py-24">
+        <Link
+          href="/blogs"
+          className="group inline-flex items-center gap-2 eyebrow text-muted-foreground hover:text-accent transition-colors mb-12"
+        >
+          <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1" />
+          All stories
+        </Link>
         <div className="flex items-center gap-4 mb-8">
           <span className="eyebrow">[ Profile ]</span>
           <span className="flex-1 rule" />

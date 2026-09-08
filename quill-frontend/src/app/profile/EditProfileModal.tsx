@@ -166,13 +166,12 @@ export default function EditProfileModal({ user, onClose }: EditProfileModalProp
       <div className="relative w-full max-w-md bg-popover border border-border text-popover-foreground shadow-xl">
         <div className="flex items-center justify-between px-6 py-5 border-b border-border">
           <span className="eyebrow">[ Edit profile ]</span>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            square
             onClick={onClose}
-            className="text-foreground hover:text-accent transition-colors cursor-pointer"
-          >
-            <XMarkIcon width={18} height={18} />
-          </button>
+            icon={<XMarkIcon width={18} height={18} />}
+          />
         </div>
 
         <div className="px-6 py-6 space-y-5">
@@ -217,16 +216,16 @@ export default function EditProfileModal({ user, onClose }: EditProfileModalProp
               </div>
 
               {avatarPreview && !isUploadingImage && (
-                <button
-                  type="button"
+                <Button
+                  variant="primary"
+                  square
                   onClick={(e) => {
                     e.stopPropagation();
                     removeImage();
                   }}
-                  className="absolute -top-2 -right-2 w-5 h-5 bg-foreground text-background flex items-center justify-center hover:bg-accent hover:text-accent-foreground transition-colors z-10"
-                >
-                  <XMarkIcon width={12} height={12} />
-                </button>
+                  icon={<XMarkIcon width={12} height={12} />}
+                  className="absolute -top-2 -right-2 !w-5 !h-5 z-10"
+                />
               )}
             </div>
             <span className="eyebrow text-muted-foreground">
