@@ -20,31 +20,6 @@ export const imageRouter = new Hono<{
   };
 }>();
 
-// imageRouter.use("/*", async (c, next) => {
-//   const headers = c.req.header("authorization") || "";
-//   try {
-//     const verified = await verify(headers, c.env.JWT_SECRET, "HS256");
-//     if (!verified.id)
-//       return c.json(
-//         { error: { code: "INVALID_TOKEN", message: "Invalid user, missing user id." } },
-//         401
-//       );
-//     c.set("userId", verified.id as string);
-//   } catch (err) {
-//     console.error("ERROR HAPPENED at imageRouter middleware", err);
-//     return c.json(
-//       {
-//         error: {
-//           code: "INVALID_TOKEN",
-//           message: "Invalid token for authentication",
-//         },
-//       },
-//       401
-//     );
-//   }
-//   await next();
-// });
-
 const MAX_UPLOADS_PER_USER = 30;
 const USER_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
 const MAX_UPLOADS_PER_DAY_GLOBAL = 200;

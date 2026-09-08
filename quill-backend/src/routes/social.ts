@@ -19,22 +19,6 @@ export const socialRouter = new Hono<{
   };
 }>();
 
-// socialRouter.use("/*", async (c, next) => {
-//   const headers = c.req.header("authorization") || "";
-//   try {
-//     const verified = await verify(headers, c.env.JWT_SECRET, "HS256");
-//     if (verified?.id) {
-//       c.set("userId", verified.id as string);
-//       await next();
-//       return;
-//     }
-//   } catch (err) {
-//     console.error("ERROR HAPPENED in social middleware", err);
-//     return c.json({ error: { code: "UNAUTHORIZED", message: "Verification failed" } }, 401);
-//   }
-//   return c.json({ error: { code: "INVALID_TOKEN", message: "Invalid auth token" } }, 401);
-// });
-
 function getPrisma(url: string) {
   return new PrismaClient({ accelerateUrl: url }).$extends(withAccelerate());
 }

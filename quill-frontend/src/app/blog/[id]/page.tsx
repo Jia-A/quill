@@ -10,6 +10,7 @@ import { sanitizeBlogHtmlServer } from "@/utils/sanitizeServer";
 import EditButton from "./EditButton";
 import LinkButton from "@/atoms/Link";
 import DeleteButton from "./DeleteButton";
+import Avatar from "@/atoms/Avatar";
 
 export const revalidate = 300;
 
@@ -149,8 +150,16 @@ const Blog = async ({ params }: { params: Promise<{ id: string }> }) => {
         <footer className="border-t border-border mt-20 pt-12">
           {blog.author && (
             <Link href={`/author/${blog.author.id}`} className="group flex items-start gap-5 w-fit">
-              <div className="w-14 h-14 flex-shrink-0 bg-foreground text-background flex items-center justify-center font-serif text-2xl">
-                {blog.author.name?.charAt(0).toUpperCase() || "A"}
+              <div className="w-16 h-16 flex-shrink-0 bg-foreground text-background flex items-center justify-center font-serif text-2xl">
+                {blog.author.avatar ? (
+                  <Avatar
+                    avImage={blog.author.avatar}
+                    alt={blog.author.name || "Anonymous"}
+                    size="lg"
+                  />
+                ) : (
+                  <>{blog.author.name?.charAt(0).toUpperCase()}</>
+                )}
               </div>
               <div>
                 <span className="eyebrow">Written by</span>
