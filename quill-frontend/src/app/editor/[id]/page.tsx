@@ -9,7 +9,7 @@ const EditBlog = async ({ params }: { params: { id: string } }) => {
   const session = await auth();
   let post;
   try {
-    post = await getBlogById(id);
+    post = await getBlogById(id, session?.backendToken);
   } catch (err) {
     console.error("Error fetching blog by ID", err);
     return (

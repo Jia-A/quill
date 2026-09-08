@@ -1,4 +1,5 @@
 import { getBlogById } from "@/actions/blogActions";
+import { auth } from "@/auth";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -9,6 +10,7 @@ import { sanitizeBlogHtmlServer } from "@/utils/sanitizeServer";
 import EditButton from "./EditButton";
 import LinkButton from "@/atoms/Link";
 import DeleteButton from "./DeleteButton";
+import Avatar from "@/atoms/Avatar";
 
 export const revalidate = 300;
 
@@ -30,7 +32,8 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   try {
-    const response = await getBlogById(id);
+    const session = await auth();
+    const response = await getBlogById(id, session?.backendToken);
     const blog = response?.blog;
     if (!blog) return { title: "Story not found — Quill" };
 
@@ -67,11 +70,8 @@ export async function generateMetadata({
 
 const Blog = async ({ params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params;
-
-  // getBlogById returns null for a missing post and throws for a real failure, so
-  // a 404 and an unreachable server stay distinguishable: notFound() below renders
-  // the 404 page, while a throw falls through to error.tsx.
-  const response = await getBlogById(id);
+  const session = await auth();
+  const response = await getBlogById(id, session?.backendToken);
   if (!response?.blog) {
     notFound();
   }
@@ -114,9 +114,10 @@ const Blog = async ({ params }: { params: Promise<{ id: string }> }) => {
           <h1 className="font-serif font-light text-[clamp(2.5rem,7vw,5rem)] leading-[0.98] tracking-tightest text-foreground">
             {blog.title}
           </h1>
-          {blog.author?.id && blog.published && (
+          {blog.author?.id && (
             <div className="mt-8 flex gap-3">
-              <SocialDraftsPanel postId={blog.id} authorId={blog.author.id} />
+              {blog?.published && <SocialDraftsPanel postId={blog.id} authorId={blog.author.id} />}
+
               <EditButton blog={blog} />
               <DeleteButton blog={blog} />
             </div>
@@ -149,8 +150,16 @@ const Blog = async ({ params }: { params: Promise<{ id: string }> }) => {
         <footer className="border-t border-border mt-20 pt-12">
           {blog.author && (
             <Link href={`/author/${blog.author.id}`} className="group flex items-start gap-5 w-fit">
-              <div className="w-14 h-14 flex-shrink-0 bg-foreground text-background flex items-center justify-center font-serif text-2xl">
-                {blog.author.name?.charAt(0).toUpperCase() || "A"}
+              <div className="w-16 h-16 flex-shrink-0 bg-foreground text-background flex items-center justify-center font-serif text-2xl">
+                {blog.author.avatar ? (
+                  <Avatar
+                    avImage={blog.author.avatar}
+                    alt={blog.author.name || "Anonymous"}
+                    size="lg"
+                  />
+                ) : (
+                  <>{blog.author.name?.charAt(0).toUpperCase()}</>
+                )}
               </div>
               <div>
                 <span className="eyebrow">Written by</span>

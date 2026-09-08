@@ -12,8 +12,12 @@ const ProfilePage = async () => {
   }
 
   let response;
+  let publishedBlogs;
+  let draftBlogs;
   try {
     response = await getUserProfile(session.backendToken);
+    publishedBlogs = response?.user?.posts.filter((blog) => blog.published === true);
+    draftBlogs = response?.user?.posts.filter((blog) => blog.published !== true);
   } catch {
     return (
       <div className="min-h-screen bg-background text-foreground">
@@ -34,13 +38,22 @@ const ProfilePage = async () => {
     <div className="min-h-screen bg-background text-foreground">
       <main className="max-w-3xl mx-auto px-6 md:px-10 py-16 md:py-24">
         <ProfileHeader user={response.user} />
+        {draftBlogs.length !== 0 && (
+          <div className="mt-16">
+            <div className="flex items-center gap-4 mb-8">
+              <span className="eyebrow">[ Drafts ]</span>
+              <span className="flex-1 rule" />
+            </div>
+            <BlogList blogs={draftBlogs || []} />
+          </div>
+        )}
 
         <div className="mt-16">
           <div className="flex items-center gap-4 mb-8">
             <span className="eyebrow">[ Published ]</span>
             <span className="flex-1 rule" />
           </div>
-          <BlogList blogs={response.user.posts || []} />
+          <BlogList blogs={publishedBlogs || []} />
         </div>
       </main>
     </div>

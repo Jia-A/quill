@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import { verify } from "hono/jwt";
 import { sanitizeBlogHtml } from "../lib/sanitizeHtml";
 import { deleteCloudinaryImage } from "../lib/deleteCloudinaryImage";
+import { authMiddleware } from "../middlewares/authMiddleware";
 
 export const blogRouter = new Hono<{
   Bindings: {
@@ -18,35 +19,7 @@ export const blogRouter = new Hono<{
   };
 }>();
 
-blogRouter.use("/*", async (c, next) => {
-  if (c.req.path === "/api/v1/blog/bulk" || c.req.path.startsWith("/api/v1/blog/single")) {
-    await next();
-    return;
-  }
-  const headers = c.req.header("authorization") || "";
-  try {
-    const verifiedString = await verify(headers, c.env.JWT_SECRET, "HS256");
-    if (verifiedString.id) {
-      c.set("userId", verifiedString?.id as string);
-      await next();
-    } else {
-      return c.json(
-        {
-          error: { code: "TOKEN_ID_MISSING", message: "ID not found in the authentication token" },
-        },
-        401
-      );
-    }
-  } catch (err) {
-    console.error("Error happened while token verification in blog router", err);
-    return c.json(
-      { error: { code: "TOKEN_INVALID", message: "Authentication token is invalid." } },
-      401
-    );
-  }
-});
-
-blogRouter.post("/", async (c) => {
+blogRouter.post("/", authMiddleware, async (c) => {
   const prisma = new PrismaClient({
     accelerateUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());
@@ -121,6 +94,22 @@ blogRouter.get("/single/:id", async (c) => {
     if (!blog) {
       return c.json({ error: { code: "NOT_FOUND", message: "Post not found" } }, 404);
     }
+
+    if (!blog.published) {
+      let requesterId: string | undefined;
+      const headers = c.req.header("authorization") || "";
+      try {
+        const verifiedString = await verify(headers, c.env.JWT_SECRET, "HS256");
+        requesterId = verifiedString?.id as string | undefined;
+      } catch {
+        requesterId = undefined;
+      }
+
+      if (requesterId !== blog.authorId) {
+        return c.json({ error: { code: "NOT_FOUND", message: "Post not found" } }, 404);
+      }
+    }
+
     return c.json({ blog }, 200);
   } catch (error) {
     return c.json(
@@ -135,13 +124,18 @@ blogRouter.get("/single/:id", async (c) => {
   }
 });
 
-blogRouter.put("/:postId", async (c) => {
+blogRouter.put("/:postId", authMiddleware, async (c) => {
   const prisma = new PrismaClient({
     accelerateUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());
   const body = await c.req.json();
 
   try {
+    const existing = await prisma.post.findFirst({
+      where: { id: c.req.param("postId"), authorId: c.get("userId") as string },
+      select: { published: true, publishedDate: true },
+    });
+
     const blog = await prisma.post.update({
       where: {
         id: c.req.param("postId"),
@@ -151,6 +145,9 @@ blogRouter.put("/:postId", async (c) => {
         title: body.title,
         content: await sanitizeBlogHtml(body.content),
         image: body.image,
+        published: body.published,
+        publishedDate:
+          body.published && !existing?.published ? new Date() : (existing?.publishedDate ?? null),
       },
     });
     return c.json(
@@ -179,7 +176,7 @@ blogRouter.put("/:postId", async (c) => {
   }
 });
 
-blogRouter.delete("/:postId", async (c) => {
+blogRouter.delete("/:postId", authMiddleware, async (c) => {
   const prisma = new PrismaClient({
     accelerateUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());
@@ -257,6 +254,9 @@ blogRouter.get("/bulk", async (c) => {
             name: true,
           },
         },
+      },
+      orderBy: {
+        publishedDate: "desc",
       },
     });
     return c.json(

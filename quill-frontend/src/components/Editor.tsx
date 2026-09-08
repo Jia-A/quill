@@ -17,13 +17,11 @@ import {
   deleteImageFromCloudinary,
   uploadImageToCloudinary,
   isImageFile,
-  isCloudinaryUrl,
   resolvePendingDeletes,
 } from "@/actions/imageActions";
 
 export default function BlogEditor({ post }) {
   const initialContent = post?.content || "";
-  console.log(post);
   const { data: session } = useSession();
   const [title, setTitle] = useState(post?.title || "");
   const [isError, setIsError] = useState({ element: "", message: "" });
@@ -36,7 +34,6 @@ export default function BlogEditor({ post }) {
   const router = useRouter();
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
-  // Cloudinary URLs removed/replaced in this session, destroyed only once the post saves.
   const [pendingDeletes, setPendingDeletes] = useState<string[]>([]);
 
   const onChange = (content: string) => {
@@ -191,12 +188,12 @@ export default function BlogEditor({ post }) {
     },
   });
 
-  const handlePublish = async () => {
+  const handleSave = async (state: "published" | "draft") => {
     const payload = {
       title,
       content: content,
       image: imageUrl,
-      published: true,
+      published: state === "published",
     };
 
     if (!title) {
@@ -255,7 +252,14 @@ export default function BlogEditor({ post }) {
           <Button
             label={post ? "Save changes" : "Publish"}
             variant="primary"
-            onClick={handlePublish}
+            onClick={() => handleSave("published")}
+            loading={isPublishing}
+            disabled={isPublishing || isUploadingImage}
+          />
+          <Button
+            label={"Save as draft"}
+            variant="primary"
+            onClick={() => handleSave("draft")}
             loading={isPublishing}
             disabled={isPublishing || isUploadingImage}
           />
