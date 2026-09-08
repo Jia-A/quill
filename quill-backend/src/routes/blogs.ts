@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import { verify } from "hono/jwt";
 import { sanitizeBlogHtml } from "../lib/sanitizeHtml";
 import { deleteCloudinaryImage } from "../lib/deleteCloudinaryImage";
+import { authMiddleware } from "../middlewares/authMiddleware";
 
 export const blogRouter = new Hono<{
   Bindings: {
@@ -18,35 +19,7 @@ export const blogRouter = new Hono<{
   };
 }>();
 
-blogRouter.use("/*", async (c, next) => {
-  if (c.req.path === "/api/v1/blog/bulk" || c.req.path.startsWith("/api/v1/blog/single")) {
-    await next();
-    return;
-  }
-  const headers = c.req.header("authorization") || "";
-  try {
-    const verifiedString = await verify(headers, c.env.JWT_SECRET, "HS256");
-    if (verifiedString.id) {
-      c.set("userId", verifiedString?.id as string);
-      await next();
-    } else {
-      return c.json(
-        {
-          error: { code: "TOKEN_ID_MISSING", message: "ID not found in the authentication token" },
-        },
-        401
-      );
-    }
-  } catch (err) {
-    console.error("Error happened while token verification in blog router", err);
-    return c.json(
-      { error: { code: "TOKEN_INVALID", message: "Authentication token is invalid." } },
-      401
-    );
-  }
-});
-
-blogRouter.post("/", async (c) => {
+blogRouter.post("/", authMiddleware, async (c) => {
   const prisma = new PrismaClient({
     accelerateUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());
@@ -151,7 +124,7 @@ blogRouter.get("/single/:id", async (c) => {
   }
 });
 
-blogRouter.put("/:postId", async (c) => {
+blogRouter.put("/:postId", authMiddleware, async (c) => {
   const prisma = new PrismaClient({
     accelerateUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());
@@ -203,7 +176,7 @@ blogRouter.put("/:postId", async (c) => {
   }
 });
 
-blogRouter.delete("/:postId", async (c) => {
+blogRouter.delete("/:postId", authMiddleware, async (c) => {
   const prisma = new PrismaClient({
     accelerateUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());
