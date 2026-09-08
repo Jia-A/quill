@@ -88,8 +88,6 @@ const Blog = async ({ params }: { params: Promise<{ id: string }> }) => {
   const wordCount = blog.content ? blog.content.replace(/<[^>]*>/g, "").split(/\s+/).length : 0;
   const readingTime = Math.max(1, Math.ceil(wordCount / 200));
 
-  // Defense in depth: content is sanitized by the backend on write, but we
-  // sanitize again at the render boundary before dangerouslySetInnerHTML.
   const safeContent = await sanitizeBlogHtmlServer(blog.content || "");
 
   const meta = [blog.author?.name || "Anonymous", publishedDate, `${readingTime} min read`]
@@ -99,7 +97,6 @@ const Blog = async ({ params }: { params: Promise<{ id: string }> }) => {
   return (
     <div className="min-h-screen bg-background">
       <article className="max-w-3xl mx-auto px-6 md:px-10 py-16 md:py-24">
-        {/* Back link */}
         <Link
           href="/blogs"
           className="group inline-flex items-center gap-2 eyebrow text-muted-foreground hover:text-accent transition-colors mb-12"
@@ -108,7 +105,6 @@ const Blog = async ({ params }: { params: Promise<{ id: string }> }) => {
           All stories
         </Link>
 
-        {/* Header */}
         <header>
           <div className="eyebrow mb-6">{meta}</div>
           <h1 className="font-serif font-light text-[clamp(2.5rem,7vw,5rem)] leading-[0.98] tracking-tightest text-foreground">
@@ -126,7 +122,6 @@ const Blog = async ({ params }: { params: Promise<{ id: string }> }) => {
           )}
         </header>
 
-        {/* Featured image */}
         {blog.image && (
           <div className="my-12 overflow-hidden border border-border bg-muted">
             <Image
@@ -142,13 +137,11 @@ const Blog = async ({ params }: { params: Promise<{ id: string }> }) => {
 
         <div className="rule my-12" />
 
-        {/* Body */}
         <div
           className="prose prose-lg dark:prose-invert max-w-none"
           dangerouslySetInnerHTML={{ __html: safeContent }}
         />
 
-        {/* Footer / author */}
         <footer className="border-t border-border mt-20 pt-12">
           {blog.author && (
             <Link href={`/author/${blog.author.id}`} className="group flex items-start gap-5 w-fit">
