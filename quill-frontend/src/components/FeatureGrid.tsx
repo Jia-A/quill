@@ -1,7 +1,6 @@
 "use client";
-import LinkButton from "@/atoms/Link";
+import Button from "@/atoms/Button";
 import { motion } from "framer-motion";
-import Link from "next/link";
 
 const features = [
   {
@@ -55,12 +54,16 @@ const FeatureGrid = () => {
           <br />
           starts here.
         </h2>
-        <LinkButton href="/auth/signup">
-          <span className="cursor-pointer whitespace-nowrap">
-            Start writing
-            <span className="transition-transform group-hover:translate-x-1">&rarr;</span>
-          </span>
-        </LinkButton>
+        <Button
+          href="/auth/signup"
+          variant="primary"
+          label={
+            <span className="whitespace-nowrap">
+              Start writing
+              <span className="transition-transform group-hover:translate-x-1">&rarr;</span>
+            </span>
+          }
+        />
       </div>
     </section>
   );

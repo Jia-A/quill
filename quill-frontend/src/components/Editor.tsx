@@ -244,25 +244,26 @@ export default function BlogEditor({ post }) {
     <div className="min-h-screen bg-background">
       <div className="max-w-3xl mx-auto py-14 px-6 md:px-10">
         {/* Masthead row */}
-        <div className="flex items-center justify-between gap-6 mb-12">
-          <div className="flex items-center gap-4 min-w-0">
-            <span className="eyebrow whitespace-nowrap">{post ? "[ Editing ]" : "[ Draft ]"}</span>
-            <span className="flex-1 rule" />
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-12">
+          <span className="eyebrow whitespace-nowrap">{post ? "[ Editing ]" : "[ Draft ]"}</span>
+          <div className="flex flex-wrap gap-3">
+            <Button
+              label="Save as draft"
+              variant="secondary"
+              size="sm"
+              onClick={() => handleSave("draft")}
+              loading={isPublishing}
+              disabled={isPublishing || isUploadingImage}
+            />
+            <Button
+              label={post ? "Save changes" : "Publish"}
+              variant="primary"
+              size="sm"
+              onClick={() => handleSave("published")}
+              loading={isPublishing}
+              disabled={isPublishing || isUploadingImage}
+            />
           </div>
-          <Button
-            label={post ? "Save changes" : "Publish"}
-            variant="primary"
-            onClick={() => handleSave("published")}
-            loading={isPublishing}
-            disabled={isPublishing || isUploadingImage}
-          />
-          <Button
-            label={"Save as draft"}
-            variant="primary"
-            onClick={() => handleSave("draft")}
-            loading={isPublishing}
-            disabled={isPublishing || isUploadingImage}
-          />
         </div>
 
         {["publish", "auth", "image"].includes(isError.element) && (
@@ -332,13 +333,13 @@ export default function BlogEditor({ post }) {
               </div>
 
               {!showUrlInput ? (
-                <button
+                <Button
                   onClick={() => setShowUrlInput(true)}
-                  className="w-full flex items-center justify-center gap-2 py-3 px-4 border border-border hover:border-accent hover:text-accent text-foreground transition-colors eyebrow"
-                >
-                  <LinkIcon className="w-4 h-4" />
-                  Add image from URL
-                </button>
+                  variant="secondary"
+                  icon={<LinkIcon className="w-4 h-4" />}
+                  label="Add image from URL"
+                  className="w-full justify-center"
+                />
               ) : (
                 <div className="flex gap-2 items-end">
                   <input
@@ -356,15 +357,16 @@ export default function BlogEditor({ post }) {
                     loading={isUploadingImage}
                     disabled={isUploadingImage}
                   />
-                  <button
+                  <Button
+                    variant="ghost"
+                    square
                     onClick={() => {
                       setShowUrlInput(false);
                       setTempImageUrl("");
                     }}
-                    className="p-2 text-muted-foreground hover:text-accent transition-colors"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
+                    className="text-muted-foreground"
+                    icon={<X className="w-4 h-4" />}
+                  />
                 </div>
               )}
             </div>
@@ -378,12 +380,13 @@ export default function BlogEditor({ post }) {
                   className="object-cover"
                   unoptimized
                 />
-                <button
+                <Button
+                  variant="primary"
+                  square
                   onClick={removeImage}
-                  className="absolute top-3 right-3 w-8 h-8 bg-foreground text-background flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:bg-accent hover:text-accent-foreground active:bg-accent active:text-accent-foreground"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+                  className="absolute top-3 right-3 !w-8 !h-8 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+                  icon={<X className="w-4 h-4" />}
+                />
               </div>
             </div>
           )}

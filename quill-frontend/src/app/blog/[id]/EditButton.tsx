@@ -1,11 +1,13 @@
 "use client";
-import LinkButton from "@/atoms/Link";
+import Button from "@/atoms/Button";
 import { useSession } from "next-auth/react";
 
 const EditButton = ({
   blog,
+  className,
 }: {
   blog: { id: string; title: string; content: string; image: string; authorId: string };
+  className?: string;
 }) => {
   const { data: session } = useSession();
 
@@ -13,9 +15,13 @@ const EditButton = ({
   if (!isAuthor) return null;
 
   return (
-    <LinkButton href={`/editor/${blog.id}`} prefetch={false}>
-      Edit blog
-    </LinkButton>
+    <Button
+      href={`/editor/${blog.id}`}
+      prefetch={false}
+      variant="secondary"
+      label="Edit blog"
+      className={`justify-center ${className || ""}`.trim()}
+    />
   );
 };
 

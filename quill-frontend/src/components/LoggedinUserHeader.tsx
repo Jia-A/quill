@@ -62,12 +62,12 @@ const LoggedinUserHeader = ({ session }: { session: Session }) => {
               >
                 Profile
               </Link>
-              <button
+              <Button
+                variant="ghost"
+                label="Logout"
                 onClick={handleLogout}
-                className="w-full text-left px-4 py-3 eyebrow hover:text-accent transition-colors cursor-pointer"
-              >
-                Logout
-              </button>
+                className="w-full !justify-start !px-4 !py-3 text-left"
+              />
             </div>
           </>
         )}

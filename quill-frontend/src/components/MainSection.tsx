@@ -1,4 +1,4 @@
-import LinkButton from "@/atoms/Link";
+import Button from "@/atoms/Button";
 import Link from "next/link";
 
 const MainSection = () => {
@@ -30,12 +30,16 @@ const MainSection = () => {
         </p>
 
         <div className="flex flex-col gap-4 md:items-end">
-          <LinkButton href="/auth/signup">
-            <span className="cursor-pointer">
-              Start writing
-              <span className="transition-transform group-hover:translate-x-1">&rarr;</span>
-            </span>
-          </LinkButton>
+          <Button
+            href="/auth/signup"
+            variant="primary"
+            label={
+              <>
+                Start writing
+                <span className="transition-transform group-hover:translate-x-1">&rarr;</span>
+              </>
+            }
+          />
           <Link
             href="/blogs"
             className="eyebrow link-underline text-muted-foreground hover:text-foreground transition-colors"

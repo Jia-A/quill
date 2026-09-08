@@ -8,7 +8,7 @@ import SocialDraftsPanel from "@/components/SocialDraftsPanel";
 import type { Metadata } from "next";
 import { sanitizeBlogHtmlServer } from "@/utils/sanitizeServer";
 import EditButton from "./EditButton";
-import LinkButton from "@/atoms/Link";
+import Button from "@/atoms/Button";
 import DeleteButton from "./DeleteButton";
 import Avatar from "@/atoms/Avatar";
 
@@ -115,11 +115,13 @@ const Blog = async ({ params }: { params: Promise<{ id: string }> }) => {
             {blog.title}
           </h1>
           {blog.author?.id && (
-            <div className="mt-8 flex gap-3">
+            <div className="mt-8 flex flex-col sm:flex-row sm:flex-wrap gap-3">
               {blog?.published && <SocialDraftsPanel postId={blog.id} authorId={blog.author.id} />}
 
-              <EditButton blog={blog} />
-              <DeleteButton blog={blog} />
+              <div className="flex gap-3">
+                <EditButton blog={blog} className="flex-1 sm:flex-none" />
+                <DeleteButton blog={blog} className="flex-1 sm:flex-none" />
+              </div>
             </div>
           )}
         </header>
@@ -174,13 +176,14 @@ const Blog = async ({ params }: { params: Promise<{ id: string }> }) => {
           )}
 
           <div className="flex flex-wrap items-center gap-4 mt-12">
-            <LinkButton
+            <Button
               href="/blogs"
-              // className="group inline-flex items-center gap-3 eyebrow bg-foreground text-background px-6 py-4 hover:bg-accent hover:text-accent-foreground transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-              Back to all stories
-            </LinkButton>
+              variant="primary"
+              icon={
+                <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+              }
+              label="Back to all stories"
+            />
           </div>
         </footer>
       </article>
