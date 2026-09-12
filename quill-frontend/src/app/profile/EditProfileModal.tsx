@@ -66,7 +66,7 @@ export default function EditProfileModal({ user, onClose }: EditProfileModalProp
     setIsUploadingImage(true);
     setIsError(null);
     try {
-      return await uploadImageToCloudinary(session.backendToken ?? "", file);
+      return await uploadImageToCloudinary(session?.backendToken ?? "", file);
     } catch (error) {
       console.error("Image upload error:", error);
       setIsError({
@@ -134,7 +134,7 @@ export default function EditProfileModal({ user, onClose }: EditProfileModalProp
     setIsSaving(true);
     setIsError(null);
     try {
-      await updateUserProfile(session.backendToken, payload);
+      await updateUserProfile(session?.backendToken, payload);
     } catch (error) {
       console.error("Profile update error:", error);
       setIsError({
@@ -147,7 +147,7 @@ export default function EditProfileModal({ user, onClose }: EditProfileModalProp
     }
 
     const toDelete = resolvePendingDeletes(pendingDeletes, imageUrl);
-    await Promise.all(toDelete.map((url) => deleteImageFromCloudinary(session.backendToken, url)));
+    await Promise.all(toDelete.map((url) => deleteImageFromCloudinary(session?.backendToken, url)));
     setPendingDeletes([]);
     setIsSaving(false);
     setUserData({ name, avatar: imageUrl });
