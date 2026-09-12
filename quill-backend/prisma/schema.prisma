@@ -31,6 +31,7 @@ model User {
   location String?
   linkedinProfileUrl String?
   savedPosts Post[] @relation("SavedPosts")
+  comments Comment[]
 }
 
 model LinkedInAccount {
@@ -58,6 +59,7 @@ model Post {
   isPinned Boolean @default(false)
   savedByUsers User[] @relation("SavedPosts")
   private Boolean @default(false)
+  comments Comment[]
 }
 
 model SocialDraft {
@@ -84,4 +86,27 @@ model ImageUpload {
 
   @@index([userId, createdAt])
   @@index([createdAt])
+}
+
+
+enum CommentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+model Comment { 
+id String @id @default (cuid()) 
+postId String 
+post Post @relation (fields: [postId], references: [id]) 
+authorId String 
+author User @relation(fields: [authorId], references: [id])
+text String 
+createdAt DateTime @default(now())
+commentStatus CommentStatus @default(PENDING)
+parentId String?
+parent Comment? @relation ("CommentReplies",fields: [parentId], references: [id]) 
+startOffset Int?
+endOffset Int?
+anchorText String?
+replies Comment[] @relation("CommentReplies")
 }
