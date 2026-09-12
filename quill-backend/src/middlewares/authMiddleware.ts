@@ -40,3 +40,22 @@ export const authMiddleware = createMiddleware<AuthEnv>(async (c, next) => {
     401
   );
 });
+
+export const optionalAuthMiddleware = createMiddleware<AuthEnv>(async (c, next) => {
+  const token = c.req.header("authorization") || "";
+  if (!token) {
+    await next();
+    return;
+  }
+
+  try {
+    const verified = await verify(token, c.env.JWT_SECRET, "HS256");
+    if (verified?.id) {
+      c.set("userId", verified.id as string);
+    }
+  } catch (err) {
+    console.error("[optionalAuth] token verification failed:", err);
+  }
+
+  await next();
+});

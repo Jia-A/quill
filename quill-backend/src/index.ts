@@ -5,6 +5,7 @@ import { socialRouter } from "./routes/social";
 import { linkedinRouter } from "./routes/linkedin";
 import { cors } from "hono/cors";
 import { imageRouter } from "./routes/image";
+import { commentRouter } from "./routes/comments";
 
 const app = new Hono<{
   Bindings: {
@@ -30,7 +31,8 @@ app.use(
   cors({
     origin: ["http://localhost:3000", "https://lets-quill.vercel.app"],
     allowHeaders: ["Content-Type", "Authorization"],
-    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    maxAge: 600,
   })
 );
 
@@ -47,5 +49,6 @@ app.route("/api/v1/blog/", blogRouter);
 app.route("/api/v1/linkedin/", linkedinRouter);
 app.route("/api/v1/social/", socialRouter);
 app.route("/api/v1/image/", imageRouter);
+app.route("/api/v1/comment/", commentRouter);
 
 export default app;
