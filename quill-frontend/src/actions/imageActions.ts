@@ -15,7 +15,7 @@ export const uploadImageToCloudinary = async (token: string, file: File): Promis
   return data.url;
 };
 
-export const deleteImageFromCloudinary = async (token: string, url: string) => {
+export const deleteImageFromCloudinary = async (token: string | undefined, url: string) => {
   const response = await fetch(`${API_URL}/image/delete`, {
     method: "DELETE",
     headers: { "Content-Type": "application/json", authorization: token },
