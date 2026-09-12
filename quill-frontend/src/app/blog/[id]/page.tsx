@@ -11,6 +11,7 @@ import EditButton from "./EditButton";
 import Button from "@/atoms/Button";
 import DeleteButton from "./DeleteButton";
 import Avatar from "@/atoms/Avatar";
+import CommentableContent from "@/components/CommentableContent";
 
 export const revalidate = 300;
 
@@ -137,10 +138,7 @@ const Blog = async ({ params }: { params: Promise<{ id: string }> }) => {
 
         <div className="rule my-12" />
 
-        <div
-          className="prose prose-lg dark:prose-invert max-w-none"
-          dangerouslySetInnerHTML={{ __html: safeContent }}
-        />
+        <CommentableContent html={safeContent} postId={blog.id} token={session?.backendToken} />
 
         <footer className="border-t border-border mt-20 pt-12">
           {blog.author && (
