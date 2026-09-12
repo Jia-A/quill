@@ -7,11 +7,13 @@ import Button from "@/atoms/Button";
 const Input = ({
   label,
   register,
+  ref,
   type = "text",
 }: {
-  label: string;
+  label?: string;
   register?: UseFormRegisterReturn<string>;
   type?: string;
+  ref?: any;
 }) => {
   const [showPassword, setShowPassword] = useState(false);
   const isPassword = type === "password";
@@ -29,6 +31,7 @@ const Input = ({
         <input
           id={label}
           type={inputType}
+          ref={ref}
           className="w-full bg-transparent border-b border-border py-2 pr-8 text-foreground text-base focus:outline-none focus:border-accent transition-colors placeholder:text-muted-foreground"
           {...register}
         />

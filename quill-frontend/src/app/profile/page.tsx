@@ -3,6 +3,8 @@ import ProfileHeader from "./ProfileHeader";
 import { getUserProfile } from "@/actions/userActions";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import { getPendingComments } from "@/actions/commentAction";
+import PendingCommentsList from "@/components/PendingCommentsList";
 
 const ProfilePage = async () => {
   const session = await auth();
@@ -34,6 +36,9 @@ const ProfilePage = async () => {
     );
   }
 
+  const pendingComments = await getPendingComments(session?.backendToken);
+  console.log(pendingComments);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <main className="max-w-3xl mx-auto px-6 md:px-10 py-16 md:py-24">
@@ -47,6 +52,14 @@ const ProfilePage = async () => {
             <BlogList blogs={draftBlogs || []} />
           </div>
         )}
+
+        <div className="mt-16">
+          <div className="flex items-center gap-4 mb-8">
+            <span className="eyebrow">[ Pending Comments ]</span>
+            <span className="flex-1 rule" />
+          </div>
+          <PendingCommentsList comments={pendingComments.comments} />
+        </div>
 
         <div className="mt-16">
           <div className="flex items-center gap-4 mb-8">
