@@ -6,6 +6,8 @@ import { linkedinRouter } from "./routes/linkedin";
 import { cors } from "hono/cors";
 import { imageRouter } from "./routes/image";
 import { commentRouter } from "./routes/comments";
+import { notificationRouter } from "./routes/notification";
+export { NotificationDO } from "./sockets/notificationDO";
 
 const app = new Hono<{
   Bindings: {
@@ -50,5 +52,6 @@ app.route("/api/v1/linkedin/", linkedinRouter);
 app.route("/api/v1/social/", socialRouter);
 app.route("/api/v1/image/", imageRouter);
 app.route("/api/v1/comment/", commentRouter);
+app.route("/api/v1/notification", notificationRouter);
 
 export default app;

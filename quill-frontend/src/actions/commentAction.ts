@@ -51,7 +51,7 @@ export const postComments = async (
     anchorText?: string;
     parentId?: string;
   },
-  token: string
+  token?: string
 ) => {
   try {
     const response = await axios.post(`${API_URL}/comment/`, payload, {

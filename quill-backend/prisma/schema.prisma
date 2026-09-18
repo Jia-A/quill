@@ -32,6 +32,7 @@ model User {
   linkedinProfileUrl String?
   savedPosts Post[] @relation("SavedPosts")
   comments Comment[]
+  notification Notification[]
 }
 
 model LinkedInAccount {
@@ -60,6 +61,7 @@ model Post {
   savedByUsers User[] @relation("SavedPosts")
   private Boolean @default(false)
   comments Comment[]
+  notification Notification[]
 }
 
 model SocialDraft {
@@ -109,4 +111,25 @@ startOffset Int?
 endOffset Int?
 anchorText String?
 replies Comment[] @relation("CommentReplies")
+notification Notification[]
+}
+
+enum NotificationType {
+  COMMENT_APPROVED
+  COMMENT_RECEIVED
+  REPLY_RECEIVED
+}
+
+model Notification {
+  id           String            @id @default(cuid())
+  text         String
+  type         NotificationType
+  userId       String
+  user         User              @relation(fields: [userId], references: [id])
+  readStatus   Boolean           @default(false)
+  commentId    String?
+  comment      Comment?          @relation(fields: [commentId], references: [id])
+  postId       String
+  post         Post              @relation(fields: [postId], references: [id])
+  dateAndTime  DateTime          @default(now())
 }
