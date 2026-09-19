@@ -4,6 +4,7 @@ export class NotificationDO {
     this.env = env;
     this.socket = null;
     this.timeoutId = null;
+    this.pendingTicket = null; // { value, expiresAt }
   }
 
   resetIdleTimer() {
@@ -19,7 +20,24 @@ export class NotificationDO {
   async fetch(request) {
     const url = new URL(request.url);
 
+    if (url.pathname === "/generate-ticket") {
+      const ticket = crypto.randomUUID();
+      this.pendingTicket = { value: ticket, expiresAt: Date.now() + 30_000 };
+      return new Response(JSON.stringify({ ticket }));
+    }
+
     if (url.pathname === "/connect") {
+      const ticket = url.searchParams.get("ticket");
+      const valid =
+        this.pendingTicket &&
+        this.pendingTicket.value === ticket &&
+        Date.now() < this.pendingTicket.expiresAt;
+
+      this.pendingTicket = null; // single-use, always discard
+
+      if (!valid) {
+        return new Response("Unauthorized", { status: 401 });
+      }
       const pair = new WebSocketPair();
       const [client, server] = Object.values(pair);
       server.accept();
