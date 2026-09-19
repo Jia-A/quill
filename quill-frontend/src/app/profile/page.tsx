@@ -1,10 +1,10 @@
-import BlogList from "@/app/blogs/BlogList";
 import ProfileHeader from "./ProfileHeader";
 import { getUserProfile } from "@/actions/userActions";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { getPendingComments } from "@/actions/commentAction";
-import PendingCommentsList from "@/components/PendingCommentsList";
+import { getPendingComments, getUserComments } from "@/actions/commentAction";
+import type { Comment } from "@/types/CommentProps";
+import ProfileTabs from "@/components/ProfileTabs";
 
 const ProfilePage = async () => {
   const session = await auth();
@@ -36,38 +36,29 @@ const ProfilePage = async () => {
     );
   }
 
-  const pendingComments = await getPendingComments(session?.backendToken);
-  console.log(pendingComments);
+  // Fetched in parallel, and each tolerates its own failure: one failing list
+  // shouldn't blank the whole profile.
+  const [pendingComments, addedComments, rejectedByMe] = await Promise.all([
+    getPendingComments(session.backendToken).catch(() => ({ comments: [] })),
+    getUserComments(session.backendToken).catch(() => ({ comments: [] })),
+    // Comments this user rejected on their own posts — not their own comments
+    // that were rejected, which stay in the Comments tab with their status.
+    getPendingComments(session.backendToken, "REJECTED").catch(() => ({ comments: [] })),
+  ]);
+
+  const authored: Comment[] = addedComments?.comments ?? [];
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <main className="max-w-3xl mx-auto px-6 md:px-10 py-16 md:py-24">
         <ProfileHeader user={response.user} />
-        {draftBlogs.length !== 0 && (
-          <div className="mt-16">
-            <div className="flex items-center gap-4 mb-8">
-              <span className="eyebrow">[ Drafts ]</span>
-              <span className="flex-1 rule" />
-            </div>
-            <BlogList blogs={draftBlogs || []} />
-          </div>
-        )}
-
-        <div className="mt-16">
-          <div className="flex items-center gap-4 mb-8">
-            <span className="eyebrow">[ Pending Comments ]</span>
-            <span className="flex-1 rule" />
-          </div>
-          <PendingCommentsList comments={pendingComments.comments} />
-        </div>
-
-        <div className="mt-16">
-          <div className="flex items-center gap-4 mb-8">
-            <span className="eyebrow">[ Published ]</span>
-            <span className="flex-1 rule" />
-          </div>
-          <BlogList blogs={publishedBlogs || []} />
-        </div>
+        <ProfileTabs
+          draftBlogs={draftBlogs || []}
+          publishedBlogs={publishedBlogs || []}
+          addedComments={authored}
+          pendingComments={pendingComments?.comments ?? []}
+          rejectedComments={rejectedByMe?.comments ?? []}
+        />
       </main>
     </div>
   );

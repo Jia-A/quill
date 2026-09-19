@@ -4,7 +4,7 @@ import { convert } from "html-to-text";
 import Link from "next/link";
 import Image from "next/image";
 
-interface Blog {
+export interface Blog {
   id: string;
   title: string;
   content: string;
