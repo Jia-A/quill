@@ -7,6 +7,7 @@ export const commentRouter = new Hono<{
   Bindings: {
     DATABASE_URL: string;
     JWT_SECRET: string;
+    NOTIFICATION_DO: DurableObjectNamespace;
   };
   Variables: {
     userId: string;
@@ -18,6 +19,7 @@ commentRouter.post("/", authMiddleware, async (c) => {
     accelerateUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());
   const userId = c.get("userId");
+  let parent;
   try {
     const { text, postId, parentId, startOffset, endOffset, anchorText } = await c.req
       .json()
@@ -42,14 +44,18 @@ commentRouter.post("/", authMiddleware, async (c) => {
       return c.json({ error: { code: "POST_NOT_FOUND", message: "Post not found" } }, 404);
     }
 
+    let recipientId: string;
     if (parentId) {
-      const parent = await prisma.comment.findUnique({ where: { id: parentId } });
+      parent = await prisma.comment.findUnique({ where: { id: parentId } });
       if (!parent || parent.postId !== postId || parent.commentStatus !== "APPROVED") {
         return c.json(
           { error: { code: "INVALID_PARENT", message: "Parent comment not found" } },
           400
         );
       }
+      recipientId = parent.authorId;
+    } else {
+      recipientId = post.authorId;
     }
 
     const response = await prisma.comment.create({
@@ -63,6 +69,26 @@ commentRouter.post("/", authMiddleware, async (c) => {
         authorId: userId,
       },
     });
+
+    const notification = await prisma.notification.create({
+      data: {
+        type: parentId ? "REPLY_RECEIVED" : "COMMENT_RECEIVED",
+        userId: recipientId,
+        postId,
+        text: "You just received a comment on your post.",
+        commentId: response.id,
+        dateAndTime: new Date(),
+        // whatever other required fields your schema has
+      },
+    });
+
+    const doId = c.env.NOTIFICATION_DO.idFromName(recipientId);
+    const stub = c.env.NOTIFICATION_DO.get(doId);
+    await stub.fetch("https://internal/notify", {
+      method: "POST",
+      body: JSON.stringify({ type: notification.type, notificationId: notification.id }),
+    });
+    console.log("Notified");
     return c.json({ message: "Comment created successfully", comment: response }, 201);
   } catch (err) {
     console.error("Error creating comment:", err);
@@ -173,6 +199,38 @@ commentRouter.patch("/:id", authMiddleware, async (c) => {
         },
       });
 
+      const notification = await prisma.notification.create({
+        data: {
+          type:
+            status === "APPROVED"
+              ? "COMMENT_APPROVED"
+              : status === "REJECTED"
+                ? "COMMENT_REJECTED"
+                : "COMMENT_RECEIVED",
+          userId: comment.authorId,
+          postId: comment.postId,
+          text:
+            status === "APPROVED"
+              ? "You're comment has been approved"
+              : status === "REJECTED"
+                ? "You're comment has been rejected."
+                : "",
+          commentId: response.id,
+          dateAndTime: new Date(),
+          // whatever other required fields your schema has
+        },
+      });
+
+      const doId = c.env.NOTIFICATION_DO.idFromName(comment.authorId);
+      const stub = c.env.NOTIFICATION_DO.get(doId);
+      await stub.fetch("https://internal/notify", {
+        method: "POST",
+        body: JSON.stringify({
+          type: notification.type,
+          notificationId: notification.id,
+        }),
+      });
+      console.log("Notified");
       return c.json({ response }, 200);
     } else {
       return c.json(
