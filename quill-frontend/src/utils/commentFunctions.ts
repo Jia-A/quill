@@ -32,7 +32,8 @@ export function highlightRange(
   start: number,
   end: number,
   commentId: string,
-  status: string
+  status: string,
+  isOwnComment = false
 ) {
   const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
   let runningCount = 0;
@@ -60,8 +61,19 @@ export function highlightRange(
     }
     const mark = document.createElement("mark");
     mark.dataset.commentId = commentId;
-    mark.className =
-      status === "PENDING" ? "bg-red-300/40 cursor-pointer" : "bg-amber-300/40 cursor-pointer";
+    // Styling lives in globals.css keyed off these attributes, so marks stay
+    // on-palette in both themes instead of hardcoding Tailwind colour classes.
+    if (status === "PENDING") {
+      // The author of a pending comment sees their own in amber, so it reads
+      // as "submitted, waiting" rather than as an ordinary unapproved mark.
+      if (isOwnComment) {
+        mark.dataset.commentMine = "";
+      } else {
+        mark.dataset.commentPending = "";
+      }
+    } else {
+      mark.dataset.commentApproved = "";
+    }
     middle.parentNode!.insertBefore(mark, middle);
     mark.appendChild(middle);
   }
