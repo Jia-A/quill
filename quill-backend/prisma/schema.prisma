@@ -118,6 +118,7 @@ enum NotificationType {
   COMMENT_APPROVED
   COMMENT_RECEIVED
   REPLY_RECEIVED
+  COMMENT_REJECTED
 }
 
 model Notification {
