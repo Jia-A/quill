@@ -11,8 +11,19 @@ export const getComments = async (postId: string, token?: string) => {
   return response.json();
 };
 
-export const getPendingComments = async (token?: string) => {
-  const response = await fetch(`${API_URL}/comment/pending`, {
+export const getUserComments = async (token?: string) => {
+  const response = await fetch(`${API_URL}/comment/`, {
+    headers: token ? { authorization: token } : undefined,
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to fetch comments: ${response.status}`);
+  }
+  return response.json();
+};
+
+export const getPendingComments = async (token?: string, status?: "PENDING" | "REJECTED") => {
+  const query = status ? `?status=${status}` : "";
+  const response = await fetch(`${API_URL}/comment/pending${query}`, {
     headers: token ? { authorization: token } : undefined,
   });
   if (!response.ok) {
