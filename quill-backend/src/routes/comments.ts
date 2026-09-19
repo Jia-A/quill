@@ -67,6 +67,7 @@ commentRouter.post("/", authMiddleware, async (c) => {
         endOffset: parentId ? null : endOffset,
         anchorText: parentId ? null : anchorText,
         authorId: userId,
+        commentStatus: parentId && "APPROVED",
       },
     });
 
@@ -104,8 +105,15 @@ commentRouter.get("/pending", authMiddleware, async (c) => {
   const userId = c.get("userId") as string;
 
   try {
+    // ?status= lets the profile ask for the moderation queue (PENDING, the
+    // default) or the comments this author has already rejected.
+    const requested = c.req.query("status")?.toUpperCase();
+    const commentStatus =
+      requested === "APPROVED" || requested === "REJECTED" ? requested : "PENDING";
+
     const response = await prisma.comment.findMany({
-      where: { post: { authorId: userId }, commentStatus: "PENDING" },
+      where: { post: { authorId: userId }, commentStatus },
+      include: { post: { select: { title: true } }, author: { select: { name: true, id: true } } },
       take: 50,
       orderBy: { createdAt: "asc" },
     });
@@ -141,7 +149,13 @@ commentRouter.get("/:postId", optionalAuthMiddleware, async (c) => {
     const comments = await prisma.comment.findMany({
       where: { postId, parentId: null, ...visibility },
       include: {
-        replies: { where: visibility },
+        // Replies need their author too — the thread UI renders the name
+        // beside each reply, and without this it is always undefined.
+        replies: {
+          where: visibility,
+          include: { author: { select: { name: true, email: true, id: true } } },
+          orderBy: { createdAt: "asc" },
+        },
         author: { select: { name: true, email: true, id: true } },
       },
       orderBy: { createdAt: "asc" },
@@ -151,6 +165,53 @@ commentRouter.get("/:postId", optionalAuthMiddleware, async (c) => {
   } catch (err) {
     console.error("Error fetching comments", err);
     return c.json({ error: { code: "INTERNAL_ERROR", message: "Internal server error" } }, 500);
+  }
+});
+
+commentRouter.get("/", authMiddleware, async (c) => {
+  const prisma = new PrismaClient({
+    accelerateUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+
+  const userId = c.get("userId") as string;
+
+  try {
+    const comments = await prisma.comment.findMany({
+      where: { authorId: userId },
+      orderBy: { createdAt: "desc" },
+      include: {
+        post: {
+          select: {
+            title: true,
+            author: {
+              select: { name: true },
+            },
+          },
+        },
+        // A row may be a reply the user wrote. Include the comment it answers
+        // so the profile can show that context instead of a bare line — a
+        // reply carries no anchorText of its own.
+        parent: {
+          select: {
+            id: true,
+            text: true,
+            anchorText: true,
+            author: { select: { name: true } },
+          },
+        },
+      },
+    });
+    return c.json({ comments }, 200);
+  } catch (err) {
+    c.json(
+      {
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Something bad happened, please try again later.",
+        },
+      },
+      500
+    );
   }
 });
 
