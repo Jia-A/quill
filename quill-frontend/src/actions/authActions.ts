@@ -1,6 +1,6 @@
 import { API_URL } from "@/utils/constants";
 import type { SignupInput } from "@tech--tonic/medium-app-common";
-import axios from "axios";
+import axios, { isAxiosError } from "axios";
 
 export const signupAction = async (payload: SignupInput) => {
   const signupInp = { ...payload, avatar: "" };
@@ -9,11 +9,9 @@ export const signupAction = async (payload: SignupInput) => {
     return response;
   } catch (error) {
     console.error("Error signing up:", error);
-    if (error?.response && error?.response?.data && error.response?.data?.error) {
-      const errorData = error.response.data.error;
-      throw new Error(errorData.message || "Signup failed");
-    } else {
-      throw new Error("Signup failed");
-    }
+    const message = isAxiosError(error)
+      ? (error.response?.data as { error?: { message?: string } })?.error?.message
+      : undefined;
+    throw new Error(message || "Signup failed");
   }
 };
