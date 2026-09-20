@@ -87,7 +87,7 @@ export function clearHighlights(container: HTMLElement) {
   container.normalize();
 }
 
-export function getOffsets(container) {
+export function getOffsets(container: HTMLElement) {
   const selection = window.getSelection();
   if (!selection || selection.isCollapsed) return null;
 
@@ -97,9 +97,9 @@ export function getOffsets(container) {
   let runningCount = 0;
   let startOffset = null;
   let endOffset = null;
-  let node;
+  let node: Text | null;
 
-  while ((node = walker.nextNode())) {
+  while ((node = walker.nextNode() as Text | null)) {
     if (node === range.startContainer) startOffset = runningCount + range.startOffset;
     if (node === range.endContainer) endOffset = runningCount + range.endOffset;
     runningCount += node.textContent.length;
