@@ -160,7 +160,6 @@ export function useCommentDeepLink(
 
   useEffect(() => {
     if (!id || handled.current === id || comments.length === 0) return;
-    handled.current = id; // one attempt, whatever the outcome
 
     // The id may name a top-level comment or a reply. Replies carry no anchor,
     // so either way scroll to the comment that owns the highlighted passage.
@@ -174,14 +173,13 @@ export function useCommentDeepLink(
       `mark[data-comment-id="${owner.id}"]`
     );
     if (!mark) return;
-
+    handled.current = id;
     mark.scrollIntoView({ behavior: "smooth", block: "center" });
     mark.dataset.commentFound = ""; // pulses via the comment-found animation
     const timer = window.setTimeout(() => delete mark.dataset.commentFound, 2200);
 
     return () => {
       window.clearTimeout(timer);
-      delete mark.dataset.commentFound;
     };
   }, [id, comments, containerRef]);
 }
