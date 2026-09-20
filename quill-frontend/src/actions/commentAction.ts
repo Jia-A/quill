@@ -1,5 +1,5 @@
 import { API_URL } from "@/utils/constants";
-import axios from "axios";
+import axios, { isAxiosError } from "axios";
 
 export const getComments = async (postId: string, token?: string) => {
   const response = await fetch(`${API_URL}/comment/${postId}`, {
@@ -43,13 +43,14 @@ export const patchCommentStatus = async (id: string, status: string, token?: str
         headers: token ? { authorization: token } : undefined,
       }
     );
-    console.log(response);
     if (response) return response;
   } catch (err) {
     console.error(err);
-    throw new Error(
-      err?.response?.data?.error?.message ?? "Failed to change the status of the comment"
-    );
+
+    const message = isAxiosError(err)
+      ? (err.response?.data as { error?: { message?: string } })?.error?.message
+      : undefined;
+    throw new Error(message ?? "Failed to patch the comment");
   }
 };
 
@@ -70,6 +71,9 @@ export const postComments = async (
     });
     return response.data;
   } catch (err) {
-    throw new Error(err?.response?.data?.error?.message ?? "Failed to save the comment");
+    const message = isAxiosError(err)
+      ? (err.response?.data as { error?: { message?: string } })?.error?.message
+      : undefined;
+    throw new Error(message ?? "Failed to save the comment");
   }
 };
