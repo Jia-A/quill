@@ -23,7 +23,6 @@ notificationRouter.post("/ticket", authMiddleware, async (c) => {
 });
 
 notificationRouter.get("/connect", async (c) => {
-  // no authMiddleware here — the ticket itself IS the auth
   const userId = c.req.query("userId") as string;
   const ticket = c.req.query("ticket") as string;
   const id = c.env.NOTIFICATION_DO.idFromName(userId);
