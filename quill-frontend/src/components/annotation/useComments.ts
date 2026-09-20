@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { getComments, patchCommentStatus, postComments } from "@/actions/commentAction";
 import type { Comment } from "@/types/CommentProps";
 import {
@@ -144,18 +145,16 @@ export function useComments(
 
 /**
  * Scrolls to the comment named by ?comment= once highlights are painted, and
- * pulses its passage. Read from window rather than useSearchParams(): the blog
- * page is statically rendered and that hook would force client-side rendering.
+ * pulses its passage. Read from the router's search params rather than a
+ * one-time window.location read: two notifications for the same post are a
+ * client-side navigation that does not remount this component, so a value
+ * captured at mount would stay stuck on the first comment.
  */
 export function useCommentDeepLink(
   containerRef: React.RefObject<HTMLDivElement | null>,
   comments: Comment[]
 ) {
-  const [id] = useState(() =>
-    typeof window === "undefined"
-      ? null
-      : new URLSearchParams(window.location.search).get("comment")
-  );
+  const id = useSearchParams().get("comment");
   const handled = useRef<string | null>(null);
 
   useEffect(() => {
@@ -172,7 +171,10 @@ export function useCommentDeepLink(
     const mark = containerRef.current?.querySelector<HTMLElement>(
       `mark[data-comment-id="${owner.id}"]`
     );
+    // No mark yet, or none at all because the post was edited past the anchor.
+    // Leave `handled` unset so a later repaint gets another chance.
     if (!mark) return;
+
     handled.current = id;
     mark.scrollIntoView({ behavior: "smooth", block: "center" });
     mark.dataset.commentFound = ""; // pulses via the comment-found animation

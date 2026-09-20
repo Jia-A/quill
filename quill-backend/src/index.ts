@@ -52,6 +52,6 @@ app.route("/api/v1/linkedin/", linkedinRouter);
 app.route("/api/v1/social/", socialRouter);
 app.route("/api/v1/image/", imageRouter);
 app.route("/api/v1/comment/", commentRouter);
-app.route("/api/v1/notification/", notificationRouter);
+app.route("/api/v1/notification", notificationRouter);
 
 export default app;
