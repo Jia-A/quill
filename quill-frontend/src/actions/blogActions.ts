@@ -1,5 +1,5 @@
 import { API_URL } from "@/utils/constants";
-import { getApiErrorMessage } from "@/utils/apiError";
+import { getApiErrorMessage, getApiErrorStatus } from "@/utils/apiError";
 import axios from "axios";
 
 // Keep the original function for backward compatibility if needed
@@ -45,6 +45,7 @@ export const getBlogById = async (id: string, token?: string) => {
     });
     return response.data;
   } catch (err) {
+    if (getApiErrorStatus(err) === 404) return null;
     throw new Error(getApiErrorMessage(err, "Failed to load the blog."));
   }
 };
