@@ -62,6 +62,8 @@ export const postComments = async (
     endOffset?: number;
     anchorText?: string;
     parentId?: string;
+    prefix?: string;
+    suffix?: string;
   },
   token?: string
 ) => {

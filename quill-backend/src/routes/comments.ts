@@ -29,9 +29,8 @@ commentRouter.post("/", authMiddleware, async (c) => {
 
   try {
     let parent;
-    const { text, postId, parentId, startOffset, endOffset, anchorText } = await c.req
-      .json()
-      .catch(() => ({}));
+    const { text, postId, parentId, startOffset, endOffset, anchorText, prefix, suffix } =
+      await c.req.json().catch(() => ({}));
     if (!text || !postId) {
       return c.json(
         { error: { code: "MISSING_FIELDS", message: "Content and postId are required" } },
@@ -75,6 +74,9 @@ commentRouter.post("/", authMiddleware, async (c) => {
         endOffset: parentId ? null : endOffset,
         anchorText: parentId ? null : anchorText,
         authorId: userId,
+        prefix: parentId ? null : (prefix ?? null),
+        suffix: parentId ? null : (suffix ?? null),
+
         commentStatus:
           post.authorId === userId || (parentId && parentId !== "") ? "APPROVED" : "PENDING",
       },

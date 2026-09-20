@@ -16,7 +16,14 @@ type CommentableContentProps = {
   currentUserId?: string;
 };
 
-type Selection = { at: Anchor; startOffset: number; endOffset: number; anchorText: string };
+type Selection = {
+  at: Anchor;
+  startOffset: number;
+  endOffset: number;
+  anchorText: string;
+  prefix: string;
+  suffix: string;
+};
 
 /** How far a mark may travel off-screen before its thread is dismissed. */
 const OFF_SCREEN = 120;
@@ -81,16 +88,14 @@ export default function CommentableContent({
         closeCompose();
         return;
       }
-      if (selected.startOffset === null || selected.endOffset === null) {
-        closeCompose();
-        return;
-      }
 
       setSelection({
         at: rectOf(selected.range),
         startOffset: selected.startOffset,
         endOffset: selected.endOffset,
         anchorText: selected.anchorText,
+        prefix: selected.prefix,
+        suffix: selected.suffix,
       });
     };
 
@@ -230,6 +235,8 @@ export default function CommentableContent({
       startOffset: selection.startOffset,
       endOffset: selection.endOffset,
       anchorText: selection.anchorText,
+      prefix: selection.prefix,
+      suffix: selection.suffix,
     });
 
     if (saved) closeCompose();
