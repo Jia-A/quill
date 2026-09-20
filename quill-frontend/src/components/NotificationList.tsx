@@ -109,7 +109,7 @@ const NotificationList = () => {
                     href={hrefFor(item)}
                     onClick={() => {
                       setOpen(false);
-                      // markAsRead(item.id);
+                      markAsRead(item.id);
                     }}
                     className={`group flex gap-3 px-4 py-3 border-l-2 transition-all duration-300 ease-out hover:bg-muted/60 hover:border-accent ${
                       item.readStatus ? "border-transparent" : "border-accent/30 bg-accent/[0.04]"
