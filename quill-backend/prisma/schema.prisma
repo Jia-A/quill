@@ -112,6 +112,9 @@ endOffset Int?
 anchorText String?
 replies Comment[] @relation("CommentReplies")
 notification Notification[]
+
+@@index([postId, parentId])
+@@index([authorId])
 }
 
 enum NotificationType {
@@ -133,4 +136,8 @@ model Notification {
   postId       String
   post         Post              @relation(fields: [postId], references: [id])
   dateAndTime  DateTime          @default(now())
+  
+  @@index([userId, dateAndTime])
+  @@index([userId, readStatus, dateAndTime])
+
 }
