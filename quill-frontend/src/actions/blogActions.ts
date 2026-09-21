@@ -3,10 +3,12 @@ import { getApiErrorMessage, getApiErrorStatus } from "@/utils/apiError";
 import axios from "axios";
 
 // Keep the original function for backward compatibility if needed
-export const getBulkBlogs = async () => {
+export const getBulkBlogs = async (q?: string) => {
   try {
-    const response = await fetch(`${API_URL}/blog/bulk`, {
-      next: { revalidate: 300 }, // Enable ISR with 5-minute revalidation
+    const query = q ? `?q=${encodeURIComponent(q)}` : "";
+    const response = await fetch(`${API_URL}/blog/bulk${query}`, {
+      // A search is for one reader, so it skips the shared cache.
+      next: q ? { revalidate: 0 } : { revalidate: 300 },
     });
 
     if (response.ok) {
