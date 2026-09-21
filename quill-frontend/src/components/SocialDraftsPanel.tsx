@@ -13,7 +13,7 @@ import {
   ExternalLink,
   Link2,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import Button from "@/atoms/Button";
 import {
   getDrafts,
   generateDraft,
@@ -171,13 +171,13 @@ const SocialDraftsPanel = ({ postId, authorId }: Props) => {
 
   return (
     <>
-      <button
+      <Button
+        variant="primary"
+        label="Share on socials"
+        icon={<Linkedin className="w-4 h-4" />}
         onClick={() => setOpen(true)}
-        className="group inline-flex items-center gap-3 eyebrow bg-foreground text-background px-6 py-4 hover:bg-accent hover:text-accent-foreground hover:border-accent transition-colors"
-      >
-        <Linkedin className="w-4 h-4" />
-        Share on socials
-      </button>
+        className="w-full sm:w-auto justify-center"
+      />
 
       {render && (
         <div className="fixed inset-0 z-50 flex">
@@ -198,13 +198,14 @@ const SocialDraftsPanel = ({ postId, authorId }: Props) => {
                 <Linkedin className="w-5 h-5" />
                 <h2 className="font-serif text-2xl tracking-tightest">LinkedIn draft</h2>
               </div>
-              <button
+              <Button
+                variant="ghost"
+                square
                 onClick={() => setOpen(false)}
-                className="text-muted-foreground hover:text-foreground"
+                className="text-muted-foreground"
                 aria-label="Close"
-              >
-                <X className="w-5 h-5" />
-              </button>
+                icon={<X className="w-5 h-5" />}
+              />
             </header>
 
             <div className="flex-1 px-4 sm:px-6 py-4 sm:py-6 flex flex-col gap-4">
@@ -247,28 +248,43 @@ const SocialDraftsPanel = ({ postId, authorId }: Props) => {
 
             <footer className="px-4 sm:px-6 py-4 sm:py-5 border-t border-border flex flex-col sm:flex-row sm:flex-wrap gap-3">
               <div className="flex flex-wrap gap-2 sm:gap-3">
-                <Button onClick={handleGenerate} disabled={generating || loading} variant="outline">
-                  {generating ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="w-4 h-4" />
-                  )}
-                  {content ? "Regenerate" : "Generate"}
-                </Button>
-                <Button onClick={handleSave} disabled={!dirty || overHard || saving || loading}>
-                  {saving ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Save className="w-4 h-4" />
-                  )}
-                  Save
-                </Button>
-                <Button onClick={handleCopy} disabled={!content || loading} variant="outline">
-                  <Copy className="w-4 h-4" />
-                  Copy
-                </Button>
+                <Button
+                  onClick={handleGenerate}
+                  disabled={generating || loading}
+                  variant="secondary"
+                  icon={
+                    generating ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4" />
+                    )
+                  }
+                  label={content ? "Regenerate" : "Generate"}
+                />
+                <Button
+                  onClick={handleSave}
+                  disabled={!dirty || overHard || saving || loading}
+                  variant="primary"
+                  icon={
+                    saving ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )
+                  }
+                  label={saving ? "Saving..." : "Save edits"}
+                  size="sm"
+                />
+                <Button
+                  onClick={handleCopy}
+                  disabled={!content || loading}
+                  variant="secondary"
+                  icon={<Copy className="w-4 h-4" />}
+                  label="Copy"
+                  size="sm"
+                />
               </div>
-              <div className="sm:ml-auto flex flex-wrap items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 {permalink && (
                   <a
                     href={permalink}
@@ -281,22 +297,28 @@ const SocialDraftsPanel = ({ postId, authorId }: Props) => {
                   </a>
                 )}
                 {connected === false ? (
-                  <Button onClick={handleConnect} variant="outline">
-                    <Link2 className="w-4 h-4" />
-                    Connect LinkedIn
-                  </Button>
+                  <Button
+                    onClick={handleConnect}
+                    variant="secondary"
+                    icon={<Link2 className="w-4 h-4" />}
+                    label="Connect LinkedIn"
+                    size="sm"
+                  />
                 ) : (
                   <Button
                     onClick={handlePublish}
                     disabled={!content || overHard || publishing || loading || connected === null}
-                  >
-                    {publishing ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Send className="w-4 h-4" />
-                    )}
-                    Post to LinkedIn
-                  </Button>
+                    variant="primary"
+                    icon={
+                      publishing ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Send className="w-4 h-4" />
+                      )
+                    }
+                    label="Post to LinkedIn"
+                    size="sm"
+                  />
                 )}
               </div>
             </footer>

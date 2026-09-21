@@ -14,23 +14,25 @@ datasource db {
 }
 
 model User {
-  id String @id @default(cuid())
-  email String @unique
-  name String?
-  avatar String?
-  avatarIsCustom Boolean @default(false)
-  password String?
-  posts Post[]
-  aboutAuthor String?
-  linkedinAccount LinkedInAccount?
-  imageUploads ImageUpload[]
-  occupation String?
-  newsletterSubscription Boolean @default(false)
-  followersCount Int @default(0)
-  followingCount Int @default(0)
-  location String?
-  linkedinProfileUrl String?
-  savedPosts Post[] @relation("SavedPosts")
+  id                     String           @id @default(cuid())
+  email                  String           @unique
+  name                   String?
+  avatar                 String?
+  avatarIsCustom         Boolean          @default(false)
+  password               String?
+  posts                  Post[]
+  aboutAuthor            String?
+  linkedinAccount        LinkedInAccount?
+  imageUploads           ImageUpload[]
+  occupation             String?
+  newsletterSubscription Boolean          @default(false)
+  followersCount         Int              @default(0)
+  followingCount         Int              @default(0)
+  location               String?
+  linkedinProfileUrl     String?
+  savedPosts             Post[]           @relation("SavedPosts")
+  comments               Comment[]
+  notification           Notification[]
 }
 
 model LinkedInAccount {
@@ -45,19 +47,21 @@ model LinkedInAccount {
 }
 
 model Post {
-  id String @id @default(cuid())
-  title String
-  content String?
-  image String?
-  published Boolean @default(false)
-  publishedDate DateTime? @db.Date
-  authorId String
-  author User @relation(fields: [authorId], references: [id])
-  summary String?
-  socialDrafts SocialDraft[]
-  isPinned Boolean @default(false)
-  savedByUsers User[] @relation("SavedPosts")
-  private Boolean @default(false)
+  id            String         @id @default(cuid())
+  title         String
+  content       String?
+  image         String?
+  published     Boolean        @default(false)
+  publishedDate DateTime?      @db.Date
+  authorId      String
+  author        User           @relation(fields: [authorId], references: [id])
+  summary       String?
+  socialDrafts  SocialDraft[]
+  isPinned      Boolean        @default(false)
+  savedByUsers  User[]         @relation("SavedPosts")
+  private       Boolean        @default(false)
+  comments      Comment[]
+  notification  Notification[]
 }
 
 model SocialDraft {
@@ -84,4 +88,57 @@ model ImageUpload {
 
   @@index([userId, createdAt])
   @@index([createdAt])
+}
+
+enum CommentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Comment {
+  id            String         @id @default(cuid())
+  postId        String
+  post          Post           @relation(fields: [postId], references: [id])
+  authorId      String
+  author        User           @relation(fields: [authorId], references: [id])
+  text          String
+  createdAt     DateTime       @default(now())
+  commentStatus CommentStatus  @default(PENDING)
+  parentId      String?
+  parent        Comment?       @relation("CommentReplies", fields: [parentId], references: [id])
+  startOffset   Int?
+  endOffset     Int?
+  anchorText    String?
+  replies       Comment[]      @relation("CommentReplies")
+  notification  Notification[]
+  prefix        String?
+  suffix        String?
+
+  @@index([postId, parentId])
+  @@index([authorId])
+}
+
+enum NotificationType {
+  COMMENT_APPROVED
+  COMMENT_RECEIVED
+  REPLY_RECEIVED
+  COMMENT_REJECTED
+}
+
+model Notification {
+  id          String           @id @default(cuid())
+  text        String
+  type        NotificationType
+  userId      String
+  user        User             @relation(fields: [userId], references: [id])
+  readStatus  Boolean          @default(false)
+  commentId   String?
+  comment     Comment?         @relation(fields: [commentId], references: [id])
+  postId      String
+  post        Post             @relation(fields: [postId], references: [id])
+  dateAndTime DateTime         @default(now())
+
+  @@index([userId, dateAndTime])
+  @@index([userId, readStatus, dateAndTime])
 }

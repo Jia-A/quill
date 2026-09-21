@@ -34,6 +34,20 @@
   "ai": {
     "binding": "AI"
   },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "NOTIFICATION_DO",
+        "class_name": "NotificationDO"
+      }
+    ]
+  },
+  "migrations": [
+  {
+    "tag": "v1",
+    "new_sqlite_classes": ["NotificationDO"]
+  }
+]
   // "observability": {
   //   "enabled": true,
   //   "head_sampling_rate": 1

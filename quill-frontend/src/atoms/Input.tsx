@@ -2,15 +2,18 @@
 import { useState } from "react";
 import type { UseFormRegisterReturn } from "react-hook-form";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+import Button from "@/atoms/Button";
 
 const Input = ({
   label,
   register,
+  ref,
   type = "text",
 }: {
-  label: string;
+  label?: string;
   register?: UseFormRegisterReturn<string>;
   type?: string;
+  ref?: any;
 }) => {
   const [showPassword, setShowPassword] = useState(false);
   const isPassword = type === "password";
@@ -28,18 +31,21 @@ const Input = ({
         <input
           id={label}
           type={inputType}
+          ref={ref}
           className="w-full bg-transparent border-b border-border py-2 pr-8 text-foreground text-base focus:outline-none focus:border-accent transition-colors placeholder:text-muted-foreground"
           {...register}
         />
         {isPassword && (
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            square
             onClick={() => setShowPassword((prev) => !prev)}
             aria-label={showPassword ? "Hide password" : "Show password"}
-            className="absolute inset-y-0 right-0 flex items-center text-muted-foreground hover:text-accent transition-colors"
-          >
-            {showPassword ? <EyeSlashIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
-          </button>
+            className="absolute inset-y-0 right-0 !w-8 !h-full text-muted-foreground"
+            icon={
+              showPassword ? <EyeSlashIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />
+            }
+          />
         )}
       </span>
     </span>

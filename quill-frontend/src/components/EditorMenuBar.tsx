@@ -14,6 +14,7 @@ import {
   Strikethrough,
 } from "lucide-react";
 import { Editor } from "@tiptap/react";
+import Button from "@/atoms/Button";
 
 export default function MenuBar({ editor }: { editor: Editor | null }) {
   if (!editor) {
@@ -129,18 +130,14 @@ export default function MenuBar({ editor }: { editor: Editor | null }) {
       {groups.map((group, gi) => (
         <div key={gi} className="flex items-center border-r border-border last:border-r-0 shrink-0">
           {group.map((option, index) => (
-            <button
+            <Button
               key={index}
-              type="button"
+              square
+              variant={option.pressed ? "primary" : "ghost"}
               onClick={option.onClick}
-              className={`flex items-center justify-center w-9 h-9 transition-colors ${
-                option.pressed
-                  ? "bg-foreground text-background"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-              }`}
-            >
-              {option.icon}
-            </button>
+              className={!option.pressed ? "text-muted-foreground hover:bg-muted" : ""}
+              icon={option.icon}
+            />
           ))}
         </div>
       ))}

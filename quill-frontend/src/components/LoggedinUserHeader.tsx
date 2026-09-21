@@ -10,6 +10,7 @@ import { useState } from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import Wordmark from "@/components/Wordmark";
 import { useUserProfile } from "@/components/UserProfileProvider";
+import NotificationList from "@/components/NotificationList";
 
 const LoggedinUserHeader = ({ session }: { session: Session }) => {
   const { userData } = useUserProfile();
@@ -25,6 +26,7 @@ const LoggedinUserHeader = ({ session }: { session: Session }) => {
       <Wordmark href="/blogs" />
       <div className="flex gap-3 sm:gap-5 items-center">
         <ThemeToggle />
+        <NotificationList />
         <Button
           variant="secondary"
           size="sm"
@@ -62,12 +64,12 @@ const LoggedinUserHeader = ({ session }: { session: Session }) => {
               >
                 Profile
               </Link>
-              <button
+              <Button
+                variant="ghost"
+                label="Logout"
                 onClick={handleLogout}
-                className="w-full text-left px-4 py-3 eyebrow hover:text-accent transition-colors cursor-pointer"
-              >
-                Logout
-              </button>
+                className="w-full !justify-start !px-4 !py-3 text-left"
+              />
             </div>
           </>
         )}
