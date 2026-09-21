@@ -3,6 +3,12 @@ import { Prisma, PrismaClient } from "../generated/prisma/client";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { authMiddleware, optionalAuthMiddleware } from "../middlewares/authMiddleware";
 
+// A comment is a margin note, not an essay. Unbounded text wrecks the
+// annotation panel layout long before it troubles the database.
+const MAX_COMMENT_LENGTH = 200;
+
+const PAGE_SIZE = 20;
+
 const NOTIFICATION_TEXT = {
   COMMENT_RECEIVED: "You just received a comment on your post.",
   REPLY_RECEIVED: "Someone replied to your comment.",
@@ -37,6 +43,30 @@ commentRouter.post("/", authMiddleware, async (c) => {
         400
       );
     }
+    if (typeof text !== "string") {
+      return c.json(
+        { error: { code: "INVALID_FIELDS", message: "Comment text must be a string" } },
+        400
+      );
+    }
+    const trimmedText = text.trim();
+    if (!trimmedText) {
+      return c.json(
+        { error: { code: "MISSING_FIELDS", message: "Comment text cannot be empty" } },
+        400
+      );
+    }
+    if (trimmedText.length > MAX_COMMENT_LENGTH) {
+      return c.json(
+        {
+          error: {
+            code: "TEXT_TOO_LONG",
+            message: `Comment must be ${MAX_COMMENT_LENGTH} characters or fewer`,
+          },
+        },
+        400
+      );
+    }
     if (!parentId) {
       if (startOffset === undefined || endOffset === undefined || !anchorText) {
         return c.json(
@@ -67,7 +97,7 @@ commentRouter.post("/", authMiddleware, async (c) => {
 
     const response = await prisma.comment.create({
       data: {
-        text,
+        text: trimmedText,
         postId,
         parentId: parentId || null,
         startOffset: parentId ? null : startOffset,
@@ -126,14 +156,24 @@ commentRouter.get("/pending", authMiddleware, async (c) => {
     const commentStatus =
       requested === "APPROVED" || requested === "REJECTED" ? requested : "PENDING";
 
-    const response = await prisma.comment.findMany({
+    const cursor = c.req.query("cursor");
+
+    // One row past the page tells us whether there's another one.
+    const rows = await prisma.comment.findMany({
       where: { post: { authorId: userId }, commentStatus },
       include: { post: { select: { title: true } }, author: { select: { name: true, id: true } } },
-      take: 50,
+      take: PAGE_SIZE + 1,
+      ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
       orderBy: { createdAt: "asc" },
     });
 
-    return c.json({ comments: response });
+    const comments = rows.slice(0, PAGE_SIZE);
+
+    // A cursor means "there's more from here"; null means that's everything.
+    return c.json({
+      comments,
+      nextCursor: rows.length > PAGE_SIZE ? comments[comments.length - 1].id : null,
+    });
   } catch (err) {
     console.error("Error fetching comments", err);
     return c.json({ error: { code: "INTERNAL_ERROR", message: "Internal server error" } }, 500);

@@ -21,9 +21,16 @@ export const getUserComments = async (token?: string) => {
   return response.json();
 };
 
-export const getPendingComments = async (token?: string, status?: "PENDING" | "REJECTED") => {
-  const query = status ? `?status=${status}` : "";
-  const response = await fetch(`${API_URL}/comment/pending${query}`, {
+export const getPendingComments = async (
+  token?: string,
+  status?: "PENDING" | "REJECTED",
+  options?: { cursor?: string }
+) => {
+  const params = new URLSearchParams();
+  if (status) params.set("status", status);
+  if (options?.cursor) params.set("cursor", options.cursor);
+
+  const response = await fetch(`${API_URL}/comment/pending?${params}`, {
     headers: token ? { authorization: token } : undefined,
   });
   if (!response.ok) {

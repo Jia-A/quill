@@ -1,6 +1,11 @@
 import { Comment } from "@/types/CommentProps";
 
 export const CONTEXT_LENGTH = 32;
+
+// Mirrors MAX_COMMENT_LENGTH on the backend. The input enforces it so the
+// limit is visible before submitting; the server check is the real guard.
+export const MAX_COMMENT_LENGTH = 200;
+
 export function getPlainText(container: Node) {
   const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
   let text = "";

@@ -59,6 +59,8 @@ const ProfilePage = async () => {
           addedComments={authored}
           pendingComments={pendingComments?.comments ?? []}
           rejectedComments={rejectedByMe?.comments ?? []}
+          pendingCursor={pendingComments?.nextCursor ?? null}
+          rejectedCursor={rejectedByMe?.nextCursor ?? null}
         />
       </main>
     </div>

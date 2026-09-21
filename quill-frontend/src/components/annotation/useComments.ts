@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { getComments, patchCommentStatus, postComments } from "@/actions/commentAction";
 import type { Comment } from "@/types/CommentProps";
 import {
+  MAX_COMMENT_LENGTH,
   clearHighlights,
   getPlainText,
   highlightRange,
@@ -76,6 +77,10 @@ export function useComments(
 
   const add = useCallback(
     async (payload: Parameters<typeof postComments>[0]) => {
+      if (payload.text.length > MAX_COMMENT_LENGTH) {
+        setError(`Comment must be ${MAX_COMMENT_LENGTH} characters or fewer`);
+        return false;
+      }
       setBusy("comment");
       try {
         const res = await postComments(payload, token);
@@ -95,6 +100,10 @@ export function useComments(
 
   const reply = useCallback(
     async (parentId: string, text: string) => {
+      if (text.length > MAX_COMMENT_LENGTH) {
+        setError(`Comment must be ${MAX_COMMENT_LENGTH} characters or fewer`);
+        return false;
+      }
       setBusy("reply");
       try {
         const res = await postComments({ text, postId, parentId }, token);
