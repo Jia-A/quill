@@ -73,19 +73,17 @@ const DeleteButton = ({
           >
             <motion.div
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-md bg-background border border-border p-8"
+              className="w-full max-w-md bg-bg border border-border p-8"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.2 }}
             >
-              <h2 className="font-serif font-light text-3xl tracking-tightest">
-                Delete this story?
-              </h2>
-              <p className="text-muted-foreground mt-3">
+              <h2 className="text-3xl">Delete this story?</h2>
+              <p className="text-muted mt-3">
                 This will permanently remove the blog and its image. This action cannot be undone.
               </p>
-              {error && <p className="accent-text mt-3">{error}</p>}
+              {error && <p className="text-accent mt-3">{error}</p>}
 
               <div className="flex flex-wrap justify-end gap-3 mt-8">
                 <Button

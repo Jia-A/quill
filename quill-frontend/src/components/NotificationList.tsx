@@ -9,7 +9,7 @@ import { TYPE_LABELS, relativeTime, hrefFor } from "@/utils/notificationFormat";
 // The small dot showing whether live updates are working.
 const DOT_COLOURS: Record<string, string> = {
   connected: "bg-accent",
-  connecting: "bg-muted-foreground animate-pulse",
+  connecting: "bg-muted animate-pulse",
   disconnected: "bg-border",
 };
 
@@ -56,7 +56,7 @@ const NotificationList = () => {
         aria-expanded={open}
         onClick={() => setOpen(!open)}
         className={`relative w-7 h-7 inline-flex items-center justify-center transition-colors duration-300 ease-out cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent ${
-          open ? "text-accent" : "text-foreground hover:text-accent"
+          open ? "text-accent" : "text-fg hover:text-accent"
         }`}
       >
         <BellIcon width={24} height={24} />
@@ -73,9 +73,9 @@ const NotificationList = () => {
           className="absolute w-[340px] max-w-[calc(100vw-2.5rem)] panel panel-accent top-[58px] right-6 md:right-10 z-[70] animate-pop-in"
         >
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-            <span className="eyebrow">
+            <span className="text-sm text-muted">
               Notifications
-              {unreadCount > 0 && <span className="accent-text ml-2">{unreadCount} new</span>}
+              {unreadCount > 0 && <span className="text-accent ml-2">{unreadCount} new</span>}
             </span>
             {/* Connection state as a quiet dot — the word "disconnected" was shouting */}
             <span className="flex items-center gap-1.5" title={`Live updates: ${connectionStatus}`}>
@@ -92,14 +92,14 @@ const NotificationList = () => {
               <span
                 role="status"
                 aria-label="Loading notifications"
-                className="inline-block w-3.5 h-3.5 border-[1.5px] border-muted-foreground border-t-transparent rounded-full animate-spin"
+                className="inline-block w-3.5 h-3.5 border-[1.5px] border-muted border-t-transparent rounded-full animate-spin"
               />
-              <p className="eyebrow text-[10px]">Loading</p>
+              <p className="text-xs text-muted">Loading</p>
             </div>
           ) : isEmpty ? (
             <div className="px-4 py-10 text-center">
-              <p className="text-sm font-serif italic text-muted-foreground">Nothing new.</p>
-              <p className="eyebrow text-[10px] mt-2">Go write something</p>
+              <p className="text-sm text-muted">Nothing new.</p>
+              <p className="text-xs text-muted mt-2">Go write something</p>
             </div>
           ) : (
             <ul className="max-h-[360px] overflow-y-auto">
@@ -111,7 +111,7 @@ const NotificationList = () => {
                       setOpen(false);
                       markAsRead(item.id);
                     }}
-                    className={`group flex gap-3 px-4 py-3 border-l-2 transition-all duration-300 ease-out hover:bg-muted/60 hover:border-accent ${
+                    className={`group flex gap-3 px-4 py-3 border-l-2 transition-all duration-300 ease-out hover:bg-bg-subtle hover:border-accent ${
                       item.readStatus ? "border-transparent" : "border-accent/30 bg-accent/[0.04]"
                     }`}
                   >
@@ -123,14 +123,14 @@ const NotificationList = () => {
                     />
                     <span className="min-w-0 flex-1">
                       <span className="flex items-baseline justify-between gap-2">
-                        <span className="eyebrow text-[10px] group-hover:accent-text transition-colors">
+                        <span className="text-xs text-muted group-hover:text-accent transition-colors">
                           {TYPE_LABELS[item.type] ?? item.type}
                         </span>
-                        <span className="eyebrow text-[10px] shrink-0">
+                        <span className="text-xs text-muted shrink-0">
                           {relativeTime(item.dateAndTime)}
                         </span>
                       </span>
-                      <span className="block text-sm font-serif leading-relaxed mt-1.5 line-clamp-2">
+                      <span className="block text-sm leading-relaxed mt-1.5 line-clamp-2">
                         {item.text}
                       </span>
                     </span>

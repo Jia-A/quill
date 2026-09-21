@@ -9,24 +9,15 @@ export default async function BlogHub() {
   const blogs = data?.blogs || [];
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <main className="max-w-3xl mx-auto px-6 md:px-10 py-16 md:py-24">
-        <header className="mb-16">
-          <div className="flex items-center gap-4 mb-8">
-            <span className="eyebrow">[ The reading room ]</span>
-            <span className="flex-1 rule" />
-          </div>
-          <h1 className="font-serif font-light text-[clamp(2.5rem,7vw,5rem)] leading-[0.95] tracking-tightest">
-            Latest <span className="italic accent-text">stories</span>
-          </h1>
-          <p className="mt-5 text-muted-foreground max-w-md">
-            Words from the Quill community. {blogs.length}{" "}
-            {blogs.length === 1 ? "story" : "stories"} to read.
-          </p>
-        </header>
+    <main className="mx-auto max-w-content px-4 py-10">
+      <header className="mb-6">
+        <h1 className="text-2xl font-semibold tracking-tight">Stories</h1>
+        <p className="mt-1 text-sm text-muted">
+          {blogs.length} {blogs.length === 1 ? "story" : "stories"} from the Quill community.
+        </p>
+      </header>
 
-        <BlogList blogs={blogs} />
-      </main>
-    </div>
+      <BlogList blogs={blogs} />
+    </main>
   );
 }

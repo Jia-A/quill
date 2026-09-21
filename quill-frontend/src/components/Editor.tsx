@@ -205,7 +205,7 @@ export default function BlogEditor({ post }: { post: EditablePost }) {
     editorProps: {
       attributes: {
         class:
-          "tiptap prose prose-lg dark:prose-invert max-w-none w-full min-h-[460px] bg-transparent py-6 text-foreground focus:outline-none",
+          "tiptap prose prose-lg dark:prose-invert max-w-none w-full min-h-[460px] bg-transparent py-6 text-fg focus:outline-none",
       },
     },
     onUpdate: ({ editor }) => {
@@ -266,12 +266,12 @@ export default function BlogEditor({ post }: { post: EditablePost }) {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-3xl mx-auto py-14 px-6 md:px-10">
-        {/* Masthead row */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-12">
-          <span className="eyebrow whitespace-nowrap">{post ? "[ Editing ]" : "[ Draft ]"}</span>
-          <div className="flex flex-wrap gap-3">
+    <div>
+      {/* Action bar, pinned under the site header. */}
+      <div className="sticky top-14 z-30 border-b border-border bg-bg">
+        <div className="mx-auto flex max-w-reading items-center justify-between gap-4 px-4 py-2">
+          <span className="text-sm text-muted">{post ? "Editing" : "Draft"}</span>
+          <div className="flex gap-2">
             <Button
               label="Save as draft"
               variant="secondary"
@@ -290,9 +290,11 @@ export default function BlogEditor({ post }: { post: EditablePost }) {
             />
           </div>
         </div>
+      </div>
 
+      <div className="mx-auto max-w-reading px-4 py-8">
         {["publish", "auth", "image"].includes(isError.element) && (
-          <p className="text-destructive eyebrow -mt-8 mb-8 text-right">{isError.message}</p>
+          <p className="mb-4 text-sm text-danger">{isError.message}</p>
         )}
 
         {/* Title */}
@@ -302,23 +304,21 @@ export default function BlogEditor({ post }: { post: EditablePost }) {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="Untitled story"
-          className="w-full font-serif font-light text-[clamp(2.25rem,6vw,4rem)] leading-[1] tracking-tightest border-none outline-none placeholder:text-muted-foreground/50 bg-transparent text-foreground"
+          className="w-full border-none bg-transparent text-3xl font-semibold tracking-tight outline-none placeholder:text-muted"
         />
         {isError.element === "title" && (
-          <span className="text-destructive eyebrow mt-3 block">{isError.message}</span>
+          <span className="mt-2 block text-sm text-danger">{isError.message}</span>
         )}
 
         {/* Featured image */}
-        <div className="mt-10">
-          <span className="eyebrow block mb-4">Featured image</span>
+        <div className="mt-8">
+          <span className="mb-2 block text-sm font-medium">Featured image</span>
 
           {!imageUrl ? (
             <div className="space-y-4">
               <div
-                className={`relative border border-dashed p-10 text-center transition-colors ${
-                  isDragOver
-                    ? "border-accent bg-accent/5"
-                    : "border-border hover:border-muted-foreground"
+                className={`relative rounded-md border border-dashed p-8 text-center ${
+                  isDragOver ? "border-accent bg-bg-subtle" : "border-border hover:border-muted"
                 }`}
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
@@ -328,15 +328,13 @@ export default function BlogEditor({ post }: { post: EditablePost }) {
                 <div className="flex flex-col items-center gap-4">
                   {isUploadingImage ? (
                     <>
-                      <Loader2 className="w-7 h-7 text-accent animate-spin" />
-                      <p className="eyebrow">Uploading image...</p>
+                      <Loader2 className="w-5 h-5 animate-spin text-muted" />
+                      <p className="text-sm text-muted">Uploading image...</p>
                     </>
                   ) : (
                     <>
-                      <Upload
-                        className={`w-7 h-7 ${isDragOver ? "text-accent" : "text-muted-foreground"}`}
-                      />
-                      <p className="eyebrow">
+                      <Upload className="w-5 h-5 text-muted" />
+                      <p className="text-sm text-muted">
                         {isDragOver ? "Drop it" : "Drop an image, or click to browse"}
                       </p>
                       <input
@@ -353,7 +351,7 @@ export default function BlogEditor({ post }: { post: EditablePost }) {
 
               <div className="flex items-center gap-4">
                 <div className="flex-1 h-px bg-border" />
-                <span className="eyebrow">or</span>
+                <span className="text-sm text-muted">or</span>
                 <div className="flex-1 h-px bg-border" />
               </div>
 
@@ -372,7 +370,7 @@ export default function BlogEditor({ post }: { post: EditablePost }) {
                     value={tempImageUrl}
                     onChange={(e) => setTempImageUrl(e.target.value)}
                     placeholder="https://example.com/image.jpg"
-                    className="flex-1 bg-transparent border-b border-border py-2 text-foreground focus:outline-none focus:border-accent transition-colors"
+                    className="flex-1 bg-transparent border-b border-border py-2 text-fg focus:outline-none focus:border-accent transition-colors"
                   />
                   <Button
                     onClick={handleUrlSubmit}
@@ -389,7 +387,7 @@ export default function BlogEditor({ post }: { post: EditablePost }) {
                       setShowUrlInput(false);
                       setTempImageUrl("");
                     }}
-                    className="text-muted-foreground"
+                    className="text-muted"
                     icon={<X className="w-4 h-4" />}
                   />
                 </div>
@@ -397,7 +395,7 @@ export default function BlogEditor({ post }: { post: EditablePost }) {
             </div>
           ) : (
             <div className="relative group">
-              <div className="relative w-full h-72 overflow-hidden border border-border bg-muted">
+              <div className="relative h-64 w-full overflow-hidden rounded-md border border-border bg-bg-subtle">
                 <Image
                   src={imageUrl}
                   alt="Featured image preview"
@@ -422,7 +420,7 @@ export default function BlogEditor({ post }: { post: EditablePost }) {
           <MenuBar editor={editor} />
           <EditorContent editor={editor} />
           {isError.element === "content" && (
-            <span className="text-destructive eyebrow mt-2 block">{isError.message}</span>
+            <span className="text-sm text-danger mt-2 block">{isError.message}</span>
           )}
         </div>
       </div>

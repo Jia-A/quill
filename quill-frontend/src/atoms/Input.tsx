@@ -2,7 +2,6 @@
 import { useState } from "react";
 import type { UseFormRegisterReturn } from "react-hook-form";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
-import Button from "@/atoms/Button";
 
 const Input = ({
   label,
@@ -20,35 +19,30 @@ const Input = ({
   const inputType = isPassword && showPassword ? "text" : type;
 
   return (
-    <span className="flex flex-col w-full group">
-      <label
-        htmlFor={label}
-        className="eyebrow mb-2 transition-colors group-focus-within:text-accent"
-      >
+    <div className="flex flex-col w-full">
+      <label htmlFor={label} className="text-sm font-medium mb-1.5">
         {label}
       </label>
-      <span className="relative w-full">
+      <div className="relative">
         <input
           id={label}
           type={inputType}
           ref={ref}
-          className="w-full bg-transparent border-b border-border py-2 pr-8 text-foreground text-base focus:outline-none focus:border-accent transition-colors placeholder:text-muted-foreground"
+          className="w-full rounded-md border border-border bg-bg px-3 py-2 pr-10 text-sm focus:outline-none focus:border-accent"
           {...register}
         />
         {isPassword && (
-          <Button
-            variant="ghost"
-            square
+          <button
+            type="button"
             onClick={() => setShowPassword((prev) => !prev)}
             aria-label={showPassword ? "Hide password" : "Show password"}
-            className="absolute inset-y-0 right-0 !w-8 !h-full text-muted-foreground"
-            icon={
-              showPassword ? <EyeSlashIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />
-            }
-          />
+            className="absolute inset-y-0 right-0 px-3 text-muted hover:text-fg"
+          >
+            {showPassword ? <EyeSlashIcon className="w-4 h-4" /> : <EyeIcon className="w-4 h-4" />}
+          </button>
         )}
-      </span>
-    </span>
+      </div>
+    </div>
   );
 };
 
