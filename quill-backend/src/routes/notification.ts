@@ -3,6 +3,8 @@ import { authMiddleware } from "../middlewares/authMiddleware";
 import { Prisma, PrismaClient } from "../generated/prisma";
 import { withAccelerate } from "@prisma/extension-accelerate";
 
+const PAGE_SIZE = 20;
+
 export const notificationRouter = new Hono<{
   Bindings: {
     DATABASE_URL: string;
@@ -23,9 +25,8 @@ notificationRouter.post("/ticket", authMiddleware, async (c) => {
 });
 
 notificationRouter.get("/connect", async (c) => {
-  // no authMiddleware here — the ticket itself IS the auth
-  const userId = c.req.query("userId");
-  const ticket = c.req.query("ticket");
+  const userId = c.req.query("userId") as string;
+  const ticket = c.req.query("ticket") as string;
   const id = c.env.NOTIFICATION_DO.idFromName(userId);
   const stub = c.env.NOTIFICATION_DO.get(id);
   const url = new URL(c.req.url);
@@ -40,14 +41,16 @@ notificationRouter.get("/", authMiddleware, async (c) => {
   }).$extends(withAccelerate());
   const userId = c.get("userId") as string | undefined;
   const unreadOnly = c.req.query("unreadOnly") === "true";
-  const take = Number(c.req.query("take")) || 20;
+  const take = Number(c.req.query("take")) || PAGE_SIZE;
   const cursor = c.req.query("cursor");
   try {
-    const [notificationList, count] = await Promise.all([
+    // One row past the page tells us whether there's another one.
+    // `count` is the unread total for the header badge, separate from paging.
+    const [rows, count] = await Promise.all([
       prisma.notification.findMany({
         where: { userId, ...(unreadOnly ? { readStatus: false } : {}) },
         orderBy: { dateAndTime: "desc" },
-        take: take,
+        take: take + 1,
         ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
       }),
       prisma.notification.count({
@@ -55,7 +58,17 @@ notificationRouter.get("/", authMiddleware, async (c) => {
       }),
     ]);
 
-    return c.json({ notificationList, count }, 200);
+    const notificationList = rows.slice(0, take);
+
+    // A cursor means "there's more from here"; null means that's everything.
+    return c.json(
+      {
+        notificationList,
+        count,
+        nextCursor: rows.length > take ? notificationList[notificationList.length - 1].id : null,
+      },
+      200
+    );
   } catch (err) {
     console.error("Error fetching comments", err);
     return c.json({ error: { code: "INTERNAL_ERROR", message: "Internal server error" } }, 500);

@@ -2,111 +2,144 @@
 
 import { BellIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
-import { useState } from "react";
-import { useNotifications, type Notification } from "@/providers/NotificationProvider";
+import { useEffect, useRef, useState } from "react";
+import { useNotifications } from "@/providers/NotificationProvider";
+import { TYPE_LABELS, relativeTime, hrefFor } from "@/utils/notificationFormat";
 
-// Mono eyebrow kicker per notification kind — mirrors the NotificationType enum.
-const TYPE_LABELS: Record<string, string> = {
-  COMMENT_RECEIVED: "New comment",
-  REPLY_RECEIVED: "New reply",
-  COMMENT_APPROVED: "Approved",
-  COMMENT_REJECTED: "Rejected",
+// The small dot showing whether live updates are working.
+const DOT_COLOURS: Record<string, string> = {
+  connected: "bg-accent",
+  connecting: "bg-muted-foreground animate-pulse",
+  disconnected: "bg-border",
 };
-
-// "3h ago" / "2d ago" — meta line under each item.
-const relativeTime = (iso: string) => {
-  const then = new Date(iso).getTime();
-  if (Number.isNaN(then)) return "";
-  const seconds = Math.round((Date.now() - then) / 1000);
-  if (seconds < 60) return "just now";
-  const minutes = Math.round(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.round(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.round(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return new Date(then).toLocaleDateString(undefined, { month: "short", day: "numeric" });
-};
-
-// A comment notification deep-links to the comment; everything else to the post.
-const hrefFor = (n: Notification) =>
-  n.commentId ? `/blog/${n.postId}#comment-${n.commentId}` : `/blog/${n.postId}`;
 
 const NotificationList = () => {
   const { notifications, unreadCount, connectionStatus, markAsRead } = useNotifications();
   const [open, setOpen] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  const isEmpty = notifications.length === 0;
+  const stillConnecting = isEmpty && connectionStatus === "connecting";
+
+  // A full-screen backdrop element cannot work here: the header sets
+  // backdrop-blur and a z-index, which creates a stacking context, so any
+  // child's z-index is confined to the header's own box and never covers the
+  // page below it. A document listener is independent of paint order.
+  useEffect(() => {
+    if (!open) return;
+
+    const onPointerDown = (e: PointerEvent) => {
+      const target = e.target as Node;
+      if (panelRef.current?.contains(target)) return;
+      if (buttonRef.current?.contains(target)) return; // the button toggles itself
+      setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
   return (
     <div className="flex items-center">
       <button
+        ref={buttonRef}
         type="button"
         aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ""}`}
         aria-expanded={open}
         onClick={() => setOpen(!open)}
-        className="relative w-7 h-7 inline-flex items-center justify-center text-foreground hover:text-accent transition-colors duration-300 ease-out cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+        className={`relative w-7 h-7 inline-flex items-center justify-center transition-colors duration-300 ease-out cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent ${
+          open ? "text-accent" : "text-foreground hover:text-accent"
+        }`}
       >
-        <BellIcon width={18} height={18} />
+        <BellIcon width={24} height={24} />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[15px] h-[15px] px-1 flex items-center justify-center bg-accent text-accent-foreground font-mono text-[9px] leading-none">
+          <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 flex items-center justify-center bg-accent text-black font-bold font-mono text-[10px] leading-none animate-ember rounded-full">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <>
-          {/* Tap/click-outside backdrop — works on touch where onMouseLeave never fires */}
-          <div className="fixed inset-0 z-40" aria-hidden onClick={() => setOpen(false)} />
-          <div className="absolute w-[320px] max-w-[calc(100vw-2.5rem)] bg-popover border border-border top-[58px] right-6 md:right-10 shadow-xl text-popover-foreground z-50">
-            <div className="flex items-baseline justify-between px-4 py-3 border-b border-border">
-              <span className="eyebrow">Notifications</span>
+        <div
+          ref={panelRef}
+          className="absolute w-[340px] max-w-[calc(100vw-2.5rem)] panel panel-accent top-[58px] right-6 md:right-10 z-[70] animate-pop-in"
+        >
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+            <span className="eyebrow">
+              Notifications
+              {unreadCount > 0 && <span className="accent-text ml-2">{unreadCount} new</span>}
+            </span>
+            {/* Connection state as a quiet dot — the word "disconnected" was shouting */}
+            <span className="flex items-center gap-1.5" title={`Live updates: ${connectionStatus}`}>
               <span
-                className={`eyebrow text-[10px] ${
-                  connectionStatus === "connected" ? "accent-text" : ""
-                }`}
-              >
-                {connectionStatus}
-              </span>
-            </div>
+                aria-hidden
+                className={`w-1.5 h-1.5 rounded-full ${DOT_COLOURS[connectionStatus]}`}
+              />
+              <span className="sr-only">{connectionStatus}</span>
+            </span>
+          </div>
 
-            {notifications.length === 0 ? (
-              <p className="px-4 py-6 text-sm font-serif text-muted-foreground">
-                Nothing new. Go write something.
-              </p>
-            ) : (
-              <ul className="max-h-[360px] overflow-y-auto">
-                {notifications.map((n) => (
-                  <li key={n.id} className="border-b border-border last:border-b-0">
-                    <Link
-                      href={hrefFor(n)}
-                      onClick={() => {
-                        setOpen(false);
-                        // markAsRead(n.id);
-                      }}
-                      className="group flex gap-3 px-4 py-3 hover:bg-muted transition-colors duration-300 ease-out"
-                    >
-                      <span
-                        aria-hidden
-                        className={`mt-1.5 w-1.5 h-1.5 shrink-0 ${
-                          n.readStatus ? "bg-transparent" : "bg-accent"
-                        }`}
-                      />
-                      <span className="min-w-0">
-                        <span className="eyebrow block text-[10px] group-hover:accent-text">
-                          {TYPE_LABELS[n.type] ?? n.type}
+          {stillConnecting ? (
+            <div className="px-4 py-10 flex flex-col items-center gap-2.5">
+              <span
+                role="status"
+                aria-label="Loading notifications"
+                className="inline-block w-3.5 h-3.5 border-[1.5px] border-muted-foreground border-t-transparent rounded-full animate-spin"
+              />
+              <p className="eyebrow text-[10px]">Loading</p>
+            </div>
+          ) : isEmpty ? (
+            <div className="px-4 py-10 text-center">
+              <p className="text-sm font-serif italic text-muted-foreground">Nothing new.</p>
+              <p className="eyebrow text-[10px] mt-2">Go write something</p>
+            </div>
+          ) : (
+            <ul className="max-h-[360px] overflow-y-auto">
+              {notifications.map((item) => (
+                <li key={item.id} className="border-b border-border last:border-b-0">
+                  <Link
+                    href={hrefFor(item)}
+                    onClick={() => {
+                      setOpen(false);
+                      markAsRead(item.id);
+                    }}
+                    className={`group flex gap-3 px-4 py-3 border-l-2 transition-all duration-300 ease-out hover:bg-muted/60 hover:border-accent ${
+                      item.readStatus ? "border-transparent" : "border-accent/30 bg-accent/[0.04]"
+                    }`}
+                  >
+                    <span
+                      aria-hidden
+                      className={`mt-[7px] w-1.5 h-1.5 shrink-0 ${
+                        item.readStatus ? "bg-transparent" : "bg-accent"
+                      }`}
+                    />
+                    <span className="min-w-0 flex-1">
+                      <span className="flex items-baseline justify-between gap-2">
+                        <span className="eyebrow text-[10px] group-hover:accent-text transition-colors">
+                          {TYPE_LABELS[item.type] ?? item.type}
                         </span>
-                        <span className="block text-sm font-serif mt-1 line-clamp-2">{n.text}</span>
-                        <span className="eyebrow block text-[10px] mt-1">
-                          {relativeTime(n.dateAndTime)}
+                        <span className="eyebrow text-[10px] shrink-0">
+                          {relativeTime(item.dateAndTime)}
                         </span>
                       </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </>
+                      <span className="block text-sm font-serif leading-relaxed mt-1.5 line-clamp-2">
+                        {item.text}
+                      </span>
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
     </div>
   );
