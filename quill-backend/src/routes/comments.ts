@@ -67,13 +67,16 @@ commentRouter.post("/", authMiddleware, async (c) => {
         400
       );
     }
-    if (!parentId) {
-      if (startOffset === undefined || endOffset === undefined || !anchorText) {
-        return c.json(
-          { error: { code: "MISSING_ANCHOR", message: "Top-level comments require anchor data" } },
-          400
-        );
-      }
+    // A top-level comment is either anchored to a passage (an inline note) or
+    // not (a comment at the foot of the post). Anchored ones need the whole
+    // anchor, not half of it.
+    const isInline =
+      !parentId && (startOffset !== undefined || endOffset !== undefined || anchorText);
+    if (isInline && (startOffset === undefined || endOffset === undefined || !anchorText)) {
+      return c.json(
+        { error: { code: "MISSING_ANCHOR", message: "Inline comments require anchor data" } },
+        400
+      );
     }
 
     const post = await prisma.post.findUnique({ where: { id: postId } });
@@ -107,8 +110,10 @@ commentRouter.post("/", authMiddleware, async (c) => {
         prefix: parentId ? null : (prefix ?? null),
         suffix: parentId ? null : (suffix ?? null),
 
-        commentStatus:
-          post.authorId === userId || (parentId && parentId !== "") ? "APPROVED" : "PENDING",
+        // Only inline notes wait for approval: they sit inside the prose and
+        // shape how the post reads. Comments at the foot of the post, and
+        // replies, go up straight away.
+        commentStatus: isInline && post.authorId !== userId ? "PENDING" : "APPROVED",
       },
     });
     if (recipientId !== userId) {

@@ -7,6 +7,7 @@ import ComposePanel from "./annotation/ComposePanel";
 import ThreadPanel from "./annotation/ThreadPanel";
 import { MiniSpinner, panelStyle, rectOf, useCloseOnScroll, type Anchor } from "./annotation/ui";
 import { useComments, useCommentDeepLink } from "./annotation/useComments";
+import PostComments from "./PostComments";
 
 type CommentableContentProps = {
   html: string;
@@ -54,6 +55,10 @@ export default function CommentableContent({
   const [composing, setComposing] = useState(false);
   const [openThread, setOpenThread] = useState<{ id: string; at: Anchor } | null>(null);
   const [replying, setReplying] = useState(false);
+
+  // An anchored comment is a margin note; one without an anchor belongs to the
+  // conversation at the foot of the post.
+  const bottomComments = useMemo(() => comments.filter((c) => c.anchorText === null), [comments]);
 
   const isLoggedIn = Boolean(token);
   const isPostAuthor = Boolean(postAuthorId && currentUserId && postAuthorId === currentUserId);
@@ -283,6 +288,14 @@ export default function CommentableContent({
           onClose={closeThread}
         />
       )}
+
+      <PostComments
+        comments={bottomComments}
+        isLoggedIn={isLoggedIn}
+        busy={busy === "comment"}
+        error={error}
+        onAdd={(text) => add({ text, postId })}
+      />
     </>
   );
 }
