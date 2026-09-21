@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { XMarkIcon } from "@heroicons/react/24/outline";
+import { MAX_COMMENT_LENGTH } from "@/utils/commentFunctions";
 
 /** Where a panel is pinned: the on-screen rect it belongs to. */
 export type Anchor = { top: number; left: number; width: number };
@@ -22,6 +24,7 @@ export const PanelInput = (
   <input
     type="text"
     autoFocus
+    maxLength={MAX_COMMENT_LENGTH}
     className="w-full bg-transparent border-b border-border pb-1.5 text-[13px] font-serif text-foreground focus:outline-none focus:border-accent transition-colors placeholder:text-muted-foreground disabled:opacity-50"
     {...props}
   />
@@ -112,3 +115,18 @@ export const panelStyle = (anchor: Anchor, width: number): React.CSSProperties =
 
 export const panelClass =
   "z-50 max-w-[calc(100vw-1rem)] panel rounded-md animate-pop-in overflow-hidden";
+
+/** Closes an open panel as soon as the page scrolls, so it can't drift from
+ * the text it belongs to. Panels are positioned `fixed`, so a scrolled panel
+ * would otherwise hang in the wrong place. */
+export function useCloseOnScroll(onClose: () => void, enabled: boolean) {
+  useEffect(() => {
+    if (!enabled) return;
+    window.addEventListener("scroll", onClose, { passive: true });
+    window.addEventListener("resize", onClose);
+    return () => {
+      window.removeEventListener("scroll", onClose);
+      window.removeEventListener("resize", onClose);
+    };
+  }, [onClose, enabled]);
+}

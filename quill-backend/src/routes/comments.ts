@@ -3,6 +3,19 @@ import { Prisma, PrismaClient } from "../generated/prisma/client";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { authMiddleware, optionalAuthMiddleware } from "../middlewares/authMiddleware";
 
+// A comment is a margin note, not an essay. Unbounded text wrecks the
+// annotation panel layout long before it troubles the database.
+const MAX_COMMENT_LENGTH = 200;
+
+const PAGE_SIZE = 20;
+
+const NOTIFICATION_TEXT = {
+  COMMENT_RECEIVED: "You just received a comment on your post.",
+  REPLY_RECEIVED: "Someone replied to your comment.",
+  COMMENT_APPROVED: "Your comment has been approved.",
+  COMMENT_REJECTED: "Your comment has been rejected.",
+} as const;
+
 export const commentRouter = new Hono<{
   Bindings: {
     DATABASE_URL: string;
@@ -19,14 +32,38 @@ commentRouter.post("/", authMiddleware, async (c) => {
     accelerateUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());
   const userId = c.get("userId");
-  let parent;
+
   try {
-    const { text, postId, parentId, startOffset, endOffset, anchorText } = await c.req
-      .json()
-      .catch(() => ({}));
+    let parent;
+    const { text, postId, parentId, startOffset, endOffset, anchorText, prefix, suffix } =
+      await c.req.json().catch(() => ({}));
     if (!text || !postId) {
       return c.json(
         { error: { code: "MISSING_FIELDS", message: "Content and postId are required" } },
+        400
+      );
+    }
+    if (typeof text !== "string") {
+      return c.json(
+        { error: { code: "INVALID_FIELDS", message: "Comment text must be a string" } },
+        400
+      );
+    }
+    const trimmedText = text.trim();
+    if (!trimmedText) {
+      return c.json(
+        { error: { code: "MISSING_FIELDS", message: "Comment text cannot be empty" } },
+        400
+      );
+    }
+    if (trimmedText.length > MAX_COMMENT_LENGTH) {
+      return c.json(
+        {
+          error: {
+            code: "TEXT_TOO_LONG",
+            message: `Comment must be ${MAX_COMMENT_LENGTH} characters or fewer`,
+          },
+        },
         400
       );
     }
@@ -60,36 +97,44 @@ commentRouter.post("/", authMiddleware, async (c) => {
 
     const response = await prisma.comment.create({
       data: {
-        text,
+        text: trimmedText,
         postId,
-        parentId,
+        parentId: parentId || null,
         startOffset: parentId ? null : startOffset,
         endOffset: parentId ? null : endOffset,
         anchorText: parentId ? null : anchorText,
         authorId: userId,
-        commentStatus: parentId && "APPROVED",
+        prefix: parentId ? null : (prefix ?? null),
+        suffix: parentId ? null : (suffix ?? null),
+
+        commentStatus:
+          post.authorId === userId || (parentId && parentId !== "") ? "APPROVED" : "PENDING",
       },
     });
+    if (recipientId !== userId) {
+      try {
+        const notification = await prisma.notification.create({
+          data: {
+            type: parentId ? "REPLY_RECEIVED" : "COMMENT_RECEIVED",
+            userId: recipientId,
+            postId,
+            text: NOTIFICATION_TEXT[parentId ? "REPLY_RECEIVED" : "COMMENT_RECEIVED"],
+            commentId: response.id,
+            dateAndTime: new Date(),
+          },
+        });
 
-    const notification = await prisma.notification.create({
-      data: {
-        type: parentId ? "REPLY_RECEIVED" : "COMMENT_RECEIVED",
-        userId: recipientId,
-        postId,
-        text: "You just received a comment on your post.",
-        commentId: response.id,
-        dateAndTime: new Date(),
-        // whatever other required fields your schema has
-      },
-    });
+        const doId = c.env.NOTIFICATION_DO.idFromName(recipientId);
+        const stub = c.env.NOTIFICATION_DO.get(doId);
+        await stub.fetch("https://internal/notify", {
+          method: "POST",
+          body: JSON.stringify({ type: notification.type, notificationId: notification.id }),
+        });
+      } catch (err) {
+        console.error("Notification creation failed", err);
+      }
+    }
 
-    const doId = c.env.NOTIFICATION_DO.idFromName(recipientId);
-    const stub = c.env.NOTIFICATION_DO.get(doId);
-    await stub.fetch("https://internal/notify", {
-      method: "POST",
-      body: JSON.stringify({ type: notification.type, notificationId: notification.id }),
-    });
-    console.log("Notified");
     return c.json({ message: "Comment created successfully", comment: response }, 201);
   } catch (err) {
     console.error("Error creating comment:", err);
@@ -111,14 +156,24 @@ commentRouter.get("/pending", authMiddleware, async (c) => {
     const commentStatus =
       requested === "APPROVED" || requested === "REJECTED" ? requested : "PENDING";
 
-    const response = await prisma.comment.findMany({
+    const cursor = c.req.query("cursor");
+
+    // One row past the page tells us whether there's another one.
+    const rows = await prisma.comment.findMany({
       where: { post: { authorId: userId }, commentStatus },
       include: { post: { select: { title: true } }, author: { select: { name: true, id: true } } },
-      take: 50,
+      take: PAGE_SIZE + 1,
+      ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
       orderBy: { createdAt: "asc" },
     });
 
-    return c.json({ comments: response });
+    const comments = rows.slice(0, PAGE_SIZE);
+
+    // A cursor means "there's more from here"; null means that's everything.
+    return c.json({
+      comments,
+      nextCursor: rows.length > PAGE_SIZE ? comments[comments.length - 1].id : null,
+    });
   } catch (err) {
     console.error("Error fetching comments", err);
     return c.json({ error: { code: "INTERNAL_ERROR", message: "Internal server error" } }, 500);
@@ -203,7 +258,8 @@ commentRouter.get("/", authMiddleware, async (c) => {
     });
     return c.json({ comments }, 200);
   } catch (err) {
-    c.json(
+    console.error("Error fetching user comments", err);
+    return c.json(
       {
         error: {
           code: "INTERNAL_SERVER_ERROR",
@@ -222,7 +278,7 @@ commentRouter.patch("/:id", authMiddleware, async (c) => {
 
   const userId = c.get("userId") as string;
   const commentId = c.req.param("id");
-  const VALID_STATUSES = ["PENDING", "APPROVED", "REJECTED"];
+  const VALID_STATUSES = ["APPROVED", "REJECTED"];
 
   try {
     const { status } = await c.req.json();
@@ -259,39 +315,34 @@ commentRouter.patch("/:id", authMiddleware, async (c) => {
           commentStatus: status,
         },
       });
+      const notificationType = status === "APPROVED" ? "COMMENT_APPROVED" : "COMMENT_REJECTED";
+      if (comment.authorId !== userId) {
+        try {
+          const notification = await prisma.notification.create({
+            data: {
+              type: notificationType,
+              userId: comment.authorId,
+              postId: comment.postId,
+              text: NOTIFICATION_TEXT[notificationType],
 
-      const notification = await prisma.notification.create({
-        data: {
-          type:
-            status === "APPROVED"
-              ? "COMMENT_APPROVED"
-              : status === "REJECTED"
-                ? "COMMENT_REJECTED"
-                : "COMMENT_RECEIVED",
-          userId: comment.authorId,
-          postId: comment.postId,
-          text:
-            status === "APPROVED"
-              ? "You're comment has been approved"
-              : status === "REJECTED"
-                ? "You're comment has been rejected."
-                : "",
-          commentId: response.id,
-          dateAndTime: new Date(),
-          // whatever other required fields your schema has
-        },
-      });
+              commentId: response.id,
+              dateAndTime: new Date(),
+            },
+          });
 
-      const doId = c.env.NOTIFICATION_DO.idFromName(comment.authorId);
-      const stub = c.env.NOTIFICATION_DO.get(doId);
-      await stub.fetch("https://internal/notify", {
-        method: "POST",
-        body: JSON.stringify({
-          type: notification.type,
-          notificationId: notification.id,
-        }),
-      });
-      console.log("Notified");
+          const doId = c.env.NOTIFICATION_DO.idFromName(comment.authorId);
+          const stub = c.env.NOTIFICATION_DO.get(doId);
+          await stub.fetch("https://internal/notify", {
+            method: "POST",
+            body: JSON.stringify({
+              type: notification.type,
+              notificationId: notification.id,
+            }),
+          });
+        } catch (err) {
+          console.error("Notification cannot be created", err);
+        }
+      }
       return c.json({ response }, 200);
     } else {
       return c.json(

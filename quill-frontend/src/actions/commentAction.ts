@@ -1,5 +1,5 @@
 import { API_URL } from "@/utils/constants";
-import axios from "axios";
+import axios, { isAxiosError } from "axios";
 
 export const getComments = async (postId: string, token?: string) => {
   const response = await fetch(`${API_URL}/comment/${postId}`, {
@@ -21,9 +21,16 @@ export const getUserComments = async (token?: string) => {
   return response.json();
 };
 
-export const getPendingComments = async (token?: string, status?: "PENDING" | "REJECTED") => {
-  const query = status ? `?status=${status}` : "";
-  const response = await fetch(`${API_URL}/comment/pending${query}`, {
+export const getPendingComments = async (
+  token?: string,
+  status?: "PENDING" | "REJECTED",
+  options?: { cursor?: string }
+) => {
+  const params = new URLSearchParams();
+  if (status) params.set("status", status);
+  if (options?.cursor) params.set("cursor", options.cursor);
+
+  const response = await fetch(`${API_URL}/comment/pending?${params}`, {
     headers: token ? { authorization: token } : undefined,
   });
   if (!response.ok) {
@@ -43,13 +50,14 @@ export const patchCommentStatus = async (id: string, status: string, token?: str
         headers: token ? { authorization: token } : undefined,
       }
     );
-    console.log(response);
     if (response) return response;
   } catch (err) {
     console.error(err);
-    throw new Error(
-      err?.response?.data?.error?.message ?? "Failed to change the status of the comment"
-    );
+
+    const message = isAxiosError(err)
+      ? (err.response?.data as { error?: { message?: string } })?.error?.message
+      : undefined;
+    throw new Error(message ?? "Failed to patch the comment");
   }
 };
 
@@ -61,6 +69,8 @@ export const postComments = async (
     endOffset?: number;
     anchorText?: string;
     parentId?: string;
+    prefix?: string;
+    suffix?: string;
   },
   token?: string
 ) => {
@@ -70,6 +80,9 @@ export const postComments = async (
     });
     return response.data;
   } catch (err) {
-    throw new Error(err?.response?.data?.error?.message ?? "Failed to save the comment");
+    const message = isAxiosError(err)
+      ? (err.response?.data as { error?: { message?: string } })?.error?.message
+      : undefined;
+    throw new Error(message ?? "Failed to save the comment");
   }
 };

@@ -1,4 +1,5 @@
 import { API_URL } from "@/utils/constants";
+import { getApiErrorMessage, getApiErrorStatus } from "@/utils/apiError";
 import axios from "axios";
 
 // Keep the original function for backward compatibility if needed
@@ -33,7 +34,7 @@ export const postBlog = async (
     });
     return response.data;
   } catch (err) {
-    throw new Error(err?.response?.data?.error?.message ?? "Failed to save the blog");
+    throw new Error(getApiErrorMessage(err, "Failed to save your blog"));
   }
 };
 
@@ -44,8 +45,8 @@ export const getBlogById = async (id: string, token?: string) => {
     });
     return response.data;
   } catch (err) {
-    if (err?.response?.status === 404) return null;
-    throw new Error(err?.response?.data?.error?.message ?? "Failed to load the blog");
+    if (getApiErrorStatus(err) === 404) return null;
+    throw new Error(getApiErrorMessage(err, "Failed to load the blog."));
   }
 };
 
@@ -66,7 +67,7 @@ export const editBlog = async (
     });
     return response.data;
   } catch (err) {
-    throw new Error(err?.response?.data?.error?.message ?? "Failed to save your changes");
+    throw new Error(getApiErrorMessage(err, "Failed to save your changes"));
   }
 };
 
@@ -77,6 +78,6 @@ export const deleteBlog = async (postId: string, token: string) => {
     });
     return response.data;
   } catch (err) {
-    throw new Error(err?.response?.data?.error?.message ?? "Failed to delete your post");
+    throw new Error(getApiErrorMessage(err, "Failed to delete your blog."));
   }
 };

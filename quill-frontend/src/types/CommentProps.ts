@@ -12,6 +12,8 @@ export type Comment = {
   startOffset: number | null;
   endOffset: number | null;
   anchorText: string | null;
+  prefix: string | null;
+  suffix: string | null;
   author: {
     name: string;
     id: string;

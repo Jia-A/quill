@@ -5,7 +5,7 @@ import { ChatBubbleLeftIcon } from "@heroicons/react/24/outline";
 import { getOffsets } from "@/utils/commentFunctions";
 import ComposePanel from "./annotation/ComposePanel";
 import ThreadPanel from "./annotation/ThreadPanel";
-import { MiniSpinner, panelStyle, rectOf, type Anchor } from "./annotation/ui";
+import { MiniSpinner, panelStyle, rectOf, useCloseOnScroll, type Anchor } from "./annotation/ui";
 import { useComments, useCommentDeepLink } from "./annotation/useComments";
 
 type CommentableContentProps = {
@@ -16,10 +16,14 @@ type CommentableContentProps = {
   currentUserId?: string;
 };
 
-type Selection = { at: Anchor; startOffset: number; endOffset: number; anchorText: string };
-
-/** How far a mark may travel off-screen before its thread is dismissed. */
-const OFF_SCREEN = 120;
+type Selection = {
+  at: Anchor;
+  startOffset: number;
+  endOffset: number;
+  anchorText: string;
+  prefix: string;
+  suffix: string;
+};
 
 /**
  * Renders post HTML and layers inline annotations over it. Comment data and
@@ -81,16 +85,14 @@ export default function CommentableContent({
         closeCompose();
         return;
       }
-      if (selected.startOffset === null || selected.endOffset === null) {
-        closeCompose();
-        return;
-      }
 
       setSelection({
         at: rectOf(selected.range),
         startOffset: selected.startOffset,
         endOffset: selected.endOffset,
         anchorText: selected.anchorText,
+        prefix: selected.prefix,
+        suffix: selected.suffix,
       });
     };
 
@@ -120,49 +122,10 @@ export default function CommentableContent({
     };
   }, [comments, closeCompose]);
 
-  // Keep an open thread pinned to its mark, and drop it once the mark is gone.
-  useEffect(() => {
-    if (!openThread) return;
-    const mark = containerRef.current?.querySelector<HTMLElement>(
-      `mark[data-comment-id="${openThread.id}"]`
-    );
-    if (!mark) return;
-
-    let frame = 0;
-
-    // Runs on every scroll event, so the actual work waits for the next
-    // animation frame and any earlier pending one is thrown away.
-    const followTheMark = () => {
-      cancelAnimationFrame(frame);
-
-      frame = requestAnimationFrame(() => {
-        const box = mark.getBoundingClientRect();
-
-        const scrolledPastTop = box.bottom < -OFF_SCREEN;
-        const scrolledPastBottom = box.top > window.innerHeight + OFF_SCREEN;
-        if (scrolledPastTop || scrolledPastBottom) {
-          closeThread();
-          return;
-        }
-
-        // Move the panel to wherever the mark is now.
-        setOpenThread((current) => {
-          if (!current) return current;
-          return { ...current, at: rectOf(mark) };
-        });
-      });
-    };
-
-    window.addEventListener("scroll", followTheMark, { passive: true });
-    window.addEventListener("resize", followTheMark);
-    return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener("scroll", followTheMark);
-      window.removeEventListener("resize", followTheMark);
-    };
-    // `at` updates every scroll frame; only the identity should re-run this.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [openThread?.id, closeThread]);
+  // A panel is pinned to a fixed spot on screen, so scrolling would leave it
+  // stranded away from its text. Close it instead.
+  useCloseOnScroll(closeThread, Boolean(openThread));
+  useCloseOnScroll(closeCompose, Boolean(selection));
 
   // Flag the mark whose thread is open, purely so it can be styled as active.
   useEffect(() => {
@@ -230,6 +193,8 @@ export default function CommentableContent({
       startOffset: selection.startOffset,
       endOffset: selection.endOffset,
       anchorText: selection.anchorText,
+      prefix: selection.prefix,
+      suffix: selection.suffix,
     });
 
     if (saved) closeCompose();

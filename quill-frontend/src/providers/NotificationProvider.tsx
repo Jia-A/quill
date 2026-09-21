@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import axios from "axios";
+import { API_URL, WS_API_URL } from "@/utils/constants";
 
 interface Notification {
   id: string;
@@ -25,11 +26,6 @@ interface NotificationContextShape {
 export type { Notification };
 
 const NotificationContext = createContext<NotificationContextShape | null>(null);
-
-// CONFIRM these match whatever env var names your actions/*.ts files already use —
-// I'm guessing based on convention, not reading your actual env setup.
-const API_BASE = process.env.NEXT_PUBLIC_API_URL;
-const WS_BASE = process.env.NEXT_PUBLIC_WS_URL; // e.g. wss://your-worker.workers.dev
 
 const RECONNECT_BASE_DELAY = 1000; // 1s
 const RECONNECT_MAX_DELAY = 30000; // 30s ceiling
@@ -55,29 +51,31 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const markAsRead = useCallback(
     async (id: string) => {
       if (!session?.backendToken) return;
+      const current = notifications.find((n) => n.id === id);
+      if (!current || current.readStatus) return;
+      // optimistic local update — remove from dropdown, decrement badge
+      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, readStatus: true } : n)));
+      setUnreadCount((prev) => Math.max(0, prev - 1));
       try {
         await axios.patch(
-          `${API_BASE}/api/v1/notification/${id}`,
+          `${API_URL}/notification/${id}`,
           {},
           {
             headers: { Authorization: `${session.backendToken}` },
           }
         );
-        // optimistic local update — remove from dropdown, decrement badge
-        setNotifications((prev) => prev.filter((n) => n.id !== id));
-        setUnreadCount((prev) => Math.max(0, prev - 1));
       } catch (err) {
         console.error("Failed to mark notification as read:", err);
       }
     },
-    [session?.backendToken]
+    [session?.backendToken, notifications]
   );
 
   const fetchNotifications = useCallback(
     async (params?: { unreadOnly?: boolean; take?: number }) => {
       if (!session?.backendToken) return;
       try {
-        const data = await axios.get(`${API_BASE}/notification`, {
+        const data = await axios.get(`${API_URL}/notification`, {
           headers: { Authorization: `${session.backendToken}` },
           params: { unreadOnly: params?.unreadOnly ?? true, take: params?.take ?? 10 },
         });
@@ -92,49 +90,45 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   );
 
   const isMountedRef = useRef(true);
+  const reconnectTimerRef = useRef<number | null>(null);
 
   const connect = useCallback(async () => {
     if (!session?.backendToken) return;
+    if (!isMountedRef.current) return;
 
     try {
       setConnectionStatus("connecting");
-      console.log("connecting");
 
       // Step 1: mint a single-use ticket
       const ticketData = await axios.post(
-        `${API_BASE}/notification/ticket`,
+        `${API_URL}/notification/ticket`,
         {},
         {
           headers: { Authorization: `${session.backendToken}` },
         }
       );
       if (!ticketData) throw new Error("Failed to fetch ticket");
-      // CONFIRM the actual field name — your /ticket route does
-      // `return c.json(await res.json())` straight from the DO's /generate-ticket response,
-      // so I don't actually know what key the ticket lives under. Check it and fix this line.
       const ticket = ticketData?.data?.ticket;
 
       if (!isMountedRef.current) return;
 
       // Step 2: open the socket, ticket in the query string
       const ws = new WebSocket(
-        `${WS_BASE}/notification/connect?ticket=${ticket}&userId=${session?.user?.id}`
+        `${WS_API_URL}/notification/connect?ticket=${ticket}&userId=${session?.user?.id}`
       );
       socketRef.current = ws;
 
       ws.onopen = () => {
         if (isMountedRef.current) setConnectionStatus("connected");
-        console.log("connected");
         reconnectAttemptRef.current = 0;
       };
 
       ws.onmessage = (event) => {
         if (!isMountedRef.current) return;
         try {
-          const payload = JSON.parse(event.data); // { type, notificationId } — not full content
+          JSON.parse(event.data); // { type, notificationId } — not full content
           // The push is a signal, not data — refetch rather than trying to construct
           // a Notification object from two fields.
-          console.log("here");
           fetchNotifications();
         } catch (err) {
           console.error("Failed to parse notification payload:", err);
@@ -145,12 +139,11 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         socketRef.current = null;
         if (!isMountedRef.current) return; // <-- the actual fix. Unmounted? Stop here, no retry scheduled.
         setConnectionStatus("disconnected");
-        console.log("Closed");
         // Ticket is single-use + short-lived — can't reopen the same URL.
         // Re-run the WHOLE sequence (new ticket, new connect), not just retry the socket.
         const delay = getReconnectDelay();
         reconnectAttemptRef.current += 1;
-        setTimeout(() => connect(), delay);
+        reconnectTimerRef.current = window.setTimeout(() => connect(), delay);
       };
 
       ws.onerror = (err) => {
@@ -171,6 +164,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
     return () => {
       isMountedRef.current = false;
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current);
       socketRef.current?.close();
       socketRef.current = null;
     };

@@ -1,10 +1,20 @@
+interface Ticket {
+  value: string;
+  expiresAt: number;
+}
+
 export class NotificationDO {
-  constructor(state, env) {
+  state: DurableObjectState;
+  env: unknown;
+  socket: WebSocket | null;
+  timeoutId: number | null;
+  pendingTicket: Ticket | null;
+  constructor(state: DurableObjectState, env: unknown) {
     this.state = state;
     this.env = env;
     this.socket = null;
     this.timeoutId = null;
-    this.pendingTicket = null; // { value, expiresAt }
+    this.pendingTicket = null;
   }
 
   resetIdleTimer() {
@@ -17,7 +27,7 @@ export class NotificationDO {
     ); // 5 min idle
   }
 
-  async fetch(request) {
+  async fetch(request: any) {
     const url = new URL(request.url);
 
     if (url.pathname === "/generate-ticket") {

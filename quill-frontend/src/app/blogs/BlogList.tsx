@@ -13,6 +13,7 @@ export interface Blog {
   author: {
     name: string;
   };
+  published?: boolean;
 }
 
 interface BlogListProps {

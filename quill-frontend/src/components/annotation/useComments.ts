@@ -1,9 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { getComments, patchCommentStatus, postComments } from "@/actions/commentAction";
 import type { Comment } from "@/types/CommentProps";
 import {
+  MAX_COMMENT_LENGTH,
   clearHighlights,
   getPlainText,
   highlightRange,
@@ -75,6 +77,10 @@ export function useComments(
 
   const add = useCallback(
     async (payload: Parameters<typeof postComments>[0]) => {
+      if (payload.text.length > MAX_COMMENT_LENGTH) {
+        setError(`Comment must be ${MAX_COMMENT_LENGTH} characters or fewer`);
+        return false;
+      }
       setBusy("comment");
       try {
         const res = await postComments(payload, token);
@@ -94,6 +100,10 @@ export function useComments(
 
   const reply = useCallback(
     async (parentId: string, text: string) => {
+      if (text.length > MAX_COMMENT_LENGTH) {
+        setError(`Comment must be ${MAX_COMMENT_LENGTH} characters or fewer`);
+        return false;
+      }
       setBusy("reply");
       try {
         const res = await postComments({ text, postId, parentId }, token);
@@ -144,23 +154,20 @@ export function useComments(
 
 /**
  * Scrolls to the comment named by ?comment= once highlights are painted, and
- * pulses its passage. Read from window rather than useSearchParams(): the blog
- * page is statically rendered and that hook would force client-side rendering.
+ * pulses its passage. Read from the router's search params rather than a
+ * one-time window.location read: two notifications for the same post are a
+ * client-side navigation that does not remount this component, so a value
+ * captured at mount would stay stuck on the first comment.
  */
 export function useCommentDeepLink(
   containerRef: React.RefObject<HTMLDivElement | null>,
   comments: Comment[]
 ) {
-  const [id] = useState(() =>
-    typeof window === "undefined"
-      ? null
-      : new URLSearchParams(window.location.search).get("comment")
-  );
+  const id = useSearchParams().get("comment");
   const handled = useRef<string | null>(null);
 
   useEffect(() => {
     if (!id || handled.current === id || comments.length === 0) return;
-    handled.current = id; // one attempt, whatever the outcome
 
     // The id may name a top-level comment or a reply. Replies carry no anchor,
     // so either way scroll to the comment that owns the highlighted passage.
@@ -173,15 +180,17 @@ export function useCommentDeepLink(
     const mark = containerRef.current?.querySelector<HTMLElement>(
       `mark[data-comment-id="${owner.id}"]`
     );
+    // No mark yet, or none at all because the post was edited past the anchor.
+    // Leave `handled` unset so a later repaint gets another chance.
     if (!mark) return;
 
+    handled.current = id;
     mark.scrollIntoView({ behavior: "smooth", block: "center" });
     mark.dataset.commentFound = ""; // pulses via the comment-found animation
     const timer = window.setTimeout(() => delete mark.dataset.commentFound, 2200);
 
     return () => {
       window.clearTimeout(timer);
-      delete mark.dataset.commentFound;
     };
   }, [id, comments, containerRef]);
 }

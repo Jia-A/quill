@@ -12,6 +12,9 @@ type ProfileTabsProps = {
   addedComments: Comment[];
   pendingComments: Comment[];
   rejectedComments: Comment[];
+  // Where each moderation list should resume from, or null if that's all.
+  pendingCursor: string | null;
+  rejectedCursor: string | null;
 };
 
 type TabId = "drafts" | "published" | "comments" | "approve" | "rejected" | "notifications";
@@ -37,6 +40,8 @@ const ProfileTabs = ({
   addedComments,
   pendingComments,
   rejectedComments,
+  pendingCursor,
+  rejectedCursor,
 }: ProfileTabsProps) => {
   const [active, setActive] = useState<TabId>("published");
 
@@ -56,10 +61,22 @@ const ProfileTabs = ({
     // These two are all on your own posts, so the post author is you and the
     // status is already implied by the tab.
     approve: (
-      <PendingCommentsList comments={pendingComments} showStatus={false} showPostAuthor={false} />
+      <PendingCommentsList
+        comments={pendingComments}
+        showStatus={false}
+        showPostAuthor={false}
+        status="PENDING"
+        nextCursor={pendingCursor}
+      />
     ),
     rejected: (
-      <PendingCommentsList comments={rejectedComments} showStatus={false} showPostAuthor={false} />
+      <PendingCommentsList
+        comments={rejectedComments}
+        showStatus={false}
+        showPostAuthor={false}
+        status="REJECTED"
+        nextCursor={rejectedCursor}
+      />
     ),
 
     notifications: <ProfileNotificationsList />,

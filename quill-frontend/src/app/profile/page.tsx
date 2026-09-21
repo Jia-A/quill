@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getPendingComments, getUserComments } from "@/actions/commentAction";
 import type { Comment } from "@/types/CommentProps";
 import ProfileTabs from "@/components/ProfileTabs";
+import { Blog } from "../blogs/BlogList";
 
 const ProfilePage = async () => {
   const session = await auth();
@@ -18,8 +19,8 @@ const ProfilePage = async () => {
   let draftBlogs;
   try {
     response = await getUserProfile(session.backendToken);
-    publishedBlogs = response?.user?.posts.filter((blog) => blog.published === true);
-    draftBlogs = response?.user?.posts.filter((blog) => blog.published !== true);
+    publishedBlogs = response?.user?.posts.filter((blog: Blog) => blog.published === true);
+    draftBlogs = response?.user?.posts.filter((blog: Blog) => blog.published !== true);
   } catch {
     return (
       <div className="min-h-screen bg-background text-foreground">
@@ -58,6 +59,8 @@ const ProfilePage = async () => {
           addedComments={authored}
           pendingComments={pendingComments?.comments ?? []}
           rejectedComments={rejectedByMe?.comments ?? []}
+          pendingCursor={pendingComments?.nextCursor ?? null}
+          rejectedCursor={rejectedByMe?.nextCursor ?? null}
         />
       </main>
     </div>
