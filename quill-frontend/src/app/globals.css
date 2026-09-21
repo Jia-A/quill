@@ -195,3 +195,147 @@
   margin-left: auto;
   margin-right: auto;
 }
+
+/* ────────────────────────────────────────────────────────────
+   Annotation & notification surfaces
+   Marginalia treated as editorial apparatus: inline marks read
+   as ink on paper, popovers as pasted-in slips of card stock.
+   ──────────────────────────────────────────────────────────── */
+
+/* Floating panel — the shared shell for comment popovers and the
+   notification dropdown. Sharp edges + a lifted, warm-toned shadow. */
+.panel {
+  background: hsl(var(--popover));
+  color: hsl(var(--popover-foreground));
+  border: 1px solid hsl(var(--border));
+  box-shadow:
+    0 1px 2px hsl(0 0% 0% / 0.06),
+    0 8px 20px -8px hsl(0 0% 0% / 0.35);
+}
+/* Popovers are small floating chips — a hair of radius reads friendlier
+   than the zero-radius page furniture without breaking the system. */
+.panel.rounded-md {
+  border-radius: 6px;
+}
+/* Hairline accent rail marking a panel as "annotation" apparatus */
+.panel-accent {
+  border-top: 2px solid hsl(var(--accent));
+}
+
+/* Inline annotation marks. Approved = ember wash keyed to the accent;
+   pending = a dotted underline that reads as provisional, not as error. */
+mark[data-comment-id] {
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 0 0.05em;
+  transition:
+    background-color 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+mark[data-comment-approved] {
+  background: hsl(var(--accent) / 0.1);
+  box-shadow: inset 0 -1px 0 hsl(var(--accent) / 0.45);
+}
+mark[data-comment-approved]:hover {
+  background: hsl(var(--accent) / 0.18);
+  box-shadow: inset 0 -1px 0 hsl(var(--accent) / 0.8);
+}
+/* Your own comment, still awaiting the post author's approval. Warm amber
+   sits apart from the ember accent without fighting it. One amber token,
+   themed once, so the rules below don't repeat per theme. */
+mark[data-comment-mine] {
+  --amber: 43 85% 45%;
+  background: hsl(var(--amber) / 0.2);
+  box-shadow: inset 0 -1px 0 hsl(var(--amber) / 0.65);
+  text-decoration: underline dotted hsl(var(--amber) / 0.6);
+  text-underline-offset: 3px;
+}
+.dark mark[data-comment-mine] {
+  --amber: 43 88% 62%;
+}
+mark[data-comment-mine]:hover {
+  background: hsl(var(--amber) / 0.32);
+  box-shadow: inset 0 -1px 0 hsl(var(--amber));
+}
+
+mark[data-comment-pending] {
+  background: hsl(var(--muted-foreground) / 0.08);
+  box-shadow: inset 0 -1px 0 hsl(var(--muted-foreground) / 0.5);
+  text-decoration: underline dotted hsl(var(--muted-foreground) / 0.7);
+  text-underline-offset: 3px;
+}
+mark[data-comment-pending]:hover {
+  background: hsl(var(--muted-foreground) / 0.16);
+}
+/* A mark arrived at from a notification deep link. Three slow breaths of
+   ember, then it settles back to its normal state — enough to find the
+   passage without the jarring on/off of a popover opening and closing. */
+@keyframes comment-found {
+  0%,
+  100% {
+    background: hsl(var(--accent) / 0.08);
+    box-shadow: inset 0 -1px 0 hsl(var(--accent) / 0.4);
+  }
+  /* Hold near the peak briefly so each of the three pulses reads as a
+     distinct beat rather than blurring into one slow swell. */
+  35%,
+  60% {
+    background: hsl(var(--accent) / 0.48);
+    box-shadow: inset 0 -2px 0 hsl(var(--accent));
+  }
+}
+mark[data-comment-found] {
+  animation: comment-found 0.7s cubic-bezier(0.4, 0, 0.6, 1) 3;
+}
+@media (prefers-reduced-motion: reduce) {
+  mark[data-comment-found] {
+    animation: none;
+    background: hsl(var(--accent) / 0.3);
+    box-shadow: inset 0 -2px 0 hsl(var(--accent));
+  }
+}
+
+/* The mark whose popover is currently open */
+mark[data-comment-active] {
+  background: hsl(var(--accent) / 0.2);
+  box-shadow: inset 0 -2px 0 hsl(var(--accent));
+}
+
+/* Popover entrance — a short rise, same curve as .animate-rise */
+/* Opacity-only: these panels carry a translateY(-100%) in their inline
+   style to sit above the selection, so animating transform would fight it. */
+@keyframes pop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.animate-pop-in {
+  animation: pop-in 0.14s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+/* Unread notification pulse — one soft ember ring, no infinite loop */
+@keyframes ember-pulse {
+  0% {
+    box-shadow: 0 0 0 0 hsl(var(--accent) / 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 6px hsl(var(--accent) / 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 hsl(var(--accent) / 0);
+  }
+}
+.animate-ember {
+  animation: ember-pulse 2.4s cubic-bezier(0.2, 0.8, 0.2, 1) 3;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pop-in,
+  .animate-ember {
+    animation: none;
+  }
+}

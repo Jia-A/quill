@@ -1,0 +1,109 @@
+import { Hono } from "hono";
+import { authMiddleware } from "../middlewares/authMiddleware";
+import { Prisma, PrismaClient } from "../generated/prisma";
+import { withAccelerate } from "@prisma/extension-accelerate";
+
+const PAGE_SIZE = 20;
+
+export const notificationRouter = new Hono<{
+  Bindings: {
+    DATABASE_URL: string;
+    JWT_SECRET: string;
+    NOTIFICATION_DO: DurableObjectNamespace;
+  };
+  Variables: {
+    userId: string;
+  };
+}>();
+
+notificationRouter.post("/ticket", authMiddleware, async (c) => {
+  const userId = c.get("userId");
+  const id = c.env.NOTIFICATION_DO.idFromName(userId);
+  const stub = c.env.NOTIFICATION_DO.get(id);
+  const res = await stub.fetch("https://internal/generate-ticket", { method: "POST" });
+  return c.json(await res.json());
+});
+
+notificationRouter.get("/connect", async (c) => {
+  const userId = c.req.query("userId") as string;
+  const ticket = c.req.query("ticket") as string;
+  const id = c.env.NOTIFICATION_DO.idFromName(userId);
+  const stub = c.env.NOTIFICATION_DO.get(id);
+  const url = new URL(c.req.url);
+  url.pathname = "/connect";
+  url.searchParams.set("ticket", ticket);
+  return stub.fetch(url.toString(), c.req.raw);
+});
+
+notificationRouter.get("/", authMiddleware, async (c) => {
+  const prisma = new PrismaClient({
+    accelerateUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+  const userId = c.get("userId") as string | undefined;
+  const unreadOnly = c.req.query("unreadOnly") === "true";
+  const take = Number(c.req.query("take")) || PAGE_SIZE;
+  const cursor = c.req.query("cursor");
+  try {
+    // One row past the page tells us whether there's another one.
+    // `count` is the unread total for the header badge, separate from paging.
+    const [rows, count] = await Promise.all([
+      prisma.notification.findMany({
+        where: { userId, ...(unreadOnly ? { readStatus: false } : {}) },
+        orderBy: { dateAndTime: "desc" },
+        take: take + 1,
+        ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
+      }),
+      prisma.notification.count({
+        where: { userId, readStatus: false },
+      }),
+    ]);
+
+    const notificationList = rows.slice(0, take);
+
+    // A cursor means "there's more from here"; null means that's everything.
+    return c.json(
+      {
+        notificationList,
+        count,
+        nextCursor: rows.length > take ? notificationList[notificationList.length - 1].id : null,
+      },
+      200
+    );
+  } catch (err) {
+    console.error("Error fetching comments", err);
+    return c.json({ error: { code: "INTERNAL_ERROR", message: "Internal server error" } }, 500);
+  }
+});
+
+notificationRouter.patch("/:id", authMiddleware, async (c) => {
+  const prisma = new PrismaClient({
+    accelerateUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+
+  const userId = c.get("userId") as string | undefined;
+  const notificationId = c.req.param("id");
+  try {
+    const notification = await prisma.notification.findUnique({
+      where: { id: notificationId, userId },
+    });
+    if (!notification) {
+      return c.json({ error: { code: "NOT_FOUND", message: "No such notification exists." } }, 404);
+    }
+
+    const response = await prisma.notification.update({
+      where: { id: notification?.id },
+      data: {
+        readStatus: true,
+      },
+    });
+    return c.json(
+      {
+        response,
+      },
+      200
+    );
+  } catch (err) {
+    console.error("Error fetching comments", err);
+    return c.json({ error: { code: "INTERNAL_ERROR", message: "Internal server error" } }, 500);
+  }
+});

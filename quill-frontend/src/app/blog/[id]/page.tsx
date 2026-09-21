@@ -138,7 +138,13 @@ const Blog = async ({ params }: { params: Promise<{ id: string }> }) => {
 
         <div className="rule my-12" />
 
-        <CommentableContent html={safeContent} postId={blog.id} token={session?.backendToken} />
+        <CommentableContent
+          html={safeContent}
+          postId={blog.id}
+          token={session?.backendToken}
+          postAuthorId={blog.author?.id}
+          currentUserId={session?.user?.id}
+        />
 
         <footer className="border-t border-border mt-20 pt-12">
           {blog.author && (

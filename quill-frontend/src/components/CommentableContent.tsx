@@ -1,229 +1,217 @@
 "use client";
-import { getComments, patchCommentStatus, postComments } from "@/actions/commentAction";
-import Button from "@/atoms/Button";
-import Input from "@/atoms/Input";
-import { Comment } from "@/types/CommentProps";
-import {
-  clearHighlights,
-  getPlainText,
-  resolveAnchor,
-  highlightRange,
-  getOffsets,
-} from "@/utils/commentFunctions";
-import { useEffect, useMemo, useRef, useState } from "react";
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ChatBubbleLeftIcon } from "@heroicons/react/24/outline";
+import { getOffsets } from "@/utils/commentFunctions";
+import ComposePanel from "./annotation/ComposePanel";
+import ThreadPanel from "./annotation/ThreadPanel";
+import { MiniSpinner, panelStyle, rectOf, useCloseOnScroll, type Anchor } from "./annotation/ui";
+import { useComments, useCommentDeepLink } from "./annotation/useComments";
 
 type CommentableContentProps = {
   html: string;
   postId: string;
   token?: string;
+  postAuthorId?: string;
+  currentUserId?: string;
 };
 
-type SelectionRefProps = {
+type Selection = {
+  at: Anchor;
   startOffset: number;
   endOffset: number;
   anchorText: string;
+  prefix: string;
+  suffix: string;
 };
 
-const CLOSED = { id: "", state: false, text: "", position: { top: 0, left: 0 }, status: "" };
-export default function CommentableContent({ html, postId, token }: CommentableContentProps) {
+/**
+ * Renders post HTML and layers inline annotations over it. Comment data and
+ * highlighting live in useComments; the panels are their own components. What
+ * remains here is which panel is open and where it sits.
+ */
+export default function CommentableContent({
+  html,
+  postId,
+  token,
+  postAuthorId,
+  currentUserId,
+}: CommentableContentProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const selectionRef = useRef<SelectionRefProps>(null);
-  const [popupOpen, setPopupOpen] = useState({ visible: false, top: 0, right: 0 });
-  const [comments, setComments] = useState<Comment[]>([]);
-  const [inputField, setInputField] = useState(false);
-  const [commentError, setCommentError] = useState<string>("");
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [commentPopup, setCommentPopup] = useState(CLOSED);
-  const [repliedToId, setRepliedToId] = useState<string | null>(null);
-  const replyInputRef = useRef<HTMLInputElement>(null);
+  const composeRef = useRef<HTMLDivElement>(null);
+  const threadRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    getComments(postId, token)
-      .then((data) => setComments(data.comments))
-      .catch((err) => console.error("Failed to load comments:", err));
-  }, [postId, token]);
+  const { comments, loading, busy, error, setError, add, reply, setStatus } = useComments(
+    containerRef,
+    postId,
+    token,
+    currentUserId
+  );
+  useCommentDeepLink(containerRef, comments);
 
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+  // Exactly one of these is ever set: a fresh selection, or an existing thread.
+  const [selection, setSelection] = useState<Selection | null>(null);
+  const [composing, setComposing] = useState(false);
+  const [openThread, setOpenThread] = useState<{ id: string; at: Anchor } | null>(null);
+  const [replying, setReplying] = useState(false);
 
-    clearHighlights(container);
+  const isLoggedIn = Boolean(token);
+  const isPostAuthor = Boolean(postAuthorId && currentUserId && postAuthorId === currentUserId);
+  const activeComment = comments.find((c) => c.id === openThread?.id);
 
-    const postText = getPlainText(container);
+  const closeCompose = useCallback(() => {
+    setSelection(null);
+    setComposing(false);
+    setError("");
+  }, [setError]);
 
-    for (const comment of comments) {
-      if (comment.startOffset === null) continue;
-      const resolved = resolveAnchor(postText, comment);
-      if (!resolved) continue;
-      highlightRange(container, resolved.start, resolved.end, comment.id, comment.commentStatus);
-    }
-  }, [comments]);
+  const closeThread = useCallback(() => {
+    setOpenThread(null);
+    setReplying(false);
+    setError("");
+  }, [setError]);
 
-  const handlePopup = () => {
-    const result = getOffsets(containerRef.current);
-    if (!result) {
-      closePopup();
-      return;
-    }
-    const { startOffset, endOffset, range, anchorText } = result;
-    if (startOffset === null || endOffset === null) return null;
-    selectionRef.current = { startOffset, endOffset, anchorText };
-    const rect = range.getBoundingClientRect();
-    setPopupOpen({ visible: true, top: rect.top, right: rect.right });
-  };
-
-  const handleCommentClick = (e: MouseEvent) => {
-    const mark = (e.target as HTMLElement).closest<HTMLElement>("mark[data-comment-id]");
-    if (!mark) return;
-    const id = mark.dataset.commentId;
-    if (!id) return;
-    const rect = mark.getBoundingClientRect();
-
-    const comment = comments.find((comment) => comment.id === id);
-
-    if (!comment) return;
-    setPopupOpen({ visible: false, top: 0, right: 0 });
-    setRepliedToId(null); // opening a different comment must not inherit a stale reply-open state
-    setCommentPopup({
-      text: comment.text,
-      id: id,
-      state: true,
-      position: { top: rect.top + window.scrollY - 20, left: rect.left },
-      status: comment.commentStatus,
-    });
-  };
-  useEffect(() => {
-    if (!commentPopup.state) return;
-    const mark = containerRef.current?.querySelector(`mark[data-comment-id="${commentPopup.id}"]`);
-    if (!mark) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting) {
-          setCommentPopup(CLOSED);
-          setRepliedToId(null);
-        }
-      },
-      { threshold: 0 }
-    );
-    observer.observe(mark);
-    return () => observer.disconnect();
-  }, [commentPopup.state, commentPopup.id]);
-
-  useEffect(() => {
-    if (!commentPopup.state) return;
-    const close = () => {
-      setCommentPopup(CLOSED);
-      setRepliedToId(null);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [commentPopup.state]);
-
+  // Selecting text offers to annotate it; clicking a mark opens its thread.
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-    container.addEventListener("mouseup", handlePopup);
-    container.addEventListener("click", handleCommentClick);
 
+    // The reader selected some text.
+    const onMouseUp = () => {
+      const selected = getOffsets(container);
+
+      // Nothing selected any more, so put the compose box away.
+      if (!selected) {
+        closeCompose();
+        return;
+      }
+
+      setSelection({
+        at: rectOf(selected.range),
+        startOffset: selected.startOffset,
+        endOffset: selected.endOffset,
+        anchorText: selected.anchorText,
+        prefix: selected.prefix,
+        suffix: selected.suffix,
+      });
+    };
+
+    // The reader clicked an existing highlight.
+    const onClick = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      const mark = target.closest<HTMLElement>("mark[data-comment-id]");
+      if (!mark) return;
+
+      const commentId = mark.dataset.commentId;
+      if (!commentId) return;
+
+      const exists = comments.some((c) => c.id === commentId);
+      if (!exists) return;
+
+      // Only one panel is ever open, so close the compose box first.
+      closeCompose();
+      setReplying(false);
+      setOpenThread({ id: commentId, at: rectOf(mark) });
+    };
+
+    container.addEventListener("mouseup", onMouseUp);
+    container.addEventListener("click", onClick);
     return () => {
-      container.removeEventListener("mouseup", handlePopup);
-      container.removeEventListener("click", handleCommentClick);
+      container.removeEventListener("mouseup", onMouseUp);
+      container.removeEventListener("click", onClick);
     };
-  }, [comments]);
+  }, [comments, closeCompose]);
 
-  const closePopup = () => {
-    setPopupOpen({ visible: false, top: 0, right: 0 });
-    setInputField(false);
-    setCommentError("");
-    selectionRef.current = null;
-  };
+  // A panel is pinned to a fixed spot on screen, so scrolling would leave it
+  // stranded away from its text. Close it instead.
+  useCloseOnScroll(closeThread, Boolean(openThread));
+  useCloseOnScroll(closeCompose, Boolean(selection));
 
-  const handleSave = async () => {
-    let comment;
-    if (inputRef.current && inputRef.current.value) {
-      comment = inputRef.current.value.trim();
-    }
-    if (!comment) {
-      setCommentError("Comment can't be empty");
+  // Flag the mark whose thread is open, purely so it can be styled as active.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    // Clear the previous one first.
+    const previous = container.querySelectorAll<HTMLElement>("mark[data-comment-active]");
+    previous.forEach((mark) => delete mark.dataset.commentActive);
+
+    if (!openThread) return;
+
+    const mark = container.querySelector<HTMLElement>(`mark[data-comment-id="${openThread.id}"]`);
+    if (mark) mark.dataset.commentActive = "";
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- as above
+  }, [openThread?.id, comments]);
+
+  // Dismiss on Escape, or a pointer down outside both panels.
+  useEffect(() => {
+    if (!composing && !openThread) return;
+
+    const closeBoth = () => {
+      closeCompose();
+      closeThread();
+    };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeBoth();
+    };
+
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as HTMLElement;
+
+      // Clicks inside either panel are not "outside".
+      if (composeRef.current?.contains(target)) return;
+      if (threadRef.current?.contains(target)) return;
+
+      // Clicking a highlight opens that thread; closing here would fight it.
+      if (target.closest("mark[data-comment-id]")) return;
+
+      closeBoth();
+    };
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [composing, openThread, closeCompose, closeThread]);
+
+  const handleSave = async (text: string) => {
+    if (!text) {
+      setError("Comment can't be empty");
       return;
     }
-    if (!selectionRef.current) {
-      setCommentError("No text section selected");
+    if (!selection) {
+      setError("No text section selected");
       return;
     }
-    const payload = {
-      text: comment,
-      postId: postId,
-      startOffset: selectionRef.current.startOffset,
-      endOffset: selectionRef.current.endOffset,
-      anchorText: selectionRef.current.anchorText,
-    };
-    try {
-      const response = await postComments(payload, token);
-      if (response && response.comment) {
-        setComments((prev) => [...prev, response?.comment]);
-      }
-      closePopup();
-    } catch (err) {
-      console.error("Error in posting comments", err);
-      setCommentError("Failed to post a comment");
-    }
+
+    const saved = await add({
+      text,
+      postId,
+      startOffset: selection.startOffset,
+      endOffset: selection.endOffset,
+      anchorText: selection.anchorText,
+      prefix: selection.prefix,
+      suffix: selection.suffix,
+    });
+
+    if (saved) closeCompose();
   };
 
-  const handleReplySave = async (id: string) => {
-    let comment;
-    if (replyInputRef.current && replyInputRef.current.value) {
-      comment = replyInputRef.current.value.trim();
-    }
-    if (!comment) {
-      setCommentError("Comment can't be empty");
+  const handleReply = async (text: string) => {
+    if (!text) {
+      setError("Comment can't be empty");
       return;
     }
-    if (!id) {
-      setCommentError("No parent comment exists");
-      return; // was missing — this previously fell through to the API call anyway
-    }
-    const payload = {
-      text: comment,
-      postId: postId,
-      parentId: id,
-    };
-    try {
-      const res = await postComments(payload, token); // { message, comment }
-      const newReply = res?.comment;
-      if (newReply) {
-        setComments((prev) =>
-          prev.map((c) =>
-            c.id === newReply.parentId ? { ...c, replies: [...(c.replies ?? []), newReply] } : c
-          )
-        );
-      }
-      setCommentError("");
-      setRepliedToId(null); // closes the reply box specifically — closePopup() was the wrong call here
-      if (replyInputRef.current) replyInputRef.current.value = "";
-    } catch (err) {
-      console.error("Error in posting comments", err);
-      setCommentError("Failed to post a comment");
-    }
+    if (!openThread) return;
+
+    const sent = await reply(openThread.id, text);
+    if (sent) setReplying(false);
   };
 
-  const handleCommentStatus = async (id: string, status: string) => {
-    try {
-      const res = await patchCommentStatus(id, status, token);
-      const updated = res?.data?.response; // check the actual shape
-      if (!updated) return;
-
-      setComments((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
-      setCommentPopup(CLOSED);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const contentDiv = useMemo(
+  const content = useMemo(
     () => (
       <div
         ref={containerRef}
@@ -236,109 +224,65 @@ export default function CommentableContent({ html, postId, token }: CommentableC
 
   return (
     <>
-      {contentDiv}
-      {popupOpen.visible && !inputField && (
+      {content}
+
+      {selection && !composing && (
         <div
-          style={{ position: "fixed", top: popupOpen.top, left: popupOpen.right }}
-          className="z-50 rounded-lg border bg-white shadow-lg dark:bg-neutral-900"
+          style={{ ...panelStyle(selection.at, 108), width: "auto" }}
+          className="z-50 panel rounded-md animate-pop-in"
         >
-          <Button
-            label="Add a comment"
+          <button
             type="button"
-            size="sm"
-            variant="primary"
-            onClick={() => setInputField(true)}
-          />
+            onClick={() => {
+              closeThread(); // mutually exclusive with the thread panel
+              setComposing(true);
+            }}
+            disabled={loading}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 font-mono text-[10px] uppercase tracking-[0.12em] hover:text-accent transition-colors duration-200 ease-out cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {loading ? (
+              <MiniSpinner className="w-[11px] h-[11px]" />
+            ) : (
+              <ChatBubbleLeftIcon width={11} height={11} />
+            )}
+            Annotate
+          </button>
         </div>
       )}
-      {inputField && (
-        <div
-          style={{ position: "fixed", top: popupOpen.top, left: popupOpen.right }}
-          className="z-50 rounded-lg border bg-white shadow-lg dark:bg-neutral-900"
-        >
-          <Input type="text" ref={inputRef} />
-          <Button
-            label="Save Comment"
-            type="button"
-            size="sm"
-            variant="primary"
-            onClick={handleSave}
-          />
-          {commentError && <p className="px-2 text-sm text-red-600">{commentError}</p>}
-        </div>
+
+      {composing && selection && (
+        <ComposePanel
+          panelRef={composeRef}
+          at={selection.at}
+          isLoggedIn={isLoggedIn}
+          busy={busy}
+          error={error}
+          onSave={handleSave}
+          onClose={closeCompose}
+        />
       )}
-      {commentPopup.state &&
-        (() => {
-          const activeComment = comments.find((c) => c.id === commentPopup.id);
-          return (
-            <div
-              style={{
-                position: "absolute",
-                top: commentPopup.position.top,
-                left: commentPopup.position.left,
-              }}
-              className="z-50 rounded-lg border dark:bg-white text-white shadow-lg bg-neutral-900"
-            >
-              {commentPopup.status === "PENDING" && (
-                <>
-                  <Button
-                    label="Approve"
-                    type="button"
-                    size="sm"
-                    variant="primary"
-                    onClick={() => handleCommentStatus(commentPopup.id, "APPROVED")}
-                  />
-                  <Button
-                    label="Reject"
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => handleCommentStatus(commentPopup.id, "REJECTED")}
-                  />
-                </>
-              )}
-              <span>{commentPopup.text}</span>
 
-              {activeComment?.replies?.map((r) => (
-                <div key={r.id} className="pl-3 border-l ml-2 mt-1">
-                  <span className="text-sm opacity-80">{r.author?.name}: </span>
-                  <span className="text-sm">{r.text}</span>
-                </div>
-              ))}
-
-              {repliedToId === commentPopup.id ? (
-                <>
-                  <Input type="text" ref={replyInputRef} />
-                  <Button
-                    label="Submit"
-                    type="button"
-                    size="sm"
-                    variant="primary"
-                    onClick={() => handleReplySave(commentPopup.id)}
-                  />
-                  <Button
-                    label="X"
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setRepliedToId(null)}
-                  />
-                  {commentError && <p className="px-2 text-sm text-red-600">{commentError}</p>}
-                </>
-              ) : (
-                commentPopup.status === "APPROVED" && (
-                  <Button
-                    label="Reply"
-                    type="button"
-                    size="sm"
-                    variant="primary"
-                    onClick={() => setRepliedToId(commentPopup.id)}
-                  />
-                )
-              )}
-            </div>
-          );
-        })()}
+      {openThread && activeComment && (
+        <ThreadPanel
+          panelRef={threadRef}
+          comment={activeComment}
+          at={openThread.at}
+          isLoggedIn={isLoggedIn}
+          isPostAuthor={isPostAuthor}
+          currentUserId={currentUserId}
+          busy={busy}
+          error={error}
+          replying={replying}
+          onReplyOpen={() => setReplying(true)}
+          onReplyCancel={() => setReplying(false)}
+          onReply={handleReply}
+          onStatus={async (status) => {
+            const changed = await setStatus(openThread.id, status);
+            if (changed) closeThread();
+          }}
+          onClose={closeThread}
+        />
+      )}
     </>
   );
 }
