@@ -126,7 +126,7 @@ export default function MenuBar({ editor }: { editor: Editor | null }) {
   ];
 
   return (
-    <div className="flex items-center gap-px border border-border bg-background sticky top-[61px] z-30 overflow-x-auto whitespace-nowrap scrollbar-thin">
+    <div className="flex items-center gap-px border border-border bg-bg sticky top-14 z-30 overflow-x-auto whitespace-nowrap scroll-strip">
       {groups.map((group, gi) => (
         <div key={gi} className="flex items-center border-r border-border last:border-r-0 shrink-0">
           {group.map((option, index) => (
@@ -135,7 +135,7 @@ export default function MenuBar({ editor }: { editor: Editor | null }) {
               square
               variant={option.pressed ? "primary" : "ghost"}
               onClick={option.onClick}
-              className={!option.pressed ? "text-muted-foreground hover:bg-muted" : ""}
+              className={!option.pressed ? "text-muted hover:bg-muted" : ""}
               icon={option.icon}
             />
           ))}

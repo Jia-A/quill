@@ -19,38 +19,28 @@ export default function ProfileHeader({ user }: ProfileHeaderProps) {
 
   return (
     <>
-      <div className="flex items-center gap-4 mb-8">
-        <span className="eyebrow">[ Profile ]</span>
-        <span className="flex-1 rule" />
-      </div>
-
-      <div className="flex flex-col sm:flex-row gap-6 sm:gap-8">
-        <Avatar
-          size="xl"
-          avImage={user.avatar}
-          name={user.name}
-          alt={user.name}
-          onClick={() => {}}
-        />
-        <div className="flex-1 min-w-0">
-          <h1 className="font-serif font-light text-[clamp(2rem,5vw,3.5rem)] leading-[0.95] tracking-tightest">
-            {user.name}
-          </h1>
-          <p className="mt-3 text-muted-foreground">{user.email}</p>
-          {user.aboutAuthor && (
-            <p className="mt-4 font-serif italic text-foreground/80 leading-relaxed max-w-md">
-              {user.aboutAuthor}
-            </p>
-          )}
+      {/* On a phone the button can't share a row with the name without
+          squeezing both, so it wraps to its own line underneath. */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+        <div className="flex min-w-0 items-start gap-4">
+          <Avatar size="xl" avImage={user.avatar} name={user.name} alt={user.name} />
+          <div className="min-w-0 flex-1">
+            <h1 className="text-2xl font-semibold tracking-tight">{user.name}</h1>
+            <p className="mt-0.5 text-sm text-muted">{user.email}</p>
+            {user.aboutAuthor && (
+              <p className="mt-3 max-w-prose text-sm leading-relaxed">{user.aboutAuthor}</p>
+            )}
+          </div>
         </div>
-        <Button
-          variant="secondary"
-          size="sm"
-          label="Edit profile"
-          icon={<PencilSquareIcon width={16} height={16} />}
-          onClick={() => setShowEditModal(true)}
-          className="self-start"
-        />
+        <div className="shrink-0 sm:ml-auto">
+          <Button
+            variant="secondary"
+            size="sm"
+            label="Edit profile"
+            icon={<PencilSquareIcon className="w-4 h-4" />}
+            onClick={() => setShowEditModal(true)}
+          />
+        </div>
       </div>
 
       {showEditModal && <EditProfileModal user={user} onClose={() => setShowEditModal(false)} />}

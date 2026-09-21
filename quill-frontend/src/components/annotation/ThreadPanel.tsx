@@ -27,11 +27,11 @@ const Byline = ({
   authorId?: string;
   currentUserId?: string;
 }) => (
-  <span className={`mt-1.5 flex items-center gap-1.5 ${META} text-muted-foreground`}>
+  <span className={`mt-1.5 flex items-center gap-1.5 ${META} text-muted`}>
     <span className="w-3 h-px bg-border" aria-hidden />
     {name ?? "Unknown"}
     {authorId && currentUserId && authorId === currentUserId && (
-      <span className="accent-text">(you)</span>
+      <span className="text-accent">(you)</span>
     )}
   </span>
 );
@@ -48,8 +48,8 @@ const ModerateButton = ({
   loading?: boolean;
 }) => {
   const look = quiet
-    ? "border border-border text-muted-foreground hover:text-foreground hover:border-foreground/40"
-    : "bg-accent text-accent-foreground hover:opacity-90";
+    ? "border border-border text-muted hover:text-fg hover:border-fg/40"
+    : "bg-accent text-accent-fg hover:opacity-90";
 
   return (
     <button
@@ -99,6 +99,7 @@ export default function ThreadPanel({
   const sending = busy === "reply";
   const isPending = comment.commentStatus === "PENDING";
   const isApproved = comment.commentStatus === "APPROVED";
+  const isRejected = comment.commentStatus === "REJECTED";
   const replies = comment.replies ?? [];
 
   const send = () => {
@@ -111,7 +112,7 @@ export default function ThreadPanel({
       <CloseButton onClick={onClose} aria-label="Close annotation" />
 
       <div className="px-3 pb-2.5">
-        <p className="text-[13px] font-serif leading-snug">{comment.text}</p>
+        <p className="text-sm leading-snug">{comment.text}</p>
         <Byline
           name={comment.author?.name}
           authorId={comment.authorId}
@@ -123,9 +124,7 @@ export default function ThreadPanel({
         <ul className="px-3 pb-2 space-y-2.5 max-h-[150px] overflow-y-auto">
           {replies.map((reply) => (
             <li key={reply.id} className="border-l border-border pl-2.5">
-              <p className="text-[12px] font-serif leading-snug text-muted-foreground">
-                {reply.text}
-              </p>
+              <p className="text-xs leading-snug text-muted">{reply.text}</p>
               <Byline
                 name={reply.author?.name}
                 authorId={reply.authorId}
@@ -156,8 +155,16 @@ export default function ThreadPanel({
       )}
 
       {isPending && !isPostAuthor && (
-        <p className="px-3 py-2 border-t border-border text-[12px] font-serif italic text-muted-foreground">
+        <p className="px-3 py-2 border-t border-border text-xs text-muted">
           Awaiting approval from the post author.
+        </p>
+      )}
+
+      {/* Only its own author ever sees a rejected comment's mark, so this line
+          is for them: the decision, stated plainly, with no action left. */}
+      {isRejected && (
+        <p className="px-3 py-2 border-t border-border text-xs text-muted">
+          Rejected by the post author.
         </p>
       )}
 
@@ -172,7 +179,7 @@ export default function ThreadPanel({
               if (e.key === "Escape") onReplyCancel();
             }}
           />
-          {error && <p className={`pt-1.5 ${META} text-destructive`}>{error}</p>}
+          {error && <p className={`pt-1.5 ${META} text-danger`}>{error}</p>}
           <div className="flex justify-end items-center gap-3 pt-2">
             <TextButton onClick={onReplyCancel}>Cancel</TextButton>
             <AccentButton onClick={send} disabled={sending} loading={sending}>
@@ -186,7 +193,7 @@ export default function ThreadPanel({
             <button
               type="button"
               onClick={onReplyOpen}
-              className={`w-full flex items-center gap-1.5 px-3 py-2 border-t border-border ${META} text-muted-foreground hover:text-accent transition-colors duration-200 cursor-pointer`}
+              className={`w-full flex items-center gap-1.5 px-3 py-2 border-t border-border ${META} text-muted hover:text-accent transition-colors duration-200 cursor-pointer`}
             >
               <ArrowUturnLeftIcon width={11} height={11} />
               Reply

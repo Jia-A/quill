@@ -59,21 +59,21 @@ const SignupForm = () => {
 
   return (
     <form onSubmit={handleSubmit(signupHandler)}>
-      <span className="flex flex-col gap-5 w-full mt-8">
+      <div className="flex flex-col gap-4">
         <Input label="Full name" register={register("name")} />
-        {errors.name && <p className="text-red-500 text-sm">{errors.name.message}</p>}
+        {errors.name && <p className="text-danger text-sm">{errors.name.message}</p>}
         <Input label="Email" register={register("email")} />
-        {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
+        {errors.email && <p className="text-danger text-sm">{errors.email.message}</p>}
         <Input label="Password" type="password" register={register("password")} />
-        {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
-      </span>
-      {formError && <p className="text-red-500 text-sm mt-4">{formError}</p>}
+        {errors.password && <p className="text-danger text-sm">{errors.password.message}</p>}
+      </div>
+      {formError && <p className="text-danger text-sm mt-4">{formError}</p>}
       <Button
         label={isSubmitting ? "Signing up..." : "Signup"}
         type="submit"
         variant="primary"
         loading={isSubmitting}
-        className="mt-6 w-full justify-center"
+        className="mt-5 w-full"
       />
     </form>
   );

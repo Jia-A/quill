@@ -1,15 +1,25 @@
+import { auth } from "@/auth";
 import MainSection from "@/components/MainSection";
-import QuoteFeature from "@/components/QuoteFeature";
-import FeatureGrid from "@/components/FeatureGrid";
+import LinkedInHighlight from "@/components/LinkedInHighlight";
+import Workflow from "@/components/Workflow";
+import CommentsHighlight from "@/components/CommentsHighlight";
+import ReadingHub from "@/components/ReadingHub";
 import Footer from "@/components/Footer";
 
-const LandingPage = () => {
+const LandingPage = async () => {
+  // Reachable while signed in, so the calls to action adapt rather than
+  // inviting you to log in again.
+  const session = await auth();
+  const signedIn = Boolean(session?.user);
+
   return (
     <main>
-      <MainSection />
-      <QuoteFeature />
-      <FeatureGrid />
-      <Footer />
+      <MainSection signedIn={signedIn} />
+      <LinkedInHighlight />
+      <Workflow />
+      <CommentsHighlight />
+      <ReadingHub signedIn={signedIn} />
+      <Footer signedIn={signedIn} />
     </main>
   );
 };

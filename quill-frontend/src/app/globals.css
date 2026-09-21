@@ -3,339 +3,192 @@
 @tailwind utilities;
 
 /*
-  Quill — editorial design system.
-  Sharp edges, warm paper, ember-crimson accent. Three faces:
-  serif (Newsreader) for display, sans (Inter) for body, mono for meta.
-  Color tokens are HSL channels consumed via hsl(var(--token)).
+  Quill design tokens.
+  Plain hex, one name per colour. Light values on :root, dark values on .dark.
+  Use them through Tailwind classes: bg-bg, text-fg, border-border, text-muted.
 */
 
 :root {
-  --radius: 0rem;
-
-  /* Light — warm paper / near-black ink */
-  --background: 40 33% 97%; /* #FAF8F4 warm paper */
-  --foreground: 30 18% 8%; /* #16130F near-black ink */
-  --card: 40 33% 97%;
-  --card-foreground: 30 18% 8%;
-  --popover: 40 33% 99%;
-  --popover-foreground: 30 18% 8%;
-
-  --primary: 30 18% 8%; /* ink */
-  --primary-foreground: 40 33% 97%;
-  --secondary: 38 24% 92%;
-  --secondary-foreground: 30 18% 8%;
-
-  --muted: 38 22% 91%;
-  --muted-foreground: 32 8% 40%;
-  --accent: 9 65% 48%; /* #C8442B ember crimson */
-  --accent-foreground: 40 33% 97%;
-
-  --destructive: 0 70% 45%;
-  --destructive-foreground: 40 33% 97%;
-
-  --border: 32 14% 84%; /* warm hairline */
-  --input: 32 14% 80%;
-  --ring: 9 65% 48%; /* accent focus ring */
-
-  --paper: 40 33% 97%;
+  --bg: #ffffff;
+  --bg-subtle: #f6f8fa;
+  --card: #ffffff;
+  --card-border: #d8dee4;
+  --fg: #1f2328;
+  --muted: #656d76;
+  --border: #d8dee4;
+  --accent: #c8442b;
+  --accent-fg: #ffffff;
+  --danger: #cf222e;
+  --annotation: #b45309;
+  --annotation-bg: #fef3c7;
+  --annotation-pending: #6b7280;
+  --annotation-wash: #fde68a;
 }
 
 .dark {
-  /* Dark — warm near-black / off-white ink */
-  --background: 30 8% 5%; /* #0E0D0C */
-  --foreground: 38 18% 90%; /* warm off-white */
-  --card: 30 8% 7%;
-  --card-foreground: 38 18% 90%;
-  --popover: 30 8% 8%;
-  --popover-foreground: 38 18% 90%;
-
-  --primary: 38 18% 90%;
-  --primary-foreground: 30 8% 5%;
-  --secondary: 30 6% 13%;
-  --secondary-foreground: 38 18% 90%;
-
-  --muted: 30 6% 13%;
-  --muted-foreground: 36 8% 58%;
-  --accent: 9 72% 56%; /* brighter ember on dark */
-  --accent-foreground: 30 8% 5%;
-
-  --destructive: 0 65% 55%;
-  --destructive-foreground: 38 18% 90%;
-
-  --border: 30 6% 17%;
-  --input: 30 6% 20%;
-  --ring: 9 72% 56%;
-
-  --paper: 30 8% 5%;
+  /* Neutral greys, not blue-grey: a blue cast fights the warm accent. */
+  --bg: #0d0d0f;
+  --bg-subtle: #151517;
+  /* Raised surfaces sit lighter than the page so cards read as cards. */
+  --card: #1b1b1e;
+  --card-border: #3a3a3f;
+  --fg: #ededee;
+  --muted: #9a9a9f;
+  --border: #2c2c30;
+  --accent: #e06a4e;
+  --accent-fg: #0d0d0f;
+  --danger: #f85149;
+  --annotation: #ffc933;
+  /* No wash in dark: the bright amber text reads well on its own. */
+  --annotation-bg: transparent;
+  --annotation-pending: #9a9a9f;
+  --annotation-wash: #3a2e0d;
 }
 
 @layer base {
-  * {
-    border-color: hsl(var(--border));
-  }
   body {
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
-    font-feature-settings:
-      "liga" 1,
-      "calt" 1;
+    background-color: var(--bg);
+    color: var(--fg);
   }
+
+  /* Selecting text tints it rather than painting a highlight box. */
   ::selection {
-    background-color: hsl(var(--accent));
-    color: hsl(var(--accent-foreground));
+    background-color: transparent;
+    color: var(--accent);
   }
-  /* Thin, editorial scrollbar */
-  ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+
+  /* User-supplied text — bios, titles, comments — can contain a single
+     unbroken run of characters long enough to push the page wider than the
+     phone it's read on. Breaking such a run is always better than a sideways
+     scrollbar; normal prose is unaffected, since it has spaces to break at. */
+  body {
+    overflow-wrap: break-word;
   }
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: hsl(var(--border));
-    border: 3px solid hsl(var(--background));
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground));
+
+  /* Links inside article text carry the accent; UI links opt in per component. */
+  .prose a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
   }
 }
 
 @layer components {
-  /* Mono eyebrow label — section numbers, kickers, meta */
-  .eyebrow {
-    font-family: var(--font-mono), monospace;
-    font-size: 0.72rem;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: hsl(var(--muted-foreground));
-  }
-  .accent-text {
-    color: hsl(var(--accent));
+  /* Article body. Serif is kept here only, where long-form reading happens. */
+  .prose,
+  .tiptap {
+    font-family: var(--font-serif), Georgia, serif;
+    font-size: 18px;
+    line-height: 1.7;
   }
 
-  /* Animated underline link — sharp, editorial */
-  .link-underline {
-    position: relative;
-  }
-  .link-underline::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    bottom: -2px;
-    height: 1px;
-    width: 100%;
-    background: currentColor;
-    transform: scaleX(0);
-    transform-origin: right;
-    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
-  }
-  .link-underline:hover::after {
-    transform: scaleX(1);
-    transform-origin: left;
+  .prose h1,
+  .prose h2,
+  .prose h3,
+  .tiptap h1,
+  .tiptap h2,
+  .tiptap h3 {
+    font-family: var(--font-sans), system-ui, sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.01em;
   }
 
-  /* Hairline rule used as a section divider */
-  .rule {
-    height: 1px;
-    width: 100%;
-    background: hsl(var(--border));
+  .prose img,
+  .tiptap img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 1.5rem auto;
+    border-radius: 6px;
+  }
+
+  /* Horizontally scrollable strips (profile tabs, editor toolbar). The bar is
+   scrolled with a swipe on touch, so the scrollbar itself is noise; a soft
+   fade at the trailing edge is what actually signals "there is more here". */
+  .scroll-strip {
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent 100%);
+    mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent 100%);
+  }
+
+  .scroll-strip::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Once everything fits there is nothing to scroll to, so drop the fade. */
+  @media (min-width: 640px) {
+    .scroll-strip {
+      -webkit-mask-image: none;
+      mask-image: none;
+    }
+  }
+
+  /* Code blocks and tables have an intrinsic width the prose column can't
+     shrink: on a phone they would widen the whole page rather than wrap. Let
+     each scroll inside its own box so the article itself stays put. */
+  .prose pre,
+  .tiptap pre {
+    overflow-x: auto;
+    max-width: 100%;
+  }
+
+  /* Inline code is part of a sentence, so it breaks rather than scrolls. */
+  .prose :not(pre) > code,
+  .tiptap :not(pre) > code {
+    overflow-wrap: break-word;
+  }
+
+  .prose table,
+  .tiptap table {
+    display: block;
+    overflow-x: auto;
+    max-width: 100%;
+  }
+
+  /* Floating surface: comment popovers, notification dropdown. */
+  .panel {
+    background-color: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
   }
 }
 
-/* Editor / blog prose tuned for the editorial serif look */
-.prose,
-.tiptap {
-  font-family: var(--font-serif), Georgia, serif;
-}
-.prose h1,
-.prose h2,
-.prose h3,
-.tiptap h1,
-.tiptap h2,
-.tiptap h3 {
-  font-family: var(--font-serif), Georgia, serif;
-  font-weight: 500;
-  letter-spacing: -0.01em;
-}
+/* Inline comment marks on a published post. */
 
-/* Reveal-on-load keyframes for editorial entrances */
-@keyframes rise {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-.animate-rise {
-  animation: rise 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-}
-
-@keyframes marquee {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-.animate-marquee {
-  animation: marquee 28s linear infinite;
-}
-
-.prose img,
-.tiptap img {
-  display: block;
-  max-width: 100%;
-  width: auto;
-  height: auto;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-/* ────────────────────────────────────────────────────────────
-   Annotation & notification surfaces
-   Marginalia treated as editorial apparatus: inline marks read
-   as ink on paper, popovers as pasted-in slips of card stock.
-   ──────────────────────────────────────────────────────────── */
-
-/* Floating panel — the shared shell for comment popovers and the
-   notification dropdown. Sharp edges + a lifted, warm-toned shadow. */
-.panel {
-  background: hsl(var(--popover));
-  color: hsl(var(--popover-foreground));
-  border: 1px solid hsl(var(--border));
-  box-shadow:
-    0 1px 2px hsl(0 0% 0% / 0.06),
-    0 8px 20px -8px hsl(0 0% 0% / 0.35);
-}
-/* Popovers are small floating chips — a hair of radius reads friendlier
-   than the zero-radius page furniture without breaking the system. */
-.panel.rounded-md {
-  border-radius: 6px;
-}
-/* Hairline accent rail marking a panel as "annotation" apparatus */
-.panel-accent {
-  border-top: 2px solid hsl(var(--accent));
-}
-
-/* Inline annotation marks. Approved = ember wash keyed to the accent;
-   pending = a dotted underline that reads as provisional, not as error. */
+/* Approved and live: amber text on a soft amber wash, no underline. */
 mark[data-comment-id] {
-  background: transparent;
-  color: inherit;
   cursor: pointer;
-  padding: 0 0.05em;
-  transition:
-    background-color 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
-    box-shadow 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-mark[data-comment-approved] {
-  background: hsl(var(--accent) / 0.1);
-  box-shadow: inset 0 -1px 0 hsl(var(--accent) / 0.45);
-}
-mark[data-comment-approved]:hover {
-  background: hsl(var(--accent) / 0.18);
-  box-shadow: inset 0 -1px 0 hsl(var(--accent) / 0.8);
-}
-/* Your own comment, still awaiting the post author's approval. Warm amber
-   sits apart from the ember accent without fighting it. One amber token,
-   themed once, so the rules below don't repeat per theme. */
-mark[data-comment-mine] {
-  --amber: 43 85% 45%;
-  background: hsl(var(--amber) / 0.2);
-  box-shadow: inset 0 -1px 0 hsl(var(--amber) / 0.65);
-  text-decoration: underline dotted hsl(var(--amber) / 0.6);
-  text-underline-offset: 3px;
-}
-.dark mark[data-comment-mine] {
-  --amber: 43 88% 62%;
-}
-mark[data-comment-mine]:hover {
-  background: hsl(var(--amber) / 0.32);
-  box-shadow: inset 0 -1px 0 hsl(var(--amber));
+  color: var(--annotation);
+  background-color: var(--annotation-bg);
+  border-radius: 2px;
+  padding: 0 2px;
 }
 
+/* Not yet approved: yours, or awaiting the author. Neutral grey with a dashed
+   rule, so provisional marks differ from live ones in kind, not just in shade. */
+mark[data-comment-mine],
 mark[data-comment-pending] {
-  background: hsl(var(--muted-foreground) / 0.08);
-  box-shadow: inset 0 -1px 0 hsl(var(--muted-foreground) / 0.5);
-  text-decoration: underline dotted hsl(var(--muted-foreground) / 0.7);
+  color: var(--annotation-pending);
+  background-color: transparent;
+  text-decoration: underline dashed;
   text-underline-offset: 3px;
 }
-mark[data-comment-pending]:hover {
-  background: hsl(var(--muted-foreground) / 0.16);
+
+/* Rejected, and only ever shown to the commenter who wrote it. Fainter than a
+   pending mark so it recedes into the prose: the decision is already made and
+   the passage is no longer asking anything of the reader. */
+mark[data-comment-rejected] {
+  color: var(--annotation-pending);
+  background-color: transparent;
+  opacity: 0.6;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
 }
-/* A mark arrived at from a notification deep link. Three slow breaths of
-   ember, then it settles back to its normal state — enough to find the
-   passage without the jarring on/off of a popover opening and closing. */
-@keyframes comment-found {
-  0%,
-  100% {
-    background: hsl(var(--accent) / 0.08);
-    box-shadow: inset 0 -1px 0 hsl(var(--accent) / 0.4);
-  }
-  /* Hold near the peak briefly so each of the three pulses reads as a
-     distinct beat rather than blurring into one slow swell. */
-  35%,
-  60% {
-    background: hsl(var(--accent) / 0.48);
-    box-shadow: inset 0 -2px 0 hsl(var(--accent));
-  }
-}
+
+/* The mark whose thread is open, or one reached from a notification. */
+mark[data-comment-active],
 mark[data-comment-found] {
-  animation: comment-found 0.7s cubic-bezier(0.4, 0, 0.6, 1) 3;
-}
-@media (prefers-reduced-motion: reduce) {
-  mark[data-comment-found] {
-    animation: none;
-    background: hsl(var(--accent) / 0.3);
-    box-shadow: inset 0 -2px 0 hsl(var(--accent));
-  }
-}
-
-/* The mark whose popover is currently open */
-mark[data-comment-active] {
-  background: hsl(var(--accent) / 0.2);
-  box-shadow: inset 0 -2px 0 hsl(var(--accent));
-}
-
-/* Popover entrance — a short rise, same curve as .animate-rise */
-/* Opacity-only: these panels carry a translateY(-100%) in their inline
-   style to sit above the selection, so animating transform would fight it. */
-@keyframes pop-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-.animate-pop-in {
-  animation: pop-in 0.14s cubic-bezier(0.2, 0.8, 0.2, 1) both;
-}
-
-/* Unread notification pulse — one soft ember ring, no infinite loop */
-@keyframes ember-pulse {
-  0% {
-    box-shadow: 0 0 0 0 hsl(var(--accent) / 0.5);
-  }
-  70% {
-    box-shadow: 0 0 0 6px hsl(var(--accent) / 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 hsl(var(--accent) / 0);
-  }
-}
-.animate-ember {
-  animation: ember-pulse 2.4s cubic-bezier(0.2, 0.8, 0.2, 1) 3;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .animate-pop-in,
-  .animate-ember {
-    animation: none;
-  }
+  color: var(--annotation);
+  background-color: var(--annotation-wash);
 }

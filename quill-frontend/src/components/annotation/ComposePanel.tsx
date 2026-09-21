@@ -59,7 +59,7 @@ export default function ComposePanel({
             />
           </div>
 
-          {error && <p className={`px-3 pb-1.5 ${META} text-destructive`}>{error}</p>}
+          {error && <p className={`px-3 pb-1.5 ${META} text-danger`}>{error}</p>}
 
           <div className="flex justify-end items-center gap-3 px-3 pb-2">
             <TextButton onClick={onClose}>Cancel</TextButton>

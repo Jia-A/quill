@@ -1,23 +1,23 @@
 import Link from "next/link";
-import Wordmark from "@/components/Wordmark";
 
-const Footer = () => {
+const Footer = ({ signedIn = false }: { signedIn?: boolean }) => {
   return (
-    <footer className="border-t border-border">
-      <div className="max-w-6xl mx-auto px-6 md:px-10 py-12 flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <Wordmark href="/" />
-        <nav className="flex flex-wrap gap-6">
-          <Link href="/blogs" className="eyebrow hover:text-accent transition-colors">
-            Read
+    <footer>
+      <div className="mx-auto flex max-w-content flex-col gap-3 px-4 py-8 text-sm text-muted sm:flex-row sm:items-center sm:justify-between">
+        <span>© {new Date().getFullYear()} Quill</span>
+        <nav className="flex gap-5">
+          <Link href="/blogs" className="hover:text-fg">
+            Stories
           </Link>
-          <Link href="/auth/signup" className="eyebrow hover:text-accent transition-colors">
+          <Link href={signedIn ? "/editor" : "/auth/signup"} className="hover:text-fg">
             Write
           </Link>
-          <Link href="/auth/signin" className="eyebrow hover:text-accent transition-colors">
-            Login
-          </Link>
+          {!signedIn && (
+            <Link href="/auth/signin" className="hover:text-fg">
+              Sign in
+            </Link>
+          )}
         </nav>
-        <span className="eyebrow">&copy; {new Date().getFullYear()} Quill</span>
       </div>
     </footer>
   );
