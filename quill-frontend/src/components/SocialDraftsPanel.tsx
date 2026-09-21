@@ -189,20 +189,20 @@ const SocialDraftsPanel = ({ postId, authorId }: Props) => {
             aria-hidden
           />
           <aside
-            className={`w-full max-w-xl bg-background border-l border-border h-full overflow-y-auto flex flex-col transition-transform duration-500 ease-out ${
+            className={`w-full max-w-xl bg-bg border-l border-border h-full overflow-y-auto flex flex-col transition-transform duration-500 ease-out ${
               entered ? "translate-x-0" : "translate-x-full"
             }`}
           >
             <header className="flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 border-b border-border">
               <div className="flex items-center gap-3">
                 <Linkedin className="w-5 h-5" />
-                <h2 className="font-serif text-2xl tracking-tightest">LinkedIn draft</h2>
+                <h2 className="text-2xl">LinkedIn draft</h2>
               </div>
               <Button
                 variant="ghost"
                 square
                 onClick={() => setOpen(false)}
-                className="text-muted-foreground"
+                className="text-muted"
                 aria-label="Close"
                 icon={<X className="w-5 h-5" />}
               />
@@ -210,7 +210,7 @@ const SocialDraftsPanel = ({ postId, authorId }: Props) => {
 
             <div className="flex-1 px-4 sm:px-6 py-4 sm:py-6 flex flex-col gap-4">
               {loading ? (
-                <div className="flex items-center justify-center py-12 text-muted-foreground">
+                <div className="flex items-center justify-center py-12 text-muted">
                   <Loader2 className="w-5 h-5 animate-spin mr-2" />
                   Loading…
                 </div>
@@ -220,7 +220,7 @@ const SocialDraftsPanel = ({ postId, authorId }: Props) => {
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     placeholder="No draft yet — hit Generate to create one with AI."
-                    className="w-full min-h-[200px] sm:min-h-[320px] flex-1 bg-muted/40 border border-border rounded-md p-4 font-sans text-sm leading-relaxed focus:outline-none focus:ring-1 focus:ring-foreground resize-y"
+                    className="w-full min-h-[200px] sm:min-h-[320px] flex-1 bg-bg-subtle border border-border rounded-md p-4 font-sans text-sm leading-relaxed focus:outline-none focus:ring-1 focus:ring-fg resize-y"
                   />
 
                   <div className="flex items-center justify-between text-xs">
@@ -230,14 +230,14 @@ const SocialDraftsPanel = ({ postId, authorId }: Props) => {
                           ? "text-red-600 font-medium"
                           : overSoft
                             ? "text-amber-600"
-                            : "text-muted-foreground"
+                            : "text-muted"
                       }
                     >
                       {content.length} / {LINKEDIN_HARD_CAP} chars
                       {overHard && ` — exceeds ${LINKEDIN_HARD_CAP} limit`}
                     </span>
                     {dirty && !overHard && (
-                      <span className="text-muted-foreground italic">Unsaved changes</span>
+                      <span className="text-muted italic">Unsaved changes</span>
                     )}
                   </div>
 

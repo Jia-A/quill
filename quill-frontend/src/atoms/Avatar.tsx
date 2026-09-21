@@ -1,43 +1,25 @@
 import Image from "next/image";
 import { AvatarProps } from "@/types/AvatarProps";
-import React from "react";
+
+const sizes = {
+  sm: "w-7 h-7 text-xs",
+  md: "w-10 h-10 text-sm",
+  lg: "w-14 h-14 text-lg",
+  xl: "w-20 h-20 text-2xl",
+};
 
 const Avatar = ({ size = "md", avImage, alt, name, onClick }: AvatarProps) => {
-  let sizeClasses = "";
-  switch (size) {
-    case "sm": {
-      sizeClasses = "w-9 h-9 font-bold text-[25px]";
-      break;
-    }
-    case "md": {
-      sizeClasses = "w-12 h-12 text-[35px]";
-      break;
-    }
-    case "lg": {
-      sizeClasses = "w-16 h-16 text-xl";
-      break;
-    }
-    case "xl": {
-      sizeClasses = "w-28 h-28 text-2xl";
-      break;
-    }
-  }
   return (
     <button
       type="button"
-      className={`relative overflow-hidden border border-foreground/30 hover:border-accent transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent ${sizeClasses}`}
       onClick={onClick}
+      className={`relative overflow-hidden rounded-full border border-border ${sizes[size]}`}
     >
       {avImage ? (
-        <Image
-          src={avImage}
-          alt={alt || name || "avatar"}
-          className="object-cover w-full h-full"
-          fill
-        />
+        <Image src={avImage} alt={alt || name || "avatar"} className="object-cover" fill />
       ) : (
-        <span className="flex items-center justify-center w-full h-full bg-foreground text-background font-serif">
-          {name?.charAt(0)}
+        <span className="flex items-center justify-center w-full h-full bg-bg-subtle font-medium">
+          {name?.charAt(0).toUpperCase()}
         </span>
       )}
     </button>

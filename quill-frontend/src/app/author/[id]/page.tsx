@@ -3,6 +3,7 @@ import { getPublicUserProfile } from "@/actions/userActions";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 
 export const revalidate = 300;
@@ -27,54 +28,42 @@ const AuthorProfilePage = async ({ params }: { params: Promise<{ id: string }> }
   }
 
   const user = response.user;
+  const posts = user.posts || [];
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <main className="max-w-3xl mx-auto px-6 md:px-10 py-16 md:py-24">
-        <Link
-          href="/blogs"
-          className="group inline-flex items-center gap-2 eyebrow text-muted-foreground hover:text-accent transition-colors mb-12"
-        >
-          <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1" />
-          All stories
-        </Link>
-        <div className="flex items-center gap-4 mb-8">
-          <span className="eyebrow">[ Profile ]</span>
-          <span className="flex-1 rule" />
-        </div>
+    <main className="mx-auto max-w-content px-4 py-10">
+      <Link
+        href="/blogs"
+        className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-fg"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        All stories
+      </Link>
 
-        <div className="flex flex-col sm:flex-row gap-6 sm:gap-8 sm:items-center">
-          <div className="w-24 h-24 shrink-0 overflow-hidden border border-foreground/30">
-            {user.avatar ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
-            ) : (
-              <span className="flex items-center justify-center w-full h-full bg-foreground text-background font-serif text-3xl">
-                {user.name?.charAt(0) || "?"}
-              </span>
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <h1 className="font-serif font-light text-[clamp(2rem,5vw,3.5rem)] leading-[0.95] tracking-tightest">
-              {user.name || "Anonymous"}
-            </h1>
-            {user.aboutAuthor && (
-              <p className="mt-4 font-serif italic text-foreground/80 leading-relaxed max-w-md">
-                {user.aboutAuthor}
-              </p>
-            )}
-          </div>
+      <div className="mt-6 flex items-start gap-4">
+        <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full border border-border">
+          {user.avatar ? (
+            <Image src={user.avatar} alt={user.name || "Author"} fill className="object-cover" />
+          ) : (
+            <span className="flex h-full w-full items-center justify-center bg-bg-subtle text-2xl font-medium">
+              {user.name?.charAt(0).toUpperCase() || "?"}
+            </span>
+          )}
         </div>
+        <div className="min-w-0 flex-1">
+          <h1 className="text-2xl font-semibold tracking-tight">{user.name || "Anonymous"}</h1>
+          <p className="mt-0.5 text-sm text-muted">
+            {posts.length} {posts.length === 1 ? "story" : "stories"}
+          </p>
+          {user.aboutAuthor && (
+            <p className="mt-3 max-w-prose text-sm leading-relaxed">{user.aboutAuthor}</p>
+          )}
+        </div>
+      </div>
 
-        <div className="mt-16">
-          <div className="flex items-center gap-4 mb-8">
-            <span className="eyebrow">[ Posts ]</span>
-            <span className="flex-1 rule" />
-          </div>
-          <BlogList blogs={user.posts || []} />
-        </div>
-      </main>
-    </div>
+      <h2 className="mb-3 mt-8 text-sm font-semibold">Posts</h2>
+      <BlogList blogs={posts} />
+    </main>
   );
 };
 

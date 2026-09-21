@@ -163,15 +163,11 @@ export default function EditProfileModal({ user, onClose }: EditProfileModalProp
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
-      <div
-        className="fixed inset-0 bg-background/80 backdrop-blur-sm"
-        aria-hidden
-        onClick={onClose}
-      />
+      <div className="fixed inset-0 bg-bg/80 backdrop-blur-sm" aria-hidden onClick={onClose} />
 
-      <div className="relative w-full max-w-md bg-popover border border-border text-popover-foreground shadow-xl">
+      <div className="relative w-full max-w-md bg-bg border border-border  shadow-xl">
         <div className="flex items-center justify-between px-6 py-5 border-b border-border">
-          <span className="eyebrow">[ Edit profile ]</span>
+          <span className="text-sm text-muted">Edit profile</span>
           <Button
             variant="ghost"
             square
@@ -185,7 +181,7 @@ export default function EditProfileModal({ user, onClose }: EditProfileModalProp
             <div className="relative w-24 h-24">
               <div
                 className={`group relative w-24 h-24 overflow-hidden border transition-colors ${
-                  isDragOver ? "border-accent bg-accent/5" : "border-foreground/30"
+                  isDragOver ? "border-accent bg-accent/5" : "border-fg/30"
                 }`}
                 onDragEnter={handleDragEnter}
                 onDragLeave={handleDragLeave}
@@ -196,7 +192,7 @@ export default function EditProfileModal({ user, onClose }: EditProfileModalProp
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={avatarPreview} alt={user.name} className="w-full h-full object-cover" />
                 ) : (
-                  <span className="flex items-center justify-center w-full h-full bg-foreground text-background font-serif text-3xl">
+                  <span className="flex items-center justify-center w-full h-full bg-fg text-accent-fg text-3xl">
                     {user.name?.charAt(0)}
                   </span>
                 )}
@@ -204,11 +200,11 @@ export default function EditProfileModal({ user, onClose }: EditProfileModalProp
                   <Loader2 className="w-7 h-7 text-accent animate-spin" />
                 ) : (
                   <div
-                    className={`absolute inset-0 flex items-center justify-center bg-background/70 transition-opacity ${
+                    className={`absolute inset-0 flex items-center justify-center bg-bg/70 transition-opacity ${
                       isDragOver ? "opacity-100" : "opacity-0 group-hover:opacity-100"
                     }`}
                   >
-                    <Upload className="w-5 h-5 text-foreground" />
+                    <Upload className="w-5 h-5 text-fg" />
                   </div>
                 )}
 
@@ -234,29 +230,29 @@ export default function EditProfileModal({ user, onClose }: EditProfileModalProp
                 />
               )}
             </div>
-            <span className="eyebrow text-muted-foreground">
+            <span className="text-xs text-muted">
               {isDragOver ? "Drop it" : "Click or drag to change"}
             </span>
             {isError?.element === "image" && (
-              <span className="eyebrow text-destructive">{isError.message}</span>
+              <span className="text-sm text-danger">{isError.message}</span>
             )}
           </div>
 
           <div>
-            <label className="eyebrow block mb-2">Name</label>
+            <label className="mb-1.5 block text-sm font-medium">Name</label>
             <input
               type="text"
               defaultValue={user.name}
-              className="w-full bg-background border border-border px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-accent transition-colors"
+              className="w-full bg-bg border border-border px-3 py-2.5 text-sm text-fg focus:outline-none focus:border-accent transition-colors"
               ref={newNameRef}
             />
           </div>
 
           <div>
-            <label className="eyebrow block mb-2">About you</label>
+            <label className="mb-1.5 block text-sm font-medium">About you</label>
             <textarea
               defaultValue={user.aboutAuthor}
-              className="w-full bg-background border border-border px-3 py-2.5 text-sm text-foreground focus:outline-none focus:border-accent transition-colors"
+              className="w-full bg-bg border border-border px-3 py-2.5 text-sm text-fg focus:outline-none focus:border-accent transition-colors"
               rows={3}
               ref={newAboutRef}
               wrap="soft"
@@ -266,7 +262,7 @@ export default function EditProfileModal({ user, onClose }: EditProfileModalProp
 
         <div className="flex items-center justify-end gap-3 px-6 py-5 border-t border-border">
           {isError?.element === "save" && (
-            <span className="eyebrow text-destructive mr-auto">{isError.message}</span>
+            <span className="text-sm text-danger mr-auto">{isError.message}</span>
           )}
           <Button
             variant="secondary"

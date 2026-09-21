@@ -20,43 +20,39 @@ const OAuthButtons = ({ callbackUrl = "/blogs" }: OAuthButtonsProps) => {
   };
 
   return (
-    <div className="w-full mt-8">
-      <div className="relative flex items-center">
-        <div className="flex-grow border-t border-border" />
-        <span className="mx-3 eyebrow">Or continue with</span>
-        <div className="flex-grow border-t border-border" />
-      </div>
+    <div className="mt-5 border-t border-border pt-5">
+      <p className="mb-3 text-center text-xs text-muted">Or continue with</p>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-5">
+      <div className="grid grid-cols-3 gap-2">
         <Button
-          label="Google"
+          label={<span className="hidden sm:inline">Google</span>}
           variant="secondary"
           size="sm"
-          className="w-full justify-center"
+          className="w-full"
           onClick={() => handleSignIn("google")}
           loading={pending === "google"}
           disabled={pending !== null}
-          icon={<FcGoogle className="w-[18px] h-[18px]" />}
+          icon={<FcGoogle className="w-4 h-4" />}
         />
         <Button
-          label="GitHub"
+          label={<span className="hidden sm:inline">GitHub</span>}
           variant="secondary"
           size="sm"
-          className="w-full justify-center"
+          className="w-full"
           onClick={() => handleSignIn("github")}
           loading={pending === "github"}
           disabled={pending !== null}
-          icon={<FaGithub className="w-[18px] h-[18px]" />}
+          icon={<FaGithub className="w-4 h-4" />}
         />
         <Button
-          label="LinkedIn"
+          label={<span className="hidden sm:inline">LinkedIn</span>}
           variant="secondary"
           size="sm"
-          className="w-full justify-center"
+          className="w-full"
           onClick={() => handleSignIn("linkedin")}
           loading={pending === "linkedin"}
           disabled={pending !== null}
-          icon={<FaLinkedin className="w-[18px] h-[18px]" color="#0A66C2" />}
+          icon={<FaLinkedin className="w-4 h-4" color="#0A66C2" />}
         />
       </div>
     </div>

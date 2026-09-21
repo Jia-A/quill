@@ -25,7 +25,7 @@ export const PanelInput = (
     type="text"
     autoFocus
     maxLength={MAX_COMMENT_LENGTH}
-    className="w-full bg-transparent border-b border-border pb-1.5 text-[13px] font-serif text-foreground focus:outline-none focus:border-accent transition-colors placeholder:text-muted-foreground disabled:opacity-50"
+    className="w-full bg-transparent border-b border-border pb-1.5 text-sm text-fg focus:outline-none focus:border-accent transition-colors placeholder:text-muted disabled:opacity-50"
     {...props}
   />
 );
@@ -36,7 +36,7 @@ export const TextButton = ({
 }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
   <button
     type="button"
-    className={`${META} text-muted-foreground hover:text-foreground transition-colors duration-200 cursor-pointer`}
+    className={`${META} text-muted hover:text-fg transition-colors duration-200 cursor-pointer`}
     {...props}
   >
     {children}
@@ -50,7 +50,7 @@ export const AccentButton = ({
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & { loading?: boolean }) => (
   <button
     type="button"
-    className={`${META} inline-flex items-center justify-center gap-1.5 rounded bg-accent px-2.5 py-1 text-accent-foreground hover:opacity-90 transition-opacity duration-200 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed`}
+    className={`${META} inline-flex items-center justify-center gap-1.5 rounded bg-accent px-2.5 py-1 text-accent-fg hover:opacity-90 transition-opacity duration-200 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed`}
     {...props}
   >
     {loading && <MiniSpinner />}
@@ -62,7 +62,7 @@ export const CloseButton = (props: React.ButtonHTMLAttributes<HTMLButtonElement>
   <div className="flex items-center justify-end px-2 pt-1.5 pb-0.5">
     <button
       type="button"
-      className="text-muted-foreground hover:text-accent transition-colors duration-200 ease-out cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
+      className="text-muted hover:text-accent transition-colors duration-200 ease-out cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"
       {...props}
     >
       <XMarkIcon width={12} height={12} />
@@ -72,8 +72,8 @@ export const CloseButton = (props: React.ButtonHTMLAttributes<HTMLButtonElement>
 
 /** Sign-in prompt shown in place of an input when logged out. */
 export const LoginNote = ({ what, onNavigate }: { what: string; onNavigate: () => void }) => (
-  <p className="px-3 pb-3 text-[12px] font-serif text-muted-foreground">
-    <Link href="/auth/signin" className="text-accent link-underline" onClick={onNavigate}>
+  <p className="px-3 pb-3 text-xs text-muted">
+    <Link href="/auth/signin" className="text-accent" onClick={onNavigate}>
       Log in
     </Link>{" "}
     to {what}.

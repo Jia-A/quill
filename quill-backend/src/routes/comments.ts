@@ -67,13 +67,16 @@ commentRouter.post("/", authMiddleware, async (c) => {
         400
       );
     }
-    if (!parentId) {
-      if (startOffset === undefined || endOffset === undefined || !anchorText) {
-        return c.json(
-          { error: { code: "MISSING_ANCHOR", message: "Top-level comments require anchor data" } },
-          400
-        );
-      }
+    // A top-level comment is either anchored to a passage (an inline note) or
+    // not (a comment at the foot of the post). Anchored ones need the whole
+    // anchor, not half of it.
+    const isInline =
+      !parentId && (startOffset !== undefined || endOffset !== undefined || anchorText);
+    if (isInline && (startOffset === undefined || endOffset === undefined || !anchorText)) {
+      return c.json(
+        { error: { code: "MISSING_ANCHOR", message: "Inline comments require anchor data" } },
+        400
+      );
     }
 
     const post = await prisma.post.findUnique({ where: { id: postId } });
@@ -107,8 +110,10 @@ commentRouter.post("/", authMiddleware, async (c) => {
         prefix: parentId ? null : (prefix ?? null),
         suffix: parentId ? null : (suffix ?? null),
 
-        commentStatus:
-          post.authorId === userId || (parentId && parentId !== "") ? "APPROVED" : "PENDING",
+        // Only inline notes wait for approval: they sit inside the prose and
+        // shape how the post reads. Comments at the foot of the post, and
+        // replies, go up straight away.
+        commentStatus: isInline && post.authorId !== userId ? "PENDING" : "APPROVED",
       },
     });
     if (recipientId !== userId) {
@@ -160,7 +165,10 @@ commentRouter.get("/pending", authMiddleware, async (c) => {
 
     // One row past the page tells us whether there's another one.
     const rows = await prisma.comment.findMany({
-      where: { post: { authorId: userId }, commentStatus },
+      // Your own comments never need your approval: new ones are created
+      // APPROVED, but older rows predate that rule and would otherwise sit
+      // in this queue and double up with the "your comments" tab.
+      where: { post: { authorId: userId }, commentStatus, NOT: { authorId: userId } },
       include: { post: { select: { title: true } }, author: { select: { name: true, id: true } } },
       take: PAGE_SIZE + 1,
       ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
@@ -233,7 +241,7 @@ commentRouter.get("/", authMiddleware, async (c) => {
   try {
     const comments = await prisma.comment.findMany({
       where: { authorId: userId },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: "asc" },
       include: {
         post: {
           select: {

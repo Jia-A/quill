@@ -3,30 +3,28 @@ import classNames from "classnames";
 import NextLink from "next/link";
 
 const Spinner = () => (
-  <span className="inline-block w-3.5 h-3.5 border-[1.5px] border-current border-t-transparent rounded-full animate-spin" />
+  <span className="w-3.5 h-3.5 rounded-full border-2 border-current border-t-transparent animate-spin" />
 );
 
 const base =
-  "group relative inline-flex items-center justify-center select-none cursor-pointer transition-colors duration-300 ease-out disabled:opacity-50 disabled:cursor-not-allowed";
+  "inline-flex items-center justify-center gap-2 rounded-md border font-medium cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed";
 
-const variantClasses = {
-  primary:
-    "eyebrow bg-foreground text-background hover:bg-accent hover:text-accent-foreground active:bg-accent active:text-accent-foreground",
-  secondary:
-    "eyebrow border border-foreground/30 text-foreground hover:border-accent hover:text-accent active:border-accent active:text-accent",
-  ghost: "eyebrow text-foreground hover:text-accent active:text-accent",
+const variants = {
+  primary: "bg-fg text-bg border-fg hover:opacity-90",
+  secondary: "bg-bg text-fg border-border hover:bg-bg-subtle",
+  ghost: "bg-transparent text-muted border-transparent hover:text-fg hover:bg-bg-subtle",
 };
 
-const sizeClasses = {
-  sm: "text-[11px] py-2 px-3 sm:px-3.5",
-  md: "text-xs py-2.5 px-4 sm:py-3 sm:px-5",
-  lg: "text-sm py-3 px-6 sm:py-4 sm:px-8",
+const sizes = {
+  sm: "text-sm px-2.5 py-1",
+  md: "text-sm px-3 py-1.5",
+  lg: "text-base px-4 py-2",
 };
 
-const squareSizeClasses = {
+const squareSizes = {
   sm: "w-7 h-7",
-  md: "w-9 h-9",
-  lg: "w-11 h-11",
+  md: "w-8 h-8",
+  lg: "w-10 h-10",
 };
 
 const Button = ({
@@ -53,36 +51,30 @@ const Button = ({
       icon
     )
   ) : (
-    <span className="flex items-center gap-2">
-      {icon}
+    <>
+      {loading ? <Spinner /> : icon}
       {children ?? label}
-      {loading ? <Spinner /> : null}
-    </span>
+    </>
   );
 
-  const sharedClassName = classNames(
+  const classes = classNames(
     base,
-    variantClasses[variant],
-    square ? squareSizeClasses[size] : sizeClasses[size],
+    variants[variant],
+    square ? squareSizes[size] : sizes[size],
     className
   );
 
   // Renders as a Link when href is provided, otherwise a <button>.
   if (href) {
     return (
-      <NextLink
-        href={href}
-        prefetch={prefetch}
-        className={sharedClassName}
-        aria-disabled={isDisabled}
-      >
+      <NextLink href={href} prefetch={prefetch} className={classes} aria-disabled={isDisabled}>
         {content}
       </NextLink>
     );
   }
 
   return (
-    <button type={type} disabled={isDisabled} className={sharedClassName} {...rest}>
+    <button type={type} disabled={isDisabled} className={classes} {...rest}>
       {content}
     </button>
   );

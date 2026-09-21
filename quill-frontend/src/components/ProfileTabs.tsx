@@ -31,7 +31,7 @@ const TABS: { id: TabId; label: string; gap?: boolean }[] = [
 
 // BlogList renders nothing for an empty array, so empty tabs need their own note.
 const Empty = ({ children }: { children: React.ReactNode }) => (
-  <p className="py-2 text-xl font-serif text-muted-foreground">{children}</p>
+  <p className="rounded-md border border-border p-8 text-center text-sm text-muted">{children}</p>
 );
 
 const ProfileTabs = ({
@@ -56,12 +56,13 @@ const ProfileTabs = ({
     published: posts(publishedBlogs, "Nothing published yet."),
 
     // Your own comments, so the status and the post's author both matter.
-    comments: <PendingCommentsList comments={addedComments} />,
+    comments: <PendingCommentsList key="comments" comments={addedComments} />,
 
     // These two are all on your own posts, so the post author is you and the
     // status is already implied by the tab.
     approve: (
       <PendingCommentsList
+        key="approve"
         comments={pendingComments}
         showStatus={false}
         showPostAuthor={false}
@@ -71,6 +72,7 @@ const ProfileTabs = ({
     ),
     rejected: (
       <PendingCommentsList
+        key="rejected"
         comments={rejectedComments}
         showStatus={false}
         showPostAuthor={false}
@@ -83,8 +85,11 @@ const ProfileTabs = ({
   };
 
   return (
-    <div className="mt-16">
-      <nav aria-label="Profile sections" className="overflow-x-auto border-b border-border">
+    <div className="mt-8">
+      <nav
+        aria-label="Profile sections"
+        className="scroll-strip overflow-x-auto border-b border-border"
+      >
         <div role="tablist" className="flex min-w-max items-center">
           {TABS.map((tab) => (
             <button
@@ -93,10 +98,12 @@ const ProfileTabs = ({
               type="button"
               aria-selected={tab.id === active}
               onClick={() => setActive(tab.id)}
-              className={`cursor-pointer whitespace-nowrap px-3 py-2 font-serif transition-colors text-lg duration-300 ease-out focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent ${
-                tab.gap ? "ml-3 border-l border-border pl-6" : ""
+              className={`-mb-px whitespace-nowrap border-b-2 px-3 py-2 text-sm ${
+                tab.gap ? "ml-2 border-l border-l-border pl-5" : ""
               } ${
-                tab.id === active ? "text-accent" : "text-muted-foreground hover:text-foreground"
+                tab.id === active
+                  ? "border-b-accent font-medium text-fg"
+                  : "border-b-transparent text-muted hover:text-fg"
               }`}
             >
               {tab.label}
@@ -105,7 +112,7 @@ const ProfileTabs = ({
         </div>
       </nav>
 
-      <div className="mt-10">{panels[active]}</div>
+      <div className="mt-6">{panels[active]}</div>
     </div>
   );
 };

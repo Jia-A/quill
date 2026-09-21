@@ -1,50 +1,46 @@
-import Button from "@/atoms/Button";
 import Link from "next/link";
 
-const MainSection = () => {
+/** Hero: the Nin line the product is named for, then the two calls to action. */
+const MainSection = ({ signedIn }: { signedIn: boolean }) => {
   return (
-    <section className="relative px-6 md:px-10 pt-24 pb-28 md:pt-36 md:pb-40 max-w-6xl mx-auto">
-      {/* Kicker */}
-      <div className="flex items-center gap-4 mb-10 animate-rise">
-        <span className="eyebrow">[ 01 — A writing surface ]</span>
-        <span className="flex-1 rule" />
-      </div>
-
-      {/* Display headline — editorial serif, oversized */}
-      <h1
-        className="font-serif font-light leading-[0.95] tracking-tightest text-[clamp(2.75rem,9vw,7.5rem)] animate-rise"
-        style={{ animationDelay: "0.05s" }}
-      >
-        Write to taste
-        <br />
-        life <span className="italic accent-text">twice.</span>
-      </h1>
-
+    <section className="relative overflow-hidden border-b border-border">
+      {/* Soft accent glow behind the quote. */}
       <div
-        className="mt-12 grid md:grid-cols-[1.4fr_1fr] gap-10 items-end animate-rise"
-        style={{ animationDelay: "0.12s" }}
-      >
-        <p className="max-w-xl text-lg md:text-xl leading-relaxed text-muted-foreground">
-          Quill is a clean, distraction-free home for your words. Draft, publish, and share
-          long-form writing &mdash; no clutter, no noise. Just you and the page.
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-0 h-[360px] w-[760px] -translate-x-1/2 rounded-full bg-accent opacity-[0.06] blur-3xl"
+      />
+
+      <div className="relative mx-auto max-w-content px-4 py-20 text-center md:py-28">
+        <blockquote>
+          <p className="mx-auto max-w-3xl font-serif text-3xl leading-snug md:text-5xl">
+            “We write to taste life twice, in the moment{" "}
+            <span className="italic text-accent">and in retrospect.</span>”
+          </p>
+          <footer className="mt-5 text-sm text-muted">Anaïs Nin</footer>
+        </blockquote>
+
+        <p className="mx-auto mt-10 max-w-xl text-base leading-relaxed text-muted">
+          Quill is a distraction-free home for long-form writing — and a one-click path from a
+          finished article to a LinkedIn post.
         </p>
 
-        <div className="flex flex-col gap-4 md:items-end">
-          <Button
-            href="/auth/signup"
-            variant="primary"
-            label={
-              <>
-                Start writing
-                <span className="transition-transform group-hover:translate-x-1">&rarr;</span>
-              </>
-            }
-          />
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <Link
-            href="/blogs"
-            className="eyebrow link-underline text-muted-foreground hover:text-foreground transition-colors"
+            href={signedIn ? "/editor" : "/auth/signup"}
+            className="rounded-md border border-fg bg-fg px-4 py-2 text-sm font-medium text-bg hover:opacity-90"
           >
-            or read the latest
+            Start writing
+          </Link>
+          {!signedIn && (
+            <Link
+              href="/auth/signin"
+              className="rounded-md border border-border px-4 py-2 text-sm hover:bg-bg-subtle"
+            >
+              Log in
+            </Link>
+          )}
+          <Link href="/blogs" className="px-1 text-sm text-muted hover:text-fg">
+            Browse stories
           </Link>
         </div>
       </div>

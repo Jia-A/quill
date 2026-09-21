@@ -79,7 +79,13 @@ export function highlightRange(
     mark.dataset.commentId = commentId;
     // Styling lives in globals.css keyed off these attributes, so marks stay
     // on-palette in both themes instead of hardcoding Tailwind colour classes.
-    if (status === "PENDING") {
+    if (status === "REJECTED") {
+      // A rejected passage is only the commenter's business: they get a faint
+      // mark so they can find what was turned down. The post's author already
+      // decided, so for them the passage reads as plain text again.
+      if (!isOwnComment) continue;
+      mark.dataset.commentRejected = "";
+    } else if (status === "PENDING") {
       // The author of a pending comment sees their own in amber, so it reads
       // as "submitted, waiting" rather than as an ordinary unapproved mark.
       if (isOwnComment) {

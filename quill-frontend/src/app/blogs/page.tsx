@@ -1,32 +1,38 @@
 import { getBulkBlogs } from "@/actions/blogActions";
 import BlogList from "./BlogList";
+import SearchBox from "@/components/SearchBox";
 
 // Enable ISR - revalidate every 5 minutes (300 seconds)
 export const revalidate = 300;
 
-export default async function BlogHub() {
-  const data = await getBulkBlogs();
+export default async function BlogHub({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+  const { q } = await searchParams;
+  const query = q?.trim() || "";
+
+  const data = await getBulkBlogs(query);
   const blogs = data?.blogs || [];
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <main className="max-w-3xl mx-auto px-6 md:px-10 py-16 md:py-24">
-        <header className="mb-16">
-          <div className="flex items-center gap-4 mb-8">
-            <span className="eyebrow">[ The reading room ]</span>
-            <span className="flex-1 rule" />
-          </div>
-          <h1 className="font-serif font-light text-[clamp(2.5rem,7vw,5rem)] leading-[0.95] tracking-tightest">
-            Latest <span className="italic accent-text">stories</span>
-          </h1>
-          <p className="mt-5 text-muted-foreground max-w-md">
-            Words from the Quill community. {blogs.length}{" "}
-            {blogs.length === 1 ? "story" : "stories"} to read.
-          </p>
-        </header>
+    <main className="mx-auto max-w-content px-4 py-10">
+      <h1 className="text-2xl font-semibold tracking-tight">Stories</h1>
 
-        <BlogList blogs={blogs} />
-      </main>
-    </div>
+      {/* The results are SearchBox's children so it can fade them while the
+          next page loads; the count below them is part of that result. */}
+      <SearchBox q={query}>
+        <p className="mb-6 mt-4 text-sm text-muted">
+          {query
+            ? `${blogs.length} ${blogs.length === 1 ? "result" : "results"} for “${query}”`
+            : `${blogs.length} ${blogs.length === 1 ? "story" : "stories"} from the Quill community.`}
+        </p>
+
+        {query && blogs.length === 0 ? (
+          <p className="rounded-md border border-border p-10 text-center text-sm text-muted">
+            Nothing matched that. Try another word.
+          </p>
+        ) : (
+          <BlogList blogs={blogs} />
+        )}
+      </SearchBox>
+    </main>
   );
 }

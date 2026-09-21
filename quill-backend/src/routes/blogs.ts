@@ -76,10 +76,21 @@ blogRouter.get("/bulk", async (c) => {
     accelerateUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());
 
+  // ?q= filters the list by title or author name.
+  const q = c.req.query("q")?.trim();
+
   try {
     const blogs = await prisma.post.findMany({
       where: {
         published: true,
+        ...(q
+          ? {
+              OR: [
+                { title: { contains: q, mode: "insensitive" as const } },
+                { author: { name: { contains: q, mode: "insensitive" as const } } },
+              ],
+            }
+          : {}),
       },
       select: {
         id: true,

@@ -23,17 +23,11 @@ const ProfilePage = async () => {
     draftBlogs = response?.user?.posts.filter((blog: Blog) => blog.published !== true);
   } catch {
     return (
-      <div className="min-h-screen bg-background text-foreground">
-        <main className="max-w-3xl mx-auto px-6 md:px-10 py-16 md:py-24">
-          <div className="flex items-center gap-4 mb-8">
-            <span className="eyebrow">[ Profile ]</span>
-            <span className="flex-1 rule" />
-          </div>
-          <p className="text-muted-foreground">
-            {`Couldn't load your profile right now. Please try again shortly.`}
-          </p>
-        </main>
-      </div>
+      <main className="mx-auto max-w-content px-4 py-10">
+        <p className="rounded-md border border-border p-8 text-center text-sm text-muted">
+          {`Couldn't load your profile right now. Please try again shortly.`}
+        </p>
+      </main>
     );
   }
 
@@ -50,20 +44,18 @@ const ProfilePage = async () => {
   const authored: Comment[] = addedComments?.comments ?? [];
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <main className="max-w-3xl mx-auto px-6 md:px-10 py-16 md:py-24">
-        <ProfileHeader user={response.user} />
-        <ProfileTabs
-          draftBlogs={draftBlogs || []}
-          publishedBlogs={publishedBlogs || []}
-          addedComments={authored}
-          pendingComments={pendingComments?.comments ?? []}
-          rejectedComments={rejectedByMe?.comments ?? []}
-          pendingCursor={pendingComments?.nextCursor ?? null}
-          rejectedCursor={rejectedByMe?.nextCursor ?? null}
-        />
-      </main>
-    </div>
+    <main className="mx-auto max-w-content px-4 py-10">
+      <ProfileHeader user={response.user} />
+      <ProfileTabs
+        draftBlogs={draftBlogs || []}
+        publishedBlogs={publishedBlogs || []}
+        addedComments={authored}
+        pendingComments={pendingComments?.comments ?? []}
+        rejectedComments={rejectedByMe?.comments ?? []}
+        pendingCursor={pendingComments?.nextCursor ?? null}
+        rejectedCursor={rejectedByMe?.nextCursor ?? null}
+      />
+    </main>
   );
 };
 

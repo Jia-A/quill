@@ -8,10 +8,10 @@ import SocialDraftsPanel from "@/components/SocialDraftsPanel";
 import type { Metadata } from "next";
 import { sanitizeBlogHtmlServer } from "@/utils/sanitizeServer";
 import EditButton from "./EditButton";
-import Button from "@/atoms/Button";
 import DeleteButton from "./DeleteButton";
 import Avatar from "@/atoms/Avatar";
 import CommentableContent from "@/components/CommentableContent";
+import { formatDate, getReadingTime } from "@/utils/postMeta";
 
 export const revalidate = 300;
 
@@ -78,66 +78,51 @@ const Blog = async ({ params }: { params: Promise<{ id: string }> }) => {
   }
 
   const blog = response.blog;
-  const publishedDate = blog.publishedDate
-    ? new Date(blog.publishedDate).toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })
-    : null;
-
-  const wordCount = blog.content ? blog.content.replace(/<[^>]*>/g, "").split(/\s+/).length : 0;
-  const readingTime = Math.max(1, Math.ceil(wordCount / 200));
+  const publishedDate = formatDate(blog.publishedDate, true);
 
   const safeContent = await sanitizeBlogHtmlServer(blog.content || "");
 
-  const meta = [blog.author?.name || "Anonymous", publishedDate, `${readingTime} min read`]
+  const meta = [blog.author?.name || "Anonymous", publishedDate, getReadingTime(blog.content)]
     .filter(Boolean)
-    .join("  /  ");
+    .join(" · ");
 
   return (
-    <div className="min-h-screen bg-background">
-      <article className="max-w-3xl mx-auto px-6 md:px-10 py-16 md:py-24">
-        <Link
-          href="/blogs"
-          className="group inline-flex items-center gap-2 eyebrow text-muted-foreground hover:text-accent transition-colors mb-12"
-        >
-          <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-1" />
-          All stories
-        </Link>
+    <article className="mx-auto max-w-reading px-4 py-10">
+      <Link
+        href="/blogs"
+        className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-fg"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        All stories
+      </Link>
 
-        <header>
-          <div className="eyebrow mb-6">{meta}</div>
-          <h1 className="font-serif font-light text-[clamp(2.5rem,7vw,5rem)] leading-[0.98] tracking-tightest text-foreground">
-            {blog.title}
-          </h1>
-          {blog.author?.id && (
-            <div className="mt-8 flex flex-col sm:flex-row sm:flex-wrap gap-3">
-              {blog?.published && <SocialDraftsPanel postId={blog.id} authorId={blog.author.id} />}
+      <header className="mt-6">
+        <h1 className="text-3xl md:text-4xl font-semibold leading-tight tracking-tight">
+          {blog.title}
+        </h1>
+        <p className="mt-3 text-sm text-muted">{meta}</p>
 
-              <div className="flex gap-3">
-                <EditButton blog={blog} className="flex-1 sm:flex-none" />
-                <DeleteButton blog={blog} className="flex-1 sm:flex-none" />
-              </div>
-            </div>
-          )}
-        </header>
-
-        {blog.image && (
-          <div className="my-12 overflow-hidden border border-border bg-muted">
-            <Image
-              src={blog.image}
-              alt={blog.title}
-              width={1200}
-              height={600}
-              className="w-full aspect-[16/9] md:aspect-auto md:h-[26rem] object-cover"
-              priority
-            />
+        {blog.author?.id && (
+          <div className="mt-5 flex flex-wrap gap-2">
+            {blog?.published && <SocialDraftsPanel postId={blog.id} authorId={blog.author.id} />}
+            <EditButton blog={blog} />
+            <DeleteButton blog={blog} />
           </div>
         )}
+      </header>
 
-        <div className="rule my-12" />
+      {blog.image && (
+        <Image
+          src={blog.image}
+          alt={blog.title}
+          width={1200}
+          height={600}
+          className="mt-8 w-full rounded-md border border-border object-cover"
+          priority
+        />
+      )}
 
+      <div className="mt-8 border-t border-border pt-8">
         <CommentableContent
           html={safeContent}
           postId={blog.id}
@@ -145,46 +130,25 @@ const Blog = async ({ params }: { params: Promise<{ id: string }> }) => {
           postAuthorId={blog.author?.id}
           currentUserId={session?.user?.id}
         />
+      </div>
 
-        <footer className="border-t border-border mt-20 pt-12">
-          {blog.author && (
-            <Link href={`/author/${blog.author.id}`} className="group flex items-start gap-5 w-fit">
-              <div className="w-16 h-16 flex-shrink-0 bg-foreground text-background flex items-center justify-center font-serif text-2xl">
-                {blog.author.avatar ? (
-                  <Avatar
-                    avImage={blog.author.avatar}
-                    alt={blog.author.name || "Anonymous"}
-                    size="lg"
-                  />
-                ) : (
-                  <>{blog.author.name?.charAt(0).toUpperCase()}</>
-                )}
-              </div>
-              <div>
-                <span className="eyebrow">Written by</span>
-                <h3 className="font-serif text-2xl tracking-tightest mt-1 group-hover:text-accent transition-colors">
-                  {blog.author.name || "Anonymous"}
-                </h3>
-                <p className="text-muted-foreground mt-1 text-sm max-w-md">
-                  Writing on Quill — sharing stories that matter.
-                </p>
-              </div>
-            </Link>
-          )}
-
-          <div className="flex flex-wrap items-center gap-4 mt-12">
-            <Button
-              href="/blogs"
-              variant="primary"
-              icon={
-                <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-              }
-              label="Back to all stories"
+      {blog.author && (
+        <footer className="mt-12 border-t border-border pt-6">
+          <Link href={`/author/${blog.author.id}`} className="flex items-center gap-3">
+            <Avatar
+              size="md"
+              avImage={blog.author.avatar}
+              alt={blog.author.name || "Anonymous"}
+              name={blog.author.name || "A"}
             />
-          </div>
+            <div>
+              <p className="text-xs text-muted">Written by</p>
+              <p className="font-medium hover:text-accent">{blog.author.name || "Anonymous"}</p>
+            </div>
+          </Link>
         </footer>
-      </article>
-    </div>
+      )}
+    </article>
   );
 };
 

@@ -1,6 +1,6 @@
 import type { Notification } from "@/providers/NotificationProvider";
 
-// Mono eyebrow kicker per notification kind — mirrors the NotificationType enum.
+// Mono label kicker per notification kind — mirrors the NotificationType enum.
 export const TYPE_LABELS: Record<string, string> = {
   COMMENT_RECEIVED: "New comment",
   REPLY_RECEIVED: "New reply",

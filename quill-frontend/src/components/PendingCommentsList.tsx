@@ -2,23 +2,24 @@
 
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { getPendingComments } from "@/actions/commentAction";
+import { getPendingComments, getUserComments } from "@/actions/commentAction";
 import { usePagedList } from "@/utils/usePagedList";
 import type { Comment } from "@/types/CommentProps";
 import LoadMore from "./LoadMore";
 
 // How each status reads in the corner of a row.
 const STATUS = {
-  PENDING: { label: "Pending", colour: "text-muted-foreground" },
-  APPROVED: { label: "Approved", colour: "accent-text" },
-  REJECTED: { label: "Rejected", colour: "text-destructive" },
+  PENDING: { label: "Pending", colour: "text-muted" },
+  APPROVED: { label: "Approved", colour: "text-accent" },
+  REJECTED: { label: "Rejected", colour: "text-danger" },
 };
 
 // Comment list for the profile Activity tabs. The comment text leads; the post
 // it belongs to is the subordinate line beneath it.
 //
-// `status` turns on paging: the moderation tabs pass it, the "your comments"
-// tab doesn't and just shows what it was given.
+// `status` picks the source: the moderation tabs read the queue of comments on
+// your posts, while the "your comments" tab reads the ones you wrote. Without
+// it, paging would fall through to the moderation queue and mix the two.
 const PendingCommentsList = ({
   comments = [],
   showStatus = true,
@@ -36,14 +37,21 @@ const PendingCommentsList = ({
 
   const { rows, hasMore, loadMore } = usePagedList(
     async (cursor) => {
-      const page = await getPendingComments(session?.backendToken, status, { cursor });
-      return { rows: page.comments as Comment[], nextCursor: page.nextCursor };
+      // No status means this is the "comments you wrote" tab, which has its
+      // own endpoint — the moderation queue would return other people's.
+      const page = status
+        ? await getPendingComments(session?.backendToken, status, { cursor })
+        : await getUserComments(session?.backendToken);
+      return {
+        rows: page.comments as Comment[],
+        nextCursor: status ? page.nextCursor : null,
+      };
     },
     { rows: comments, nextCursor }
   );
 
   if (rows.length === 0) {
-    return <p className="py-2 text-xl font-serif text-muted-foreground">Nothing here.</p>;
+    return <p className="py-2 text-xl text-muted">Nothing here.</p>;
   }
 
   return (
@@ -57,17 +65,17 @@ const PendingCommentsList = ({
             <li key={comment.id} className="border-b border-border">
               <Link
                 href={`/blog/${comment.postId}?comment=${comment.id}`}
-                className="group flex items-baseline justify-between gap-4 -ml-px border-l-2 border-transparent py-4 pl-4 pr-2 transition-all duration-300 ease-out hover:border-accent hover:bg-muted/50"
+                className="group flex items-baseline justify-between gap-4 -ml-px border-l-2 border-transparent py-4 pl-4 pr-2 transition-all duration-300 ease-out hover:border-accent hover:bg-bg-subtle"
               >
                 <span className="min-w-0">
-                  <span className="block font-serif text-[18px] leading-snug line-clamp-2 accent-text transition-colors">
+                  <span className="block text-base leading-snug line-clamp-2 text-accent transition-colors">
                     {comment.text}
                   </span>
-                  <span className="mt-1.5 block font-mono text-[12px] tracking-[0.12em] text-muted-foreground truncate">
-                    <span className="group-hover:text-foreground transition-colors font-semibold">
+                  <span className="mt-1.5 block font-mono text-xs tracking-[0.12em] text-muted truncate">
+                    <span className="group-hover:text-fg transition-colors font-semibold">
                       {comment.post?.title ?? "Untitled"}
                     </span>
-                    {postAuthor && <span className="text-muted-foreground"> — {postAuthor}</span>}
+                    {postAuthor && <span className="text-muted"> — {postAuthor}</span>}
                   </span>
                 </span>
 
