@@ -66,7 +66,7 @@ export default function EditProfileModal({ user, onClose }: EditProfileModalProp
     setIsUploadingImage(true);
     setIsError(null);
     try {
-      return await uploadImageToCloudinary(session.backendToken ?? "", file);
+      return await uploadImageToCloudinary(session?.backendToken ?? "", file);
     } catch (error) {
       console.error("Image upload error:", error);
       setIsError({
@@ -131,10 +131,16 @@ export default function EditProfileModal({ user, onClose }: EditProfileModalProp
       payload.avatar = imageUrl;
     }
 
+    const token = session?.backendToken;
+    if (!token) {
+      setIsError({ element: "save", message: "Your session expired. Please sign in again." });
+      return;
+    }
+
     setIsSaving(true);
     setIsError(null);
     try {
-      await updateUserProfile(session.backendToken, payload);
+      await updateUserProfile(token, payload);
     } catch (error) {
       console.error("Profile update error:", error);
       setIsError({
@@ -147,7 +153,7 @@ export default function EditProfileModal({ user, onClose }: EditProfileModalProp
     }
 
     const toDelete = resolvePendingDeletes(pendingDeletes, imageUrl);
-    await Promise.all(toDelete.map((url) => deleteImageFromCloudinary(session.backendToken, url)));
+    await Promise.all(toDelete.map((url) => deleteImageFromCloudinary(token, url)));
     setPendingDeletes([]);
     setIsSaving(false);
     setUserData({ name, avatar: imageUrl });

@@ -71,6 +71,53 @@ blogRouter.post("/", authMiddleware, async (c) => {
   }
 });
 
+blogRouter.get("/bulk", async (c) => {
+  const prisma = new PrismaClient({
+    accelerateUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+
+  try {
+    const blogs = await prisma.post.findMany({
+      where: {
+        published: true,
+      },
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        image: true,
+        publishedDate: true,
+        author: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        publishedDate: "desc",
+      },
+    });
+    return c.json(
+      {
+        blogs,
+      },
+      200
+    );
+  } catch (err) {
+    console.error("ERROR HAPPENED in /bulk:", err);
+    return c.json(
+      {
+        error: {
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Something went wrong on the server side, please try again later",
+        },
+      },
+      500
+    );
+  }
+});
+
 blogRouter.get("/single/:id", async (c) => {
   const prisma = new PrismaClient({
     accelerateUrl: c.env.DATABASE_URL,
@@ -225,53 +272,6 @@ blogRouter.delete("/:postId", authMiddleware, async (c) => {
         error: {
           code: "INTERNAL_SERVER_ERROR",
           message: "Something went wrong on the server side.",
-        },
-      },
-      500
-    );
-  }
-});
-
-blogRouter.get("/bulk", async (c) => {
-  const prisma = new PrismaClient({
-    accelerateUrl: c.env.DATABASE_URL,
-  }).$extends(withAccelerate());
-
-  try {
-    const blogs = await prisma.post.findMany({
-      where: {
-        published: true,
-      },
-      select: {
-        id: true,
-        title: true,
-        content: true,
-        image: true,
-        publishedDate: true,
-        author: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-      orderBy: {
-        publishedDate: "desc",
-      },
-    });
-    return c.json(
-      {
-        blogs,
-      },
-      200
-    );
-  } catch (err) {
-    console.error("ERROR HAPPENED in /bulk:", err);
-    return c.json(
-      {
-        error: {
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Something went wrong on the server side, please try again later",
         },
       },
       500

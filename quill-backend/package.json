@@ -18,6 +18,6 @@
   },
   "devDependencies": {
     "prisma": "7.8.0",
-    "wrangler": "^4.56.0"
+    "wrangler": "^4.134.0"
   }
 }

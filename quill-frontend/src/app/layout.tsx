@@ -5,6 +5,7 @@ import Header from "@/components/Header";
 import SessionProviderWrapper from "@/components/SessionProviderWrapper";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import UserProfileProvider from "@/components/UserProfileProvider";
+import { NotificationProvider } from "@/providers/NotificationProvider";
 
 // Body text — clean, neutral sans.
 const inter = Inter({
@@ -59,10 +60,12 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <ThemeProvider>
           <SessionProviderWrapper>
-            <UserProfileProvider>
-              <Header />
-              {children}
-            </UserProfileProvider>
+            <NotificationProvider>
+              <UserProfileProvider>
+                <Header />
+                {children}
+              </UserProfileProvider>
+            </NotificationProvider>
           </SessionProviderWrapper>
         </ThemeProvider>
       </body>

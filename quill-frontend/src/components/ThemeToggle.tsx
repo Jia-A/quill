@@ -22,9 +22,9 @@ export function ThemeToggle() {
       aria-label="Toggle theme"
       icon={
         theme === "dark" ? (
-          <Sun className="w-[18px] h-[18px]" />
+          <Sun className="w-[24px] h-[24px]" />
         ) : (
-          <Moon className="w-[18px] h-[18px]" />
+          <Moon className="w-[24px] h-[24px]" />
         )
       }
     />
