@@ -290,7 +290,7 @@ userRouter.get("/:id", async (c) => {
         occupation: true,
         location: true,
         posts: {
-          where: { published: true, private: false },
+          where: { published: true },
           orderBy: { publishedDate: "desc" },
         },
       },
