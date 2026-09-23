@@ -12,17 +12,26 @@ type ProfileTabsProps = {
   addedComments: Comment[];
   pendingComments: Comment[];
   rejectedComments: Comment[];
+  sharedBlogs: Blog[];
   // Where each moderation list should resume from, or null if that's all.
   pendingCursor: string | null;
   rejectedCursor: string | null;
 };
 
-type TabId = "drafts" | "published" | "comments" | "approve" | "rejected" | "notifications";
+type TabId =
+  | "drafts"
+  | "published"
+  | "shared"
+  | "comments"
+  | "approve"
+  | "rejected"
+  | "notifications";
 
 // `gap` marks where the posts group ends and the comments group begins.
 const TABS: { id: TabId; label: string; gap?: boolean }[] = [
-  { id: "drafts", label: "Drafts" },
   { id: "published", label: "Published" },
+  { id: "shared", label: "Shared" },
+  { id: "drafts", label: "Drafts" },
   { id: "comments", label: "Comments", gap: true },
   { id: "approve", label: "To approve" },
   { id: "rejected", label: "Rejected" },
@@ -42,6 +51,7 @@ const ProfileTabs = ({
   rejectedComments,
   pendingCursor,
   rejectedCursor,
+  sharedBlogs,
 }: ProfileTabsProps) => {
   const [active, setActive] = useState<TabId>("published");
 
@@ -54,6 +64,7 @@ const ProfileTabs = ({
   const panels: Record<TabId, React.ReactNode> = {
     drafts: posts(draftBlogs, "Nothing in progress. Start something."),
     published: posts(publishedBlogs, "Nothing published yet."),
+    shared: posts(sharedBlogs, "Nothing published yet."),
 
     // Your own comments, so the status and the post's author both matter.
     comments: <PendingCommentsList key="comments" comments={addedComments} />,

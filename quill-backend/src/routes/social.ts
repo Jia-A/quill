@@ -74,7 +74,7 @@ socialRouter.post("/:postId/generate", authMiddleware, async (c) => {
 
   const check = await assertOwnership(prisma, postId, userId);
   if ("error" in check) return c.json({ error: check.error }, check.status);
-  if (!check.post.published) return c.json({ error: "Post must be published" }, 400);
+  if (check.post.visibility !== "PUBLIC") return c.json({ error: "Post must be published" }, 400);
 
   const origin = c.env.FRONTEND_URL ?? "http://localhost:3000";
   const postUrl = `${origin.replace(/\/$/, "")}/blog/${postId}`;
@@ -159,6 +159,13 @@ socialRouter.post("/:postId/publish", authMiddleware, async (c) => {
 
   const check = await assertOwnership(prisma, postId, userId);
   if ("error" in check) return c.json({ error: check.error }, check.status);
+  if (check.post.visibility !== "PUBLIC")
+    return c.json(
+      {
+        error: { code: "POST_NOT_PUBLIC", message: "Only public posts can be shared to LinkedIn" },
+      },
+      400
+    );
 
   const draft = await prisma.socialDraft.findUnique({
     where: { postId_platform: { postId, platform: "linkedin" } },

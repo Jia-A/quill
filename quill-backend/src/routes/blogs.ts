@@ -1,10 +1,11 @@
-import { Prisma, PrismaClient } from "../generated/prisma/client";
+import { Prisma, PrismaClient, PostVisibility } from "../generated/prisma/client";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { Hono } from "hono";
 import { verify } from "hono/jwt";
 import { sanitizeBlogHtml } from "../lib/sanitizeHtml";
 import { deleteCloudinaryImage } from "../lib/deleteCloudinaryImage";
 import { authMiddleware } from "../middlewares/authMiddleware";
+const VIS = Object.values(PostVisibility);
 
 export const blogRouter = new Hono<{
   Bindings: {
@@ -27,14 +28,20 @@ blogRouter.post("/", authMiddleware, async (c) => {
   const userId = c.get("userId") as string;
 
   try {
+    const visibility =
+      body.visibility ??
+      (body.published === true ? "PUBLIC" : body.published === false ? "DRAFT" : undefined);
+    if (visibility !== undefined && !VIS.includes(visibility))
+      return c.json({ error: { code: "INVALID_VISIBILITY", message: "Invalid visibility" } }, 400);
     const blog = await prisma.post.create({
       data: {
         title: body.title,
         content: await sanitizeBlogHtml(body.content),
         image: body.image,
-        published: body.published,
         authorId: userId,
-        publishedDate: body.published ? new Date() : null,
+        visibility: visibility ?? "DRAFT",
+        published: (visibility ?? "DRAFT") === "PUBLIC",
+        publishedDate: visibility === "PUBLIC" ? new Date() : null,
       },
     });
 
@@ -82,7 +89,7 @@ blogRouter.get("/bulk", async (c) => {
   try {
     const blogs = await prisma.post.findMany({
       where: {
-        published: true,
+        visibility: "PUBLIC",
         ...(q
           ? {
               OR: [
@@ -153,7 +160,7 @@ blogRouter.get("/single/:id", async (c) => {
       return c.json({ error: { code: "NOT_FOUND", message: "Post not found" } }, 404);
     }
 
-    if (!blog.published) {
+    if (blog.visibility !== "PUBLIC") {
       let requesterId: string | undefined;
       const headers = c.req.header("authorization") || "";
       try {
@@ -163,9 +170,34 @@ blogRouter.get("/single/:id", async (c) => {
         requesterId = undefined;
       }
 
-      if (requesterId !== blog.authorId) {
-        return c.json({ error: { code: "NOT_FOUND", message: "Post not found" } }, 404);
+      if (requesterId === undefined) {
+        return c.json(
+          {
+            error: {
+              code: "AUTH_FAILED",
+              message:
+                "You're not authorized to access this blog, please login with proper credentials first.",
+            },
+          },
+          403
+        );
       }
+
+      if (requesterId === blog.authorId) {
+        return c.json({ blog }, 200);
+      }
+
+      if (blog.visibility === "SHARED") {
+        const viaTeam = await prisma.postTeam.findFirst({
+          where: { postId: blog.id, team: { members: { some: { userId: requesterId } } } },
+        });
+        if (viaTeam) {
+          return c.json({ blog }, 200);
+        } else {
+          return c.json({ error: { code: "NOT_FOUND", message: "Post not found" } }, 404);
+        }
+      }
+      return c.json({ error: { code: "NOT_FOUND", message: "Post not found" } }, 404);
     }
 
     return c.json({ blog }, 200);
@@ -189,9 +221,14 @@ blogRouter.put("/:postId", authMiddleware, async (c) => {
   const body = await c.req.json();
 
   try {
+    const visibility =
+      body.visibility ??
+      (body.published === true ? "PUBLIC" : body.published === false ? "DRAFT" : undefined);
+    if (visibility !== undefined && !VIS.includes(visibility))
+      return c.json({ error: { code: "INVALID_VISIBILITY", message: "Invalid visibility" } }, 400);
     const existing = await prisma.post.findFirst({
       where: { id: c.req.param("postId"), authorId: c.get("userId") as string },
-      select: { published: true, publishedDate: true },
+      select: { visibility: true, publishedDate: true },
     });
 
     const blog = await prisma.post.update({
@@ -203,9 +240,11 @@ blogRouter.put("/:postId", authMiddleware, async (c) => {
         title: body.title,
         content: await sanitizeBlogHtml(body.content),
         image: body.image,
-        published: body.published,
         publishedDate:
-          body.published && !existing?.published ? new Date() : (existing?.publishedDate ?? null),
+          visibility === "PUBLIC" && existing?.visibility !== "PUBLIC"
+            ? new Date()
+            : (existing?.publishedDate ?? null),
+        ...(visibility !== undefined ? { visibility, published: visibility === "PUBLIC" } : {}),
       },
     });
     return c.json(

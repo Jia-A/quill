@@ -1,6 +1,7 @@
 import { API_URL } from "@/utils/constants";
 import { getApiErrorMessage, getApiErrorStatus } from "@/utils/apiError";
 import axios from "axios";
+import { PostVisibility } from "@/types/PostProps";
 
 // Keep the original function for backward compatibility if needed
 export const getBulkBlogs = async (q?: string) => {
@@ -26,7 +27,7 @@ export const postBlog = async (
     title: string;
     content: string;
     image: string;
-    published: boolean;
+    visibility: PostVisibility;
   },
   token: string
 ) => {
@@ -58,8 +59,8 @@ export const editBlog = async (
     title?: string;
     content?: string;
     image?: string;
-    published: boolean;
     authorId?: string;
+    visibility: PostVisibility;
   },
   token: string
 ) => {

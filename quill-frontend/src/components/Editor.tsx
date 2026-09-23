@@ -19,6 +19,7 @@ import {
   isImageFile,
   resolvePendingDeletes,
 } from "@/actions/imageActions";
+import { PostVisibility } from "@/types/PostProps";
 
 export type EditablePost =
   | {
@@ -27,7 +28,7 @@ export type EditablePost =
       content: string | null;
       image: string | null;
       authorId: string;
-      published: boolean;
+      visibility: PostVisibility;
     }
   | undefined;
 
@@ -213,12 +214,12 @@ export default function BlogEditor({ post }: { post: EditablePost }) {
     },
   });
 
-  const handleSave = async (state: "published" | "draft") => {
+  const handleSave = async (state: "DRAFT" | "PUBLIC") => {
     const payload = {
       title,
       content: content,
       image: imageUrl,
-      published: state === "published",
+      visibility: state,
     };
 
     if (!title) {
@@ -276,7 +277,7 @@ export default function BlogEditor({ post }: { post: EditablePost }) {
               label="Save as draft"
               variant="secondary"
               size="sm"
-              onClick={() => handleSave("draft")}
+              onClick={() => handleSave("DRAFT")}
               loading={isPublishing}
               disabled={isPublishing || isUploadingImage}
             />
@@ -284,7 +285,7 @@ export default function BlogEditor({ post }: { post: EditablePost }) {
               label={post ? "Save changes" : "Publish"}
               variant="primary"
               size="sm"
-              onClick={() => handleSave("published")}
+              onClick={() => handleSave("PUBLIC")}
               loading={isPublishing}
               disabled={isPublishing || isUploadingImage}
             />

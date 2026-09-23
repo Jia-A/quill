@@ -104,7 +104,9 @@ const Blog = async ({ params }: { params: Promise<{ id: string }> }) => {
 
         {blog.author?.id && (
           <div className="mt-5 flex flex-wrap gap-2">
-            {blog?.published && <SocialDraftsPanel postId={blog.id} authorId={blog.author.id} />}
+            {blog?.visibility === "PUBLIC" && (
+              <SocialDraftsPanel postId={blog.id} authorId={blog.author.id} />
+            )}
             <EditButton blog={blog} />
             <DeleteButton blog={blog} />
           </div>
