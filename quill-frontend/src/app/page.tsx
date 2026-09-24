@@ -3,6 +3,7 @@ import MainSection from "@/components/MainSection";
 import LinkedInHighlight from "@/components/LinkedInHighlight";
 import Workflow from "@/components/Workflow";
 import CommentsHighlight from "@/components/CommentsHighlight";
+import TeamsHighlight from "@/components/TeamsHighlight";
 import ReadingHub from "@/components/ReadingHub";
 import Footer from "@/components/Footer";
 
@@ -18,6 +19,7 @@ const LandingPage = async () => {
       <LinkedInHighlight />
       <Workflow />
       <CommentsHighlight />
+      <TeamsHighlight />
       <ReadingHub signedIn={signedIn} />
       <Footer signedIn={signedIn} />
     </main>
