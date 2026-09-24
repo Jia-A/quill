@@ -4,11 +4,11 @@
 
 # Quill
 
-**Write it. Share it with your team. Publish it everywhere.**
+**Publish the article. Let the ghost writer handle LinkedIn.**
 
-A publishing platform for writers who want a beautiful place to write — and a few trusted readers before the world sees a word.
+A publishing platform with an AI ghost writer built into the editor — it reads your finished article and writes the LinkedIn post for you, hook and all, ready to send from the same page.
 
-[Write](#-a-writing-experience-that-stays-out-of-the-way) · [Teams](#-teams-your-draft-your-circle) · [Comments](#-two-kinds-of-conversation) · [LinkedIn](#-one-article-two-audiences) · [Search](#-find-the-story-you-meant-to-read) · [Read](#-a-noiseless-reading-hub) · [Try it](#try-it)
+[Ghost writer](#-one-article-two-audiences) · [Write](#-a-writing-experience-that-stays-out-of-the-way) · [Teams](#-teams-your-draft-your-circle) · [Comments](#-two-kinds-of-conversation) · [Search](#-find-the-story-you-meant-to-read) · [Read](#-a-noiseless-reading-hub) · [Try it](#try-it)
 
 </div>
 
