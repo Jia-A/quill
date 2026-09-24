@@ -135,12 +135,14 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
         }
       };
 
-      ws.onclose = () => {
+      ws.onclose = (e) => {
         socketRef.current = null;
         if (!isMountedRef.current) return; // <-- the actual fix. Unmounted? Stop here, no retry scheduled.
         setConnectionStatus("disconnected");
         // Ticket is single-use + short-lived — can't reopen the same URL.
         // Re-run the WHOLE sequence (new ticket, new connect), not just retry the socket.
+        if (e.code === 4000) return;
+
         const delay = getReconnectDelay();
         reconnectAttemptRef.current += 1;
         reconnectTimerRef.current = window.setTimeout(() => connect(), delay);
@@ -169,6 +171,17 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       socketRef.current = null;
     };
   }, [session?.backendToken, connect, fetchNotifications]);
+
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible" && socketRef.current === null) {
+        fetchNotifications();
+        connect();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [connect, fetchNotifications]);
 
   return (
     <NotificationContext.Provider

@@ -33,6 +33,9 @@ model User {
   savedPosts             Post[]           @relation("SavedPosts")
   comments               Comment[]
   notification           Notification[]
+  createdTeams Team[]
+  teamMemberships TeamMember[]
+
 }
 
 model LinkedInAccount {
@@ -46,6 +49,11 @@ model LinkedInAccount {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+enum PostVisibility {
+  DRAFT
+  PUBLIC
+  SHARED
+}
 model Post {
   id            String         @id @default(cuid())
   title         String
@@ -59,9 +67,10 @@ model Post {
   socialDrafts  SocialDraft[]
   isPinned      Boolean        @default(false)
   savedByUsers  User[]         @relation("SavedPosts")
-  private       Boolean        @default(false)
   comments      Comment[]
   notification  Notification[]
+  visibility PostVisibility @default(DRAFT)
+  sharedWith PostTeam[]
 }
 
 model SocialDraft {
@@ -141,4 +150,37 @@ model Notification {
 
   @@index([userId, dateAndTime])
   @@index([userId, readStatus, dateAndTime])
+}
+
+
+model Team {
+  id        String       @id @default(cuid())
+  name      String
+  creatorId String
+  creator   User         @relation(fields: [creatorId], references: [id])
+  createdAt DateTime     @default(now())
+  members   TeamMember[]
+  posts     PostTeam[]
+
+}
+
+model TeamMember {
+  teamId   String
+  team     Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt DateTime @default(now())
+
+  @@id([teamId, userId])
+  @@index([userId])
+}
+
+model PostTeam {
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  teamId String
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@id([postId, teamId])
+  @@index([teamId])
 }

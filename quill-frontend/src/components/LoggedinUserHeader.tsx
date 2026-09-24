@@ -29,6 +29,7 @@ const LoggedinUserHeader = ({ session }: { session: Session }) => {
           <NavLink href="/blogs" match={["/blog", "/author"]}>
             Stories
           </NavLink>
+          <NavLink href="/teams">Teams</NavLink>
         </div>
 
         <div className="flex items-center gap-2">

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import { MagnifyingGlassIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { MiniSpinner } from "./annotation/ui";
 
 const DEBOUNCE_MS = 300;
@@ -34,11 +34,17 @@ const SearchBox = ({ q, children }: { q: string; children: React.ReactNode }) =>
     return () => clearTimeout(timer);
   }, [text, router]);
 
+  useEffect(() => {
+    if (q === current.current) return;
+    current.current = q;
+    setText(q);
+  }, [q]);
+
   const field = (
     <div className="relative mt-4">
       <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
       <input
-        type="search"
+        type="text"
         name="q"
         value={text}
         onChange={(e) => setText(e.target.value)}
@@ -46,7 +52,15 @@ const SearchBox = ({ q, children }: { q: string; children: React.ReactNode }) =>
         aria-label="Search stories"
         className="w-full rounded-md border border-border bg-bg py-2 pl-9 pr-9 text-sm outline-none placeholder:text-muted focus:border-accent"
       />
-      {pending && <MiniSpinner className="absolute right-3 top-1/2 -translate-y-1/2 text-muted" />}
+      {!pending && text && (
+        <XMarkIcon
+          className="absolute right-3 top-[30%] cursor-pointer"
+          height={16}
+          width={16}
+          onClick={() => setText("")}
+        />
+      )}
+      {pending && <MiniSpinner className="absolute right-3 top-1/3 text-muted" />}
     </div>
   );
 

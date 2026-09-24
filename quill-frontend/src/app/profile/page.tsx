@@ -17,10 +17,12 @@ const ProfilePage = async () => {
   let response;
   let publishedBlogs;
   let draftBlogs;
+  let sharedBlogs;
   try {
     response = await getUserProfile(session.backendToken);
-    publishedBlogs = response?.user?.posts.filter((blog: Blog) => blog.published === true);
-    draftBlogs = response?.user?.posts.filter((blog: Blog) => blog.published !== true);
+    publishedBlogs = response?.user?.posts.filter((blog: Blog) => blog.visibility === "PUBLIC");
+    draftBlogs = response?.user?.posts.filter((blog: Blog) => blog.visibility === "DRAFT");
+    sharedBlogs = response?.user?.posts.filter((blog: Blog) => blog.visibility === "SHARED");
   } catch {
     return (
       <main className="mx-auto max-w-content px-4 py-10">
@@ -48,6 +50,7 @@ const ProfilePage = async () => {
       <ProfileHeader user={response.user} />
       <ProfileTabs
         draftBlogs={draftBlogs || []}
+        sharedBlogs={sharedBlogs || []}
         publishedBlogs={publishedBlogs || []}
         addedComments={authored}
         pendingComments={pendingComments?.comments ?? []}
