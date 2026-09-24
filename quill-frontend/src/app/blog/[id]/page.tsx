@@ -9,6 +9,7 @@ import type { Metadata } from "next";
 import { sanitizeBlogHtmlServer } from "@/utils/sanitizeServer";
 import EditButton from "./EditButton";
 import DeleteButton from "./DeleteButton";
+import ShareTeamsButton from "./ShareTeamsButton";
 import Avatar from "@/atoms/Avatar";
 import CommentableContent from "@/components/CommentableContent";
 import { formatDate, getReadingTime } from "@/utils/postMeta";
@@ -106,6 +107,9 @@ const Blog = async ({ params }: { params: Promise<{ id: string }> }) => {
           <div className="mt-5 flex flex-wrap gap-2">
             {blog?.visibility === "PUBLIC" && (
               <SocialDraftsPanel postId={blog.id} authorId={blog.author.id} />
+            )}
+            {blog?.visibility !== "PUBLIC" && (
+              <ShareTeamsButton blog={{ id: blog.id, authorId: blog.author.id }} />
             )}
             <EditButton blog={blog} />
             <DeleteButton blog={blog} />

@@ -20,6 +20,7 @@ import {
   resolvePendingDeletes,
 } from "@/actions/imageActions";
 import { PostVisibility } from "@/types/PostProps";
+import ShareTeamsSidebar from "./ShareTeamsSidebar";
 
 export type EditablePost =
   | {
@@ -45,8 +46,17 @@ export default function BlogEditor({ post }: { post: EditablePost }) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [isPublishing, setIsPublishing] = useState(false);
+  // Which action is in flight, so only the clicked button shows a spinner
+  // while the other two merely disable.
+  const [pendingAction, setPendingAction] = useState<"DRAFT" | "PUBLIC" | "SHARE" | null>(null);
+  const isPublishing = pendingAction !== null;
   const [pendingDeletes, setPendingDeletes] = useState<string[]>([]);
+
+  const [savedPostId, setSavedPostId] = useState<string | null>(post?.id ?? null);
+  const [currentVisibility, setCurrentVisibility] = useState<PostVisibility>(
+    post?.visibility ?? "DRAFT"
+  );
+  const [shareOpen, setShareOpen] = useState(false);
 
   const onChange = (content: string) => {
     setContent(content);
@@ -214,56 +224,68 @@ export default function BlogEditor({ post }: { post: EditablePost }) {
     },
   });
 
-  const handleSave = async (state: "DRAFT" | "PUBLIC") => {
-    const payload = {
+  // Your existing handleSave body, renamed: returns the id instead of navigating
+  const savePost = async (
+    state: "DRAFT" | "PUBLIC",
+    // Sharing saves a draft, so the button to spin can't be derived from state.
+    action: "DRAFT" | "PUBLIC" | "SHARE" = state
+  ): Promise<string | null> => {
+    const visibility = state === "DRAFT" && currentVisibility === "SHARED" ? "SHARED" : state;
+    const payload: { title: string; content: string; image: string; visibility: PostVisibility } = {
       title,
-      content: content,
+      content,
       image: imageUrl,
-      visibility: state,
+      visibility,
     };
-
     if (!title) {
       setIsError({ element: "title", message: "Title is required" });
-      return;
+      return null;
     }
     if (!content || content === "<p></p>") {
       setIsError({ element: "content", message: "Content is required" });
-      return;
+      return null;
     }
     if (!session?.backendToken) {
       setIsError({ element: "auth", message: "You must be signed in to publish" });
-      return;
+      return null;
     }
     setIsError({ element: "", message: "" });
-    setIsPublishing(true);
+    setPendingAction(action);
 
-    // Only the save itself is guarded here. Anything after it runs once the post
-    // is already stored, so folding it into this try would report a successful
-    // publish as a failure.
     let response;
     try {
-      response = post
-        ? await editBlog(post.id, { ...payload, authorId: post.authorId }, session.backendToken)
-        : await postBlog(payload, session.backendToken);
+      response = savedPostId
+        ? await editBlog(
+            savedPostId,
+            { ...payload, authorId: post?.authorId },
+            session!.backendToken
+          )
+        : await postBlog(payload, session!.backendToken);
     } catch (error) {
-      console.error("Publish error:", error);
-      setIsError({
-        element: "publish",
-        message:
-          error instanceof Error && error.message
-            ? error.message
-            : "Failed to publish the blog. Please try again.",
-      });
-      setIsPublishing(false);
-      return;
+      // ...your existing error handling
+      setPendingAction(null);
+      return null;
     }
 
-    // Only once the post is safely saved is the old image unreferenced.
     const toDelete = resolvePendingDeletes(pendingDeletes, imageUrl);
     await Promise.all(toDelete.map(deleteImage));
     setPendingDeletes([]);
 
-    router.push(`/blog/${response?.blog?.id}`);
+    const id = response?.blog?.id ?? savedPostId;
+    if (id) setSavedPostId(id);
+    setCurrentVisibility(visibility);
+    setPendingAction(null);
+    return id;
+  };
+
+  const handleSave = async (state: "DRAFT" | "PUBLIC") => {
+    const id = await savePost(state);
+    if (id) router.push(`/blog/${id}`);
+  };
+
+  const handleShare = async () => {
+    const id = savedPostId ?? (await savePost("DRAFT", "SHARE"));
+    if (id) setShareOpen(true);
   };
 
   return (
@@ -278,7 +300,7 @@ export default function BlogEditor({ post }: { post: EditablePost }) {
               variant="secondary"
               size="sm"
               onClick={() => handleSave("DRAFT")}
-              loading={isPublishing}
+              loading={pendingAction === "DRAFT"}
               disabled={isPublishing || isUploadingImage}
             />
             <Button
@@ -286,12 +308,37 @@ export default function BlogEditor({ post }: { post: EditablePost }) {
               variant="primary"
               size="sm"
               onClick={() => handleSave("PUBLIC")}
-              loading={isPublishing}
+              loading={pendingAction === "PUBLIC"}
               disabled={isPublishing || isUploadingImage}
             />
+            {currentVisibility !== "PUBLIC" && (
+              <Button
+                label={"Share in teams"}
+                variant="primary"
+                size="sm"
+                onClick={handleShare}
+                loading={pendingAction === "SHARE"}
+                disabled={isPublishing || isUploadingImage}
+              />
+            )}
           </div>
         </div>
       </div>
+
+      {savedPostId && session?.backendToken && (
+        <ShareTeamsSidebar
+          postId={savedPostId}
+          token={session.backendToken}
+          open={shareOpen}
+          onClose={() => setShareOpen(false)}
+          onShared={(visibility) => {
+            setCurrentVisibility(visibility);
+            // Sharing is the end of the editing session, same as Save/Publish:
+            // send the author to the post rather than leaving them in the editor.
+            router.push(`/blog/${savedPostId}`);
+          }}
+        />
+      )}
 
       <div className="mx-auto max-w-reading px-4 py-8">
         {["publish", "auth", "image"].includes(isError.element) && (

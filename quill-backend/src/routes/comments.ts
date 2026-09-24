@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { Prisma, PrismaClient } from "../generated/prisma/client";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { authMiddleware, optionalAuthMiddleware } from "../middlewares/authMiddleware";
+import { canReadPost } from "../lib/authFunctions";
 
 // A comment is a margin note, not an essay. Unbounded text wrecks the
 // annotation panel layout long before it troubles the database.
@@ -81,6 +82,10 @@ commentRouter.post("/", authMiddleware, async (c) => {
 
     const post = await prisma.post.findUnique({ where: { id: postId } });
     if (!post) {
+      return c.json({ error: { code: "POST_NOT_FOUND", message: "Post not found" } }, 404);
+    }
+
+    if (!(await canReadPost(prisma, post, userId))) {
       return c.json({ error: { code: "POST_NOT_FOUND", message: "Post not found" } }, 404);
     }
 
@@ -200,6 +205,11 @@ commentRouter.get("/:postId", optionalAuthMiddleware, async (c) => {
     const post = await prisma.post.findUnique({ where: { id: postId } });
     if (!post) {
       return c.json({ error: { code: "POST_NOT_FOUND", message: "Post not found" } }, 404);
+    }
+    if (!(await canReadPost(prisma, post, userId))) {
+      return userId
+        ? c.json({ error: { code: "POST_NOT_FOUND", message: "Post not found" } }, 404)
+        : c.json({ error: { code: "AUTH_FAILED", message: "Log in to view this post." } }, 401);
     }
     const isAuthor = post.authorId === userId;
 
