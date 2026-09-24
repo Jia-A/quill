@@ -1,10 +1,12 @@
-import { Prisma, PrismaClient } from "../generated/prisma/client";
+import { Prisma, PrismaClient, PostVisibility } from "../generated/prisma/client";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { Hono } from "hono";
 import { verify } from "hono/jwt";
 import { sanitizeBlogHtml } from "../lib/sanitizeHtml";
 import { deleteCloudinaryImage } from "../lib/deleteCloudinaryImage";
 import { authMiddleware } from "../middlewares/authMiddleware";
+import { canReadPost, getOptionalUserId } from "../lib/authFunctions";
+const VIS = Object.values(PostVisibility);
 
 export const blogRouter = new Hono<{
   Bindings: {
@@ -27,14 +29,20 @@ blogRouter.post("/", authMiddleware, async (c) => {
   const userId = c.get("userId") as string;
 
   try {
+    const visibility =
+      body.visibility ??
+      (body.published === true ? "PUBLIC" : body.published === false ? "DRAFT" : undefined);
+    if (visibility !== undefined && !VIS.includes(visibility))
+      return c.json({ error: { code: "INVALID_VISIBILITY", message: "Invalid visibility" } }, 400);
     const blog = await prisma.post.create({
       data: {
         title: body.title,
         content: await sanitizeBlogHtml(body.content),
         image: body.image,
-        published: body.published,
         authorId: userId,
-        publishedDate: body.published ? new Date() : null,
+        visibility: visibility ?? "DRAFT",
+        published: (visibility ?? "DRAFT") === "PUBLIC",
+        publishedDate: visibility === "PUBLIC" ? new Date() : null,
       },
     });
 
@@ -82,7 +90,7 @@ blogRouter.get("/bulk", async (c) => {
   try {
     const blogs = await prisma.post.findMany({
       where: {
-        published: true,
+        visibility: "PUBLIC",
         ...(q
           ? {
               OR: [
@@ -152,22 +160,12 @@ blogRouter.get("/single/:id", async (c) => {
     if (!blog) {
       return c.json({ error: { code: "NOT_FOUND", message: "Post not found" } }, 404);
     }
-
-    if (!blog.published) {
-      let requesterId: string | undefined;
-      const headers = c.req.header("authorization") || "";
-      try {
-        const verifiedString = await verify(headers, c.env.JWT_SECRET, "HS256");
-        requesterId = verifiedString?.id as string | undefined;
-      } catch {
-        requesterId = undefined;
-      }
-
-      if (requesterId !== blog.authorId) {
-        return c.json({ error: { code: "NOT_FOUND", message: "Post not found" } }, 404);
-      }
+    const requesterId = await getOptionalUserId(c.req.header("authorization"), c.env.JWT_SECRET);
+    if (!(await canReadPost(prisma, blog, requesterId))) {
+      return requesterId
+        ? c.json({ error: { code: "NOT_FOUND", message: "Post not found" } }, 404)
+        : c.json({ error: { code: "AUTH_FAILED", message: "Log in to view this post." } }, 401);
     }
-
     return c.json({ blog }, 200);
   } catch (error) {
     return c.json(
@@ -189,9 +187,14 @@ blogRouter.put("/:postId", authMiddleware, async (c) => {
   const body = await c.req.json();
 
   try {
+    const visibility =
+      body.visibility ??
+      (body.published === true ? "PUBLIC" : body.published === false ? "DRAFT" : undefined);
+    if (visibility !== undefined && !VIS.includes(visibility))
+      return c.json({ error: { code: "INVALID_VISIBILITY", message: "Invalid visibility" } }, 400);
     const existing = await prisma.post.findFirst({
       where: { id: c.req.param("postId"), authorId: c.get("userId") as string },
-      select: { published: true, publishedDate: true },
+      select: { visibility: true, publishedDate: true },
     });
 
     const blog = await prisma.post.update({
@@ -203,9 +206,11 @@ blogRouter.put("/:postId", authMiddleware, async (c) => {
         title: body.title,
         content: await sanitizeBlogHtml(body.content),
         image: body.image,
-        published: body.published,
         publishedDate:
-          body.published && !existing?.published ? new Date() : (existing?.publishedDate ?? null),
+          visibility === "PUBLIC" && existing?.visibility !== "PUBLIC"
+            ? new Date()
+            : (existing?.publishedDate ?? null),
+        ...(visibility !== undefined ? { visibility, published: visibility === "PUBLIC" } : {}),
       },
     });
     return c.json(
@@ -285,6 +290,73 @@ blogRouter.delete("/:postId", authMiddleware, async (c) => {
           message: "Something went wrong on the server side.",
         },
       },
+      500
+    );
+  }
+});
+
+blogRouter.put("/:postId/teams/", authMiddleware, async (c) => {
+  const prisma = new PrismaClient({ accelerateUrl: c.env.DATABASE_URL }).$extends(withAccelerate());
+  const userId = c.get("userId") as string;
+  const postId = c.req.param("postId");
+
+  try {
+    const body = await c.req.json().catch(() => ({}));
+
+    if (!Array.isArray(body.teamIds) || !body.teamIds.every((t: unknown) => typeof t === "string"))
+      return c.json(
+        { error: { code: "INVALID_TEAMS", message: "teamIds must be a list of team ids." } },
+        400
+      );
+    const teamIds: string[] = [...new Set(body.teamIds as string[])];
+    if (teamIds.length > 30)
+      return c.json({ error: { code: "INVALID_TEAMS", message: "Too many teams." } }, 400);
+
+    // 1. Post must exist and be mine
+    const post = await prisma.post.findFirst({
+      where: { id: postId, authorId: userId },
+      select: { visibility: true },
+    });
+    if (!post) return c.json({ error: { code: "NOT_FOUND", message: "Post not found" } }, 404);
+
+    // 2. Public posts are already readable by everyone
+    if (post.visibility === "PUBLIC")
+      return c.json(
+        { error: { code: "POST_IS_PUBLIC", message: "Public posts can't be shared to teams." } },
+        400
+      );
+
+    // 3. Every team must be one I'm a member of — the UI hides others, the server enforces it
+    if (teamIds.length > 0) {
+      const myTeamCount = await prisma.team.count({
+        where: { id: { in: teamIds }, members: { some: { userId } } },
+      });
+      if (myTeamCount !== teamIds.length)
+        return c.json(
+          {
+            error: {
+              code: "INVALID_TEAMS",
+              message: "You can only share into teams you belong to.",
+            },
+          },
+          403
+        );
+    }
+
+    const visibility = teamIds.length > 0 ? "SHARED" : "DRAFT";
+
+    // 4. Make the rows match the ticked list exactly, and set visibility — all or nothing
+    await prisma.$transaction([
+      prisma.postTeam.deleteMany({ where: { postId } }),
+      prisma.postTeam.createMany({ data: teamIds.map((teamId) => ({ postId, teamId })) }),
+      prisma.post.update({ where: { id: postId }, data: { visibility } }),
+    ]);
+
+    return c.json({ visibility, teamIds }, 200);
+  } catch (err) {
+    console.error("ERROR HAPPENED in PUT /blog/:postId/teams:", err);
+    return c.json(
+      { error: { code: "INTERNAL_SERVER_ERROR", message: "Could not update sharing" } },
       500
     );
   }

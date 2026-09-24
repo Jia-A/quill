@@ -21,7 +21,7 @@ export class NotificationDO {
     if (this.timeoutId) clearTimeout(this.timeoutId);
     this.timeoutId = setTimeout(
       () => {
-        if (this.socket) this.socket.close();
+        if (this.socket) this.socket.close(4000, "idle");
       },
       5 * 60 * 1000
     ); // 5 min idle
@@ -59,6 +59,7 @@ export class NotificationDO {
       });
 
       server.addEventListener("close", () => {
+        if (this.socket !== server) return;
         this.socket = null;
         if (this.timeoutId) clearTimeout(this.timeoutId);
       });

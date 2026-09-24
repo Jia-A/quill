@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { formatDate, getReadingTime, getExcerpt } from "@/utils/postMeta";
+import { PostVisibility } from "@/types/PostProps";
 
 export interface Blog {
   id: string;
@@ -11,7 +12,7 @@ export interface Blog {
   author: {
     name: string;
   };
-  published?: boolean;
+  visibility: PostVisibility;
 }
 
 interface BlogListProps {

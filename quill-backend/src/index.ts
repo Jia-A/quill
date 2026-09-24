@@ -7,6 +7,7 @@ import { cors } from "hono/cors";
 import { imageRouter } from "./routes/image";
 import { commentRouter } from "./routes/comments";
 import { notificationRouter } from "./routes/notification";
+import { teamRouter } from "./routes/teams";
 export { NotificationDO } from "./sockets/notificationDO";
 
 const app = new Hono<{
@@ -53,5 +54,6 @@ app.route("/api/v1/social/", socialRouter);
 app.route("/api/v1/image/", imageRouter);
 app.route("/api/v1/comment/", commentRouter);
 app.route("/api/v1/notification", notificationRouter);
+app.route("/api/v1/teams/", teamRouter);
 
 export default app;
