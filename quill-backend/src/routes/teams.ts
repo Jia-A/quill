@@ -1,5 +1,5 @@
-import { withAccelerate } from "@prisma/extension-accelerate";
-import { Prisma, PrismaClient } from "../generated/prisma/client";
+import { Prisma } from "../generated/prisma/client";
+import { getPrisma } from "../lib/prisma";
 import { authMiddleware } from "../middlewares/authMiddleware";
 import { Hono } from "hono";
 
@@ -22,29 +22,23 @@ const teamSelect = (postId: string) =>
     posts: { where: { postId }, select: { postId: true } },
   }) satisfies Prisma.TeamSelect;
 
-type TeamRow = Prisma.TeamGetPayload<{ select: ReturnType<typeof teamSelect> }>;
-
 const createdTeamSelect = {
   id: true,
   name: true,
   members: { select: { user: { select: { name: true } } } },
 } satisfies Prisma.TeamSelect;
 
-type CreatedTeam = Prisma.TeamGetPayload<{ select: typeof createdTeamSelect }>;
-
 teamRouter.get("/", authMiddleware, async (c) => {
-  const prisma = new PrismaClient({
-    accelerateUrl: c.env.DATABASE_URL,
-  }).$extends(withAccelerate());
-  const userId = c.get("userId") as string;
+  const prisma = getPrisma(c.env.DATABASE_URL);
+  const userId = c.get("userId");
   const postId = c.req.query("postId");
 
   try {
-    const teams = (await prisma.team.findMany({
+    const teams = await prisma.team.findMany({
       where: { members: { some: { userId } } },
       select: teamSelect(postId ?? ""),
       orderBy: { createdAt: "desc" },
-    })) as unknown as TeamRow[];
+    });
 
     return c.json(
       {
@@ -68,8 +62,8 @@ teamRouter.get("/", authMiddleware, async (c) => {
 });
 
 teamRouter.post("/", authMiddleware, async (c) => {
-  const prisma = new PrismaClient({ accelerateUrl: c.env.DATABASE_URL }).$extends(withAccelerate());
-  const userId = c.get("userId") as string;
+  const prisma = getPrisma(c.env.DATABASE_URL);
+  const userId = c.get("userId");
 
   try {
     const body = await c.req.json().catch(() => ({}));
@@ -139,14 +133,14 @@ teamRouter.post("/", authMiddleware, async (c) => {
       );
 
     // Nested create = one transaction: team + every member row, or nothing
-    const team = (await prisma.team.create({
+    const team = await prisma.team.create({
       data: {
         name,
         creatorId: userId,
         members: { create: [{ userId }, ...members.map((m) => ({ userId: m.id }))] },
       },
       select: createdTeamSelect,
-    })) as unknown as CreatedTeam;
+    });
 
     return c.json(
       {
@@ -195,18 +189,16 @@ const overviewSelect = {
   },
 } satisfies Prisma.TeamSelect;
 
-type OverviewRow = Prisma.TeamGetPayload<{ select: typeof overviewSelect }>;
-
 teamRouter.get("/overview", authMiddleware, async (c) => {
-  const prisma = new PrismaClient({ accelerateUrl: c.env.DATABASE_URL }).$extends(withAccelerate());
-  const userId = c.get("userId") as string;
+  const prisma = getPrisma(c.env.DATABASE_URL);
+  const userId = c.get("userId");
 
   try {
-    const teams = (await prisma.team.findMany({
+    const teams = await prisma.team.findMany({
       where: { members: { some: { userId } } },
       select: overviewSelect,
       orderBy: { createdAt: "desc" },
-    })) as unknown as OverviewRow[];
+    });
 
     return c.json(
       {

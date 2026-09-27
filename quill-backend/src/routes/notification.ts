@@ -1,7 +1,6 @@
 import { Hono } from "hono";
 import { authMiddleware } from "../middlewares/authMiddleware";
-import { Prisma, PrismaClient } from "../generated/prisma";
-import { withAccelerate } from "@prisma/extension-accelerate";
+import { getPrisma } from "../lib/prisma";
 
 const PAGE_SIZE = 20;
 
@@ -36,10 +35,8 @@ notificationRouter.get("/connect", async (c) => {
 });
 
 notificationRouter.get("/", authMiddleware, async (c) => {
-  const prisma = new PrismaClient({
-    accelerateUrl: c.env.DATABASE_URL,
-  }).$extends(withAccelerate());
-  const userId = c.get("userId") as string | undefined;
+  const prisma = getPrisma(c.env.DATABASE_URL);
+  const userId = c.get("userId");
   const unreadOnly = c.req.query("unreadOnly") === "true";
   const take = Number(c.req.query("take")) || PAGE_SIZE;
   const cursor = c.req.query("cursor");
@@ -76,11 +73,9 @@ notificationRouter.get("/", authMiddleware, async (c) => {
 });
 
 notificationRouter.patch("/:id", authMiddleware, async (c) => {
-  const prisma = new PrismaClient({
-    accelerateUrl: c.env.DATABASE_URL,
-  }).$extends(withAccelerate());
+  const prisma = getPrisma(c.env.DATABASE_URL);
 
-  const userId = c.get("userId") as string | undefined;
+  const userId = c.get("userId");
   const notificationId = c.req.param("id");
   try {
     const notification = await prisma.notification.findUnique({

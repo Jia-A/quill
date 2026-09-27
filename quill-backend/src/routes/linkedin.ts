@@ -1,8 +1,7 @@
-import { PrismaClient } from "../generated/prisma/client";
-import { withAccelerate } from "@prisma/extension-accelerate";
 import { Hono } from "hono";
 import { sign, verify } from "hono/jwt";
 import { encryptSecret } from "../lib/crypto";
+import { getPrisma } from "../lib/prisma";
 
 export const linkedinRouter = new Hono<{
   Bindings: {
@@ -18,10 +17,6 @@ export const linkedinRouter = new Hono<{
     userId: string;
   };
 }>();
-
-function getPrisma(url: string) {
-  return new PrismaClient({ accelerateUrl: url }).$extends(withAccelerate());
-}
 
 function getRedirectUri(c: any) {
   const backend = c.env.BACKEND_URL ?? "http://localhost:8787";

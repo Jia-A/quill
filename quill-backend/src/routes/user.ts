@@ -1,10 +1,9 @@
-import { PrismaClient } from "../generated/prisma/edge";
-import { withAccelerate } from "@prisma/extension-accelerate";
 import { Hono } from "hono";
 import { setCookie } from "hono/cookie";
 import { sign, verify } from "hono/jwt";
 import { hashPassword, verifyPassword } from "../lib/password";
 import { verifyOAuthToken, isSupportedProvider } from "../lib/verifyOAuth";
+import { getPrisma } from "../lib/prisma";
 
 function validatePassword(password: unknown): string | null {
   if (typeof password !== "string" || password.length < 8) {
@@ -29,9 +28,7 @@ export const userRouter = new Hono<{
 }>();
 
 userRouter.post("/signup", async (c) => {
-  const prisma = new PrismaClient({
-    accelerateUrl: c.env.DATABASE_URL, // we are keeping accelerateURL separetely in each route because it might be possible that the routes will be deployed separately as well
-  }).$extends(withAccelerate());
+  const prisma = getPrisma(c.env.DATABASE_URL); // we need to keep the initializing the prisma again and again in each route separately because the env variables are attached to requests not route, and thus we can get the db url only with an incoming requests.
 
   const body = await c.req.json();
 
@@ -83,9 +80,7 @@ userRouter.post("/signup", async (c) => {
 });
 
 userRouter.post("/signin", async (c) => {
-  const prisma = new PrismaClient({
-    accelerateUrl: c.env.DATABASE_URL,
-  }).$extends(withAccelerate());
+  const prisma = getPrisma(c.env.DATABASE_URL);
 
   const body = await c.req.json();
 
@@ -120,9 +115,7 @@ userRouter.post("/signin", async (c) => {
 });
 
 userRouter.post("/oauth-sync", async (c) => {
-  const prisma = new PrismaClient({
-    accelerateUrl: c.env.DATABASE_URL,
-  }).$extends(withAccelerate());
+  const prisma = getPrisma(c.env.DATABASE_URL);
 
   try {
     const body = await c.req.json().catch(() => null);
@@ -182,9 +175,7 @@ userRouter.post("/oauth-sync", async (c) => {
 });
 
 userRouter.get("/me", async (c) => {
-  const prisma = new PrismaClient({
-    accelerateUrl: c.env.DATABASE_URL,
-  }).$extends(withAccelerate());
+  const prisma = getPrisma(c.env.DATABASE_URL);
 
   const headers = c.req.header("authorization") || "";
   let userId;
@@ -222,9 +213,7 @@ userRouter.get("/me", async (c) => {
 });
 
 userRouter.put("/me", async (c) => {
-  const prisma = new PrismaClient({
-    accelerateUrl: c.env.DATABASE_URL,
-  }).$extends(withAccelerate());
+  const prisma = getPrisma(c.env.DATABASE_URL);
 
   const headers = c.req.header("authorization") || "";
 
@@ -274,9 +263,7 @@ userRouter.put("/me", async (c) => {
 
 // Public author profile — no auth required. Only exposes safe fields and published posts.
 userRouter.get("/:id", async (c) => {
-  const prisma = new PrismaClient({
-    accelerateUrl: c.env.DATABASE_URL,
-  }).$extends(withAccelerate());
+  const prisma = getPrisma(c.env.DATABASE_URL);
 
   try {
     const user = await prisma.user.findUnique({
