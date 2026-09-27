@@ -1,9 +1,7 @@
 import { Hono } from "hono";
-import { verify } from "hono/jwt";
-import { PrismaClient } from "../generated/prisma/client";
-import { withAccelerate } from "@prisma/extension-accelerate";
 import { deleteCloudinaryImage, sign } from "../lib/deleteCloudinaryImage";
 import { authMiddleware } from "../middlewares/authMiddleware";
+import { getPrisma } from "../lib/prisma";
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 
@@ -52,9 +50,7 @@ async function checkQuota(prisma: QuotaClient, userId: string) {
 }
 
 imageRouter.delete("/delete", authMiddleware, async (c) => {
-  const prisma = new PrismaClient({
-    accelerateUrl: c.env.DATABASE_URL,
-  }).$extends(withAccelerate());
+  const prisma = getPrisma(c.env.DATABASE_URL);
 
   const userId = c.get("userId");
   const { url } = await c.req.json<{ url?: string }>();
@@ -70,9 +66,7 @@ imageRouter.delete("/delete", authMiddleware, async (c) => {
 });
 
 imageRouter.post("/upload", authMiddleware, async (c) => {
-  const prisma = new PrismaClient({
-    accelerateUrl: c.env.DATABASE_URL,
-  }).$extends(withAccelerate());
+  const prisma = getPrisma(c.env.DATABASE_URL);
   const userId = c.get("userId");
   const formData = await c.req.formData();
   const file = formData.get("image");
@@ -156,9 +150,7 @@ imageRouter.post("/upload", authMiddleware, async (c) => {
 });
 
 imageRouter.post("/upload-url", authMiddleware, async (c) => {
-  const prisma = new PrismaClient({
-    accelerateUrl: c.env.DATABASE_URL,
-  }).$extends(withAccelerate());
+  const prisma = getPrisma(c.env.DATABASE_URL);
   const userId = c.get("userId");
   const { url } = await c.req.json<{ url?: string }>();
 
