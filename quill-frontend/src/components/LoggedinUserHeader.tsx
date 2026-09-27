@@ -26,10 +26,13 @@ const LoggedinUserHeader = ({ session }: { session: Session }) => {
       <div className="mx-auto flex h-full max-w-content items-center justify-between px-4">
         <div className="flex items-center gap-6">
           <Wordmark href="/" />
-          <NavLink href="/blogs" match={["/blog", "/author"]}>
-            Stories
-          </NavLink>
-          <NavLink href="/teams">Teams</NavLink>
+          {/* On mobile these move into the avatar menu. */}
+          <div className="hidden items-center gap-6 sm:flex">
+            <NavLink href="/blogs" match={["/blog", "/author"]}>
+              Stories
+            </NavLink>
+            <NavLink href="/teams">Teams</NavLink>
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
@@ -63,6 +66,22 @@ const LoggedinUserHeader = ({ session }: { session: Session }) => {
                   <div className="border-b border-border px-3 py-2">
                     <p className="text-xs text-muted">Signed in as</p>
                     <p className="truncate text-sm font-medium">{userData?.name}</p>
+                  </div>
+                  <div className="border-b border-border py-1 sm:hidden">
+                    <Link
+                      href="/blogs"
+                      onClick={() => setShowUserMenu(false)}
+                      className="block px-3 py-2 text-sm hover:bg-bg-subtle"
+                    >
+                      Stories
+                    </Link>
+                    <Link
+                      href="/teams"
+                      onClick={() => setShowUserMenu(false)}
+                      className="block px-3 py-2 text-sm hover:bg-bg-subtle"
+                    >
+                      Teams
+                    </Link>
                   </div>
                   <Link
                     href="/profile"

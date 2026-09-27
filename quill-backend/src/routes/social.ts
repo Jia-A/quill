@@ -1,10 +1,8 @@
-import { PrismaClient } from "../generated/prisma/client";
-import { withAccelerate } from "@prisma/extension-accelerate";
 import { Hono } from "hono";
-import { verify } from "hono/jwt";
 import { generateSocialDraft, PLATFORM_CAPS, Platform } from "../lib/generateSocial";
 import { decryptSecret } from "../lib/crypto";
 import { authMiddleware } from "../middlewares/authMiddleware";
+import { getPrisma } from "../lib/prisma";
 
 export const socialRouter = new Hono<{
   Bindings: {
@@ -18,10 +16,6 @@ export const socialRouter = new Hono<{
     userId: string;
   };
 }>();
-
-function getPrisma(url: string) {
-  return new PrismaClient({ accelerateUrl: url }).$extends(withAccelerate());
-}
 
 function isValidPlatform(p: unknown): p is Platform {
   return p === "linkedin";

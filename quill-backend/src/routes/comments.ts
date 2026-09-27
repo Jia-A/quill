@@ -1,8 +1,8 @@
 import { Hono } from "hono";
-import { Prisma, PrismaClient } from "../generated/prisma/client";
-import { withAccelerate } from "@prisma/extension-accelerate";
+import { Prisma } from "../generated/prisma/client";
 import { authMiddleware, optionalAuthMiddleware } from "../middlewares/authMiddleware";
 import { canReadPost } from "../lib/authFunctions";
+import { getPrisma } from "../lib/prisma";
 
 // A comment is a margin note, not an essay. Unbounded text wrecks the
 // annotation panel layout long before it troubles the database.
@@ -29,9 +29,7 @@ export const commentRouter = new Hono<{
 }>();
 
 commentRouter.post("/", authMiddleware, async (c) => {
-  const prisma = new PrismaClient({
-    accelerateUrl: c.env.DATABASE_URL,
-  }).$extends(withAccelerate());
+  const prisma = getPrisma(c.env.DATABASE_URL);
   const userId = c.get("userId");
 
   try {
@@ -153,11 +151,9 @@ commentRouter.post("/", authMiddleware, async (c) => {
 });
 
 commentRouter.get("/pending", authMiddleware, async (c) => {
-  const prisma = new PrismaClient({
-    accelerateUrl: c.env.DATABASE_URL,
-  }).$extends(withAccelerate());
+  const prisma = getPrisma(c.env.DATABASE_URL);
 
-  const userId = c.get("userId") as string;
+  const userId = c.get("userId");
 
   try {
     // ?status= lets the profile ask for the moderation queue (PENDING, the
@@ -194,12 +190,10 @@ commentRouter.get("/pending", authMiddleware, async (c) => {
 });
 
 commentRouter.get("/:postId", optionalAuthMiddleware, async (c) => {
-  const prisma = new PrismaClient({
-    accelerateUrl: c.env.DATABASE_URL,
-  }).$extends(withAccelerate());
+  const prisma = getPrisma(c.env.DATABASE_URL);
 
   const postId = c.req.param("postId");
-  const userId = c.get("userId") as string | undefined;
+  const userId = c.get("userId");
 
   try {
     const post = await prisma.post.findUnique({ where: { id: postId } });
@@ -242,11 +236,9 @@ commentRouter.get("/:postId", optionalAuthMiddleware, async (c) => {
 });
 
 commentRouter.get("/", authMiddleware, async (c) => {
-  const prisma = new PrismaClient({
-    accelerateUrl: c.env.DATABASE_URL,
-  }).$extends(withAccelerate());
+  const prisma = getPrisma(c.env.DATABASE_URL);
 
-  const userId = c.get("userId") as string;
+  const userId = c.get("userId");
 
   try {
     const comments = await prisma.comment.findMany({
@@ -290,11 +282,9 @@ commentRouter.get("/", authMiddleware, async (c) => {
 });
 
 commentRouter.patch("/:id", authMiddleware, async (c) => {
-  const prisma = new PrismaClient({
-    accelerateUrl: c.env.DATABASE_URL,
-  }).$extends(withAccelerate());
+  const prisma = getPrisma(c.env.DATABASE_URL);
 
-  const userId = c.get("userId") as string;
+  const userId = c.get("userId");
   const commentId = c.req.param("id");
   const VALID_STATUSES = ["APPROVED", "REJECTED"];
 

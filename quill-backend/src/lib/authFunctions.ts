@@ -1,10 +1,5 @@
-import { PrismaClient } from "../generated/prisma/client";
-import { withAccelerate } from "@prisma/extension-accelerate";
 import { verify } from "hono/jwt";
-
-export const getPrisma = (url: string) =>
-  new PrismaClient({ accelerateUrl: url }).$extends(withAccelerate());
-type DB = ReturnType<typeof getPrisma>; // same expression your routes use, so the type matches
+import { DB } from "./prisma";
 
 type ReadablePost = {
   id: string;

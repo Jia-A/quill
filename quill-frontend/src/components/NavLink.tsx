@@ -21,9 +21,7 @@ const NavLink = ({
     <Link
       href={href}
       aria-current={active ? "page" : undefined}
-      className={`hidden text-sm sm:block ${
-        active ? "font-medium text-fg" : "text-muted hover:text-fg"
-      }`}
+      className={`text-sm ${active ? "font-medium text-fg" : "text-muted hover:text-fg"}`}
     >
       {children}
     </Link>

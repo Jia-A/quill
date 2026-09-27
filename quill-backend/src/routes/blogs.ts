@@ -1,11 +1,10 @@
-import { Prisma, PrismaClient, PostVisibility } from "../generated/prisma/client";
-import { withAccelerate } from "@prisma/extension-accelerate";
+import { Prisma, PostVisibility } from "../generated/prisma/client";
 import { Hono } from "hono";
-import { verify } from "hono/jwt";
 import { sanitizeBlogHtml } from "../lib/sanitizeHtml";
 import { deleteCloudinaryImage } from "../lib/deleteCloudinaryImage";
 import { authMiddleware } from "../middlewares/authMiddleware";
 import { canReadPost, getOptionalUserId } from "../lib/authFunctions";
+import { getPrisma } from "../lib/prisma";
 const VIS = Object.values(PostVisibility);
 
 export const blogRouter = new Hono<{
@@ -22,11 +21,9 @@ export const blogRouter = new Hono<{
 }>();
 
 blogRouter.post("/", authMiddleware, async (c) => {
-  const prisma = new PrismaClient({
-    accelerateUrl: c.env.DATABASE_URL,
-  }).$extends(withAccelerate());
+  const prisma = getPrisma(c.env.DATABASE_URL);
   const body = await c.req.json();
-  const userId = c.get("userId") as string;
+  const userId = c.get("userId");
 
   try {
     const visibility =
@@ -80,9 +77,7 @@ blogRouter.post("/", authMiddleware, async (c) => {
 });
 
 blogRouter.get("/bulk", async (c) => {
-  const prisma = new PrismaClient({
-    accelerateUrl: c.env.DATABASE_URL,
-  }).$extends(withAccelerate());
+  const prisma = getPrisma(c.env.DATABASE_URL);
 
   // ?q= filters the list by title or author name.
   const q = c.req.query("q")?.trim();
@@ -138,9 +133,7 @@ blogRouter.get("/bulk", async (c) => {
 });
 
 blogRouter.get("/single/:id", async (c) => {
-  const prisma = new PrismaClient({
-    accelerateUrl: c.env.DATABASE_URL,
-  }).$extends(withAccelerate());
+  const prisma = getPrisma(c.env.DATABASE_URL);
 
   try {
     const blog = await prisma.post.findFirst({
@@ -181,9 +174,8 @@ blogRouter.get("/single/:id", async (c) => {
 });
 
 blogRouter.put("/:postId", authMiddleware, async (c) => {
-  const prisma = new PrismaClient({
-    accelerateUrl: c.env.DATABASE_URL,
-  }).$extends(withAccelerate());
+  const prisma = getPrisma(c.env.DATABASE_URL);
+  const userId = c.get("userId");
   const body = await c.req.json();
 
   try {
@@ -193,14 +185,14 @@ blogRouter.put("/:postId", authMiddleware, async (c) => {
     if (visibility !== undefined && !VIS.includes(visibility))
       return c.json({ error: { code: "INVALID_VISIBILITY", message: "Invalid visibility" } }, 400);
     const existing = await prisma.post.findFirst({
-      where: { id: c.req.param("postId"), authorId: c.get("userId") as string },
+      where: { id: c.req.param("postId"), authorId: userId },
       select: { visibility: true, publishedDate: true },
     });
 
     const blog = await prisma.post.update({
       where: {
         id: c.req.param("postId"),
-        authorId: c.get("userId") as string,
+        authorId: userId,
       },
       data: {
         title: body.title,
@@ -240,15 +232,13 @@ blogRouter.put("/:postId", authMiddleware, async (c) => {
 });
 
 blogRouter.delete("/:postId", authMiddleware, async (c) => {
-  const prisma = new PrismaClient({
-    accelerateUrl: c.env.DATABASE_URL,
-  }).$extends(withAccelerate());
+  const prisma = getPrisma(c.env.DATABASE_URL);
 
   try {
     const blog = await prisma.post.delete({
       where: {
         id: c.req.param("postId"),
-        authorId: c.get("userId") as string,
+        authorId: c.get("userId"),
       },
     });
 
@@ -258,7 +248,7 @@ blogRouter.delete("/:postId", authMiddleware, async (c) => {
       try {
         const result = await deleteCloudinaryImage({
           prisma,
-          userId: c.get("userId") as string,
+          userId: c.get("userId"),
           url: blog.image,
           env: c.env,
         });
@@ -296,8 +286,8 @@ blogRouter.delete("/:postId", authMiddleware, async (c) => {
 });
 
 blogRouter.put("/:postId/teams/", authMiddleware, async (c) => {
-  const prisma = new PrismaClient({ accelerateUrl: c.env.DATABASE_URL }).$extends(withAccelerate());
-  const userId = c.get("userId") as string;
+  const prisma = getPrisma(c.env.DATABASE_URL);
+  const userId = c.get("userId");
   const postId = c.req.param("postId");
 
   try {
