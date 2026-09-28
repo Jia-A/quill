@@ -118,7 +118,7 @@ commentRouter.post("/", authMiddleware, async (c) => {
         // replies, go up straight away.
         commentStatus: isInline && post.authorId !== userId ? "PENDING" : "APPROVED",
       },
-      include: { author: { select: { name: true, email: true, id: true } } },
+      include: { author: { select: { name: true, id: true } } },
     });
     if (recipientId !== userId) {
       try {
@@ -323,7 +323,7 @@ commentRouter.patch("/:id", authMiddleware, async (c) => {
         data: {
           commentStatus: status,
         },
-        include: { author: { select: { name: true, email: true, id: true } } },
+        include: { author: { select: { name: true, id: true } } },
       });
       const notificationType = status === "APPROVED" ? "COMMENT_APPROVED" : "COMMENT_REJECTED";
       if (comment.authorId !== userId) {
