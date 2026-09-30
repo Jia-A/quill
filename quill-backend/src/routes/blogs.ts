@@ -268,6 +268,7 @@ blogRouter.delete("/:postId", authMiddleware, async (c) => {
       200
     );
   } catch (error) {
+    console.log(error);
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025")
       return c.json(
         { error: { code: "NOT_FOUND", message: "Post not found, invalid post id" } },
