@@ -108,14 +108,14 @@ enum CommentStatus {
 model Comment {
   id            String         @id @default(cuid())
   postId        String
-  post          Post           @relation(fields: [postId], references: [id])
+  post          Post           @relation(fields: [postId], references: [id], onDelete: Cascade)
   authorId      String
   author        User           @relation(fields: [authorId], references: [id])
   text          String
   createdAt     DateTime       @default(now())
   commentStatus CommentStatus  @default(PENDING)
   parentId      String?
-  parent        Comment?       @relation("CommentReplies", fields: [parentId], references: [id])
+  parent        Comment?       @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   startOffset   Int?
   endOffset     Int?
   anchorText    String?
@@ -143,9 +143,9 @@ model Notification {
   user        User             @relation(fields: [userId], references: [id])
   readStatus  Boolean          @default(false)
   commentId   String?
-  comment     Comment?         @relation(fields: [commentId], references: [id])
+  comment     Comment?         @relation(fields: [commentId], references: [id], onDelete: Cascade)
   postId      String
-  post        Post             @relation(fields: [postId], references: [id])
+  post        Post             @relation(fields: [postId], references: [id], onDelete: Cascade)
   dateAndTime DateTime         @default(now())
 
   @@index([userId, dateAndTime])
