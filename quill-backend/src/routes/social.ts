@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { generateSocialDraft, PLATFORM_CAPS, Platform } from "../lib/generateSocial";
+import { streamSocialDraft, PLATFORM_CAPS, Platform } from "../lib/generateSocial";
 import { decryptSecret } from "../lib/crypto";
 import { authMiddleware } from "../middlewares/authMiddleware";
 import { getPrisma } from "../lib/prisma";
@@ -70,43 +70,27 @@ socialRouter.post("/:postId/generate", authMiddleware, async (c) => {
   if ("error" in check) return c.json({ error: check.error }, check.status);
   if (check.post.visibility !== "PUBLIC") return c.json({ error: "Post must be published" }, 400);
 
-  const origin = c.env.FRONTEND_URL ?? "http://localhost:3000";
-  const postUrl = `${origin.replace(/\/$/, "")}/blog/${postId}`;
-
-  const content = await generateSocialDraft(
+  const stream = await streamSocialDraft(
     c.env.AI,
     {
       title: check.post.title,
       content: check.post.content ?? "",
       summary: check.post.summary,
       authorName: check.post.author?.name ?? null,
-      postUrl,
     },
     platform
   );
 
-  if (!content) return c.json({ error: "Generation failed" }, 502);
+  if (!stream) return c.json({ error: "Generation failed" }, 502);
 
-  try {
-    const saved = await prisma.socialDraft.upsert({
-      where: { postId_platform: { postId, platform } },
-      create: { postId, platform, content },
-      update: { content },
-    });
-
-    return c.json({ platform, content: saved.content }, 200);
-  } catch (err) {
-    console.log("ERROR HAPPENED in socialRouter.post/generate", err);
-    return c.json(
-      {
-        error: {
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Something went wrong, please try again.",
-        },
-      },
-      500
-    );
-  }
+  // c.body keeps the headers the cors middleware already set on c.res.
+  // The draft is no longer saved here: the client saves it via PUT only when
+  // the stream finishes normally, so a stopped generation is never persisted.
+  return c.body(stream, 200, {
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache",
+    "Timing-Allow-Origin": "https://lets-quill.vercel.app",
+  });
 });
 
 socialRouter.put("/:postId", authMiddleware, async (c) => {

@@ -9,73 +9,31 @@ const LINKEDIN_HARD_CAP = 1300;
 
 export type Platform = "linkedin";
 
-const PREAMBLE_RE =
-  /^\s*(?:sure[!,.]?|okay[!,.]?|here(?:'s| is)[^:\n]*[:\n]|here you go[:\n]?|i'?d be happy[^:\n]*[:\n]?|got it[!,.]?|certainly[!,.]?)\s*/i;
-
-function sanitize(raw: string): string {
-  let t = raw.trim();
-  // Strip leading model preamble lines like "Here's the LinkedIn post:"
-  for (let i = 0; i < 3; i++) {
-    const next = t.replace(PREAMBLE_RE, "");
-    if (next === t) break;
-    t = next.trimStart();
-  }
-  // Drop wrapping quotes if the whole post is quoted
-  if ((t.startsWith('"') && t.endsWith('"')) || (t.startsWith("'") && t.endsWith("'"))) {
-    t = t.slice(1, -1).trim();
-  }
-  // Replace em/en dashes with comma+space (keeps prose readable, never em-dash)
-  t = t.replace(/\s*[—–]\s*/g, ", ");
-  return t.trim();
-}
-
-function cutBody(body: string, cap: number): string {
-  if (body.length <= cap) return body;
-  const slice = body.slice(0, cap);
-  const lastStop = Math.max(
-    slice.lastIndexOf(". "),
-    slice.lastIndexOf("! "),
-    slice.lastIndexOf("? "),
-    slice.lastIndexOf("\n\n")
-  );
-  if (lastStop > cap * 0.6) return slice.slice(0, lastStop + 1).trim();
-  return slice.trim();
-}
-function truncateAtSentence(text: string, cap: number): string {
-  if (text.length <= cap) return text;
-
-  const readMoreAt = text.lastIndexOf("Read more:");
-  if (readMoreAt === -1) return cutBody(text, cap);
-
-  const body = text.slice(0, readMoreAt).trim();
-  const tail = text.slice(readMoreAt).trim();
-
-  const room = cap - tail.length - 2; // 2 = the "\n\n" we rejoin with
-  if (room <= 0) return cutBody(text, cap);
-
-  return `${cutBody(body, room)}\n\n${tail}`;
-}
-
-export async function generateSocialDraft(
+// Returns Workers AI's SSE stream untouched. Sanitizing and the 1300-char cut
+// need the full text, so the client applies them once the stream ends.
+export async function streamSocialDraft(
   ai: Ai,
   post: SocialPromptInput,
   platform: Platform
-): Promise<string | null> {
+): Promise<ReadableStream | null> {
   if (platform !== "linkedin") return null;
 
   const messages = buildLinkedInMessages(post);
   try {
-    const res: any = await ai.run(MODEL, {
+    // Errors like AiError 5028 throw here, before any bytes are sent, so the
+    // route can still answer with a normal JSON error status.
+    const stream = await ai.run(MODEL, {
       messages,
-      max_tokens: 700,
+      // ~4 chars/token, so 350 tokens (~1400 chars) lands just past
+      // LINKEDIN_HARD_CAP; the prompt aims for 1000-1200, and the client cuts
+      // anything over the cap back to a sentence boundary.
+      max_tokens: 350,
       temperature: 0.6,
+      stream: true,
     });
-    const text: string | undefined =
-      typeof res === "string" ? res : (res?.response ?? res?.result?.response);
-    if (!text) return null;
-    return truncateAtSentence(sanitize(text), LINKEDIN_HARD_CAP);
+    return stream as ReadableStream;
   } catch (err) {
-    console.error("Workers AI failed", err);
+    console.error("Workers AI stream failed", err);
     return null;
   }
 }

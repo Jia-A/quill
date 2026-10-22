@@ -5,7 +5,6 @@ export type SocialPromptInput = {
   content: string;
   summary?: string | null;
   authorName?: string | null;
-  postUrl: string;
 };
 
 export type ChatMessage = { role: "system" | "user"; content: string };
@@ -21,20 +20,20 @@ VOICE & ENGAGEMENT (most important):
 - Theory-only posts are forbidden. If the article has code or a worked example, show it. If not, ground every claim in something concrete.
 
 HARD FORMAT RULES:
-- LENGTH IS CRITICAL: the post MUST be between 600 and 1300 characters, including the URL and any code snippet. A post under 600 characters is a failure. Aim for roughly 800 characters. Develop each point with concrete detail instead of summarizing.
+- LENGTH IS CRITICAL: the post MUST be between 600 and 1300 characters, including any code snippet and hashtags. A post under 600 characters is a failure. Aim for roughly 1000 to 1200 characters. Develop each point with concrete detail instead of summarizing.
 - Exactly 3-5 paragraphs separated by blank lines. Each body paragraph should be 3 to 5 sentences, not 1 or 2.
 - Plain prose. No markdown headers, no bullet symbols, no <br>.
 - Emoji: 0 by default, 2 maximum, only if they genuinely add something.
 - NEVER use em-dashes (—) or en-dashes (–). Use commas, periods, or parentheses instead.
+- Do NOT include any URL or "Read more" line. The link to the article is added automatically after your post.
 - Do NOT output any preamble, framing, or meta text. No "Here's the LinkedIn post:", no surrounding quotes, no "Sure!", no explanation. Start directly with the hook.
 
 STRUCTURE (in this exact order, no labels in output):
 1. Hook line.
 2. Body paragraphs (the substance, with a concrete example or scenario).
 3. If a CODE SNIPPET is provided in the user message, include a SHORT illustrative version (max ~8 lines, max ~250 chars) in a fenced code block (\`\`\`). Pick the most teachable few lines. Skip entirely if no snippet given, and do not invent code.
-4. One short line nudging readers toward the full article (do not include the URL on this line).
-5. The exact line: Read more: <URL>
-6. Final line: 1 to 3 relevant hashtags.
+4. One short line nudging readers toward the full article (no URL).
+5. Final line: 1 to 3 relevant hashtags, and nothing else on that line.
 
 Return ONLY the post body starting with the hook. Nothing else.
 
@@ -54,7 +53,6 @@ export function buildLinkedInMessages(input: SocialPromptInput): ChatMessage[] {
     input.authorName ? `Author: ${input.authorName}` : null,
     `Title: ${input.title}`,
     input.summary ? `Summary: ${input.summary}` : null,
-    `Post URL: ${input.postUrl}`,
     codeHint
       ? `CODE SNIPPET (include a short illustrative version in the post):\n${codeHint}`
       : `No code snippet — write prose only, do not invent code.`,
