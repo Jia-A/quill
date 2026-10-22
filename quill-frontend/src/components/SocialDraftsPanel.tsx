@@ -110,8 +110,10 @@ const SocialDraftsPanel = ({ postId, authorId }: Props) => {
   if (!isOwner) return null;
 
   const dirty = content !== saved;
-  const overHard = content.length > LINKEDIN_HARD_CAP;
-  const overSoft = content.length > LINKEDIN_SOFT_CAP;
+  // Mid-stream text is not the final draft (assembleDraft cuts it to the cap
+  // when the stream ends), so the limit only applies once generation is done.
+  const overHard = !generating && content.length > LINKEDIN_HARD_CAP;
+  const overSoft = !generating && content.length > LINKEDIN_SOFT_CAP;
 
   const handleGenerate = async () => {
     if (!token) return;
@@ -282,8 +284,11 @@ const SocialDraftsPanel = ({ postId, authorId }: Props) => {
                       {content.length} / {LINKEDIN_HARD_CAP} chars
                       {overHard && ` — exceeds ${LINKEDIN_HARD_CAP} limit`}
                     </span>
-                    {dirty && !overHard && (
-                      <span className="text-muted italic">Unsaved changes</span>
+                    {generating ? (
+                      <span className="text-muted italic">Generating…</span>
+                    ) : (
+                      dirty &&
+                      !overHard && <span className="text-muted italic">Unsaved changes</span>
                     )}
                   </div>
 
@@ -318,7 +323,7 @@ const SocialDraftsPanel = ({ postId, authorId }: Props) => {
                 )}
                 <Button
                   onClick={handleSave}
-                  disabled={!dirty || overHard || saving || loading}
+                  disabled={!dirty || overHard || generating || saving || loading}
                   variant="primary"
                   icon={
                     saving ? (
@@ -362,7 +367,14 @@ const SocialDraftsPanel = ({ postId, authorId }: Props) => {
                 ) : (
                   <Button
                     onClick={handlePublish}
-                    disabled={!content || overHard || publishing || loading || connected === null}
+                    disabled={
+                      !content ||
+                      overHard ||
+                      generating ||
+                      publishing ||
+                      loading ||
+                      connected === null
+                    }
                     variant="primary"
                     icon={
                       publishing ? (

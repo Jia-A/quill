@@ -20,8 +20,8 @@ VOICE & ENGAGEMENT (most important):
 - Theory-only posts are forbidden. If the article has code or a worked example, show it. If not, ground every claim in something concrete.
 
 HARD FORMAT RULES:
-- LENGTH IS CRITICAL: the post MUST be between 600 and 1300 characters, including any code snippet and hashtags. A post under 600 characters is a failure. Aim for roughly 1000 to 1200 characters. Develop each point with concrete detail instead of summarizing.
-- Exactly 3-5 paragraphs separated by blank lines. Each body paragraph should be 3 to 5 sentences, not 1 or 2.
+- LENGTH IS CRITICAL: between 150 and 220 words; use as many short paragraphs as the content needs (2 to 5), then the nudge line, then the hashtag line. Do not go longer. Spend the words on concrete detail, not summary.
+- Paragraphs are separated by blank lines. Each paragraph is 2 to 3 sentences; the hook paragraph may be a single line.
 - Plain prose. No markdown headers, no bullet symbols, no <br>.
 - Emoji: 0 by default, 2 maximum, only if they genuinely add something.
 - NEVER use em-dashes (—) or en-dashes (–). Use commas, periods, or parentheses instead.
@@ -29,15 +29,15 @@ HARD FORMAT RULES:
 - Do NOT output any preamble, framing, or meta text. No "Here's the LinkedIn post:", no surrounding quotes, no "Sure!", no explanation. Start directly with the hook.
 
 STRUCTURE (in this exact order, no labels in output):
-1. Hook line.
-2. Body paragraphs (the substance, with a concrete example or scenario).
-3. If a CODE SNIPPET is provided in the user message, include a SHORT illustrative version (max ~8 lines, max ~250 chars) in a fenced code block (\`\`\`). Pick the most teachable few lines. Skip entirely if no snippet given, and do not invent code.
+1. Hook line (the first paragraph).
+2. The remaining paragraphs (the substance, with a concrete example or scenario).
+3. If a CODE SNIPPET is provided in the user message, include a SHORT illustrative version (max ~8 lines) in a fenced code block (\`\`\`). Pick the most teachable few lines. Skip entirely if no snippet given, and do not invent code.
 4. One short line nudging readers toward the full article (no URL).
 5. Final line: 1 to 3 relevant hashtags, and nothing else on that line.
 
 Return ONLY the post body starting with the hook. Nothing else.
 
-FINAL REMINDER: the post must be at least 600 characters. Short posts are rejected. Develop your points with concrete detail rather than summarizing.`;
+FINAL REMINDER: between 150 and 220 words in 2 to 5 short paragraphs, then the nudge line, then the hashtag line. Longer posts get cut off.`;
 
 export function buildLinkedInMessages(input: SocialPromptInput): ChatMessage[] {
   const snippets = extractCodeSnippets(input.content);

@@ -19,7 +19,24 @@ export function sanitizeDraft(raw: string): string {
   }
   // Replace em/en dashes with comma+space (keeps prose readable, never em-dash)
   t = t.replace(/\s*[—–]\s*/g, ", ");
+  // Same for a spaced hyphen used as a dash ("HTML - it was"), outside code
+  // blocks, where " - " is usually subtraction. Odd split indices are code.
+  t = t
+    .split(/(```[\s\S]*?```)/)
+    .map((part, i) => (i % 2 ? part : replaceSpacedHyphens(part)))
+    .join("");
   return t.trim();
+}
+
+// Hyphenated words ("event-driven") have no spaces and are left alone, as are
+// line-start bullets and number ranges ("5 - 10"). A capitalised next word
+// (other than "I") starts a new sentence, so it gets a period; otherwise a comma.
+function replaceSpacedHyphens(text: string): string {
+  return text.replace(/(\S)[ \t]+-[ \t]+(?=(\S+))/g, (match, before: string, nextWord: string) => {
+    if (/\d/.test(before) && /^\d/.test(nextWord)) return match;
+    const newSentence = /^[A-Z]/.test(nextWord) && !/^I(?:'|$)/.test(nextWord);
+    return `${before}${newSentence ? ". " : ", "}`;
+  });
 }
 
 function cutBody(body: string, cap: number): string {

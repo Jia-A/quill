@@ -24,10 +24,10 @@ export async function streamSocialDraft(
     // route can still answer with a normal JSON error status.
     const stream = await ai.run(MODEL, {
       messages,
-      // ~4 chars/token, so 350 tokens (~1400 chars) lands just past
-      // LINKEDIN_HARD_CAP; the prompt aims for 1000-1200, and the client cuts
-      // anything over the cap back to a sentence boundary.
-      max_tokens: 350,
+      // ~4 chars/token, so 300 tokens (~1200 chars) bounds a 150-220 word
+      // post near LINKEDIN_HARD_CAP; the client still cuts anything over the
+      // cap back to a sentence boundary.
+      max_tokens: 300,
       temperature: 0.6,
       stream: true,
     });
