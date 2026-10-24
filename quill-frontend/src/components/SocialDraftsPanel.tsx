@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import {
   Linkedin,
@@ -12,17 +12,19 @@ import {
   Send,
   ExternalLink,
   Link2,
+  Square,
 } from "lucide-react";
 import Button from "@/atoms/Button";
 import {
   getDrafts,
-  generateDraft,
+  streamDraft,
   updateDraft,
   getLinkedInStatus,
   linkedInConnectUrl,
   publishToLinkedIn,
   type PublishResult,
 } from "@/actions/socialActions";
+import { sanitizeDraft, assembleDraft } from "@/utils/socialDraftFormat";
 
 const LINKEDIN_SOFT_CAP = 1100;
 const LINKEDIN_HARD_CAP = 1300;
@@ -48,6 +50,8 @@ const SocialDraftsPanel = ({ postId, authorId }: Props) => {
   const [connected, setConnected] = useState<boolean | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [permalink, setPermalink] = useState<string | null>(null);
+  // The in-flight generation; null once its stream has finished or been stopped.
+  const abortRef = useRef<AbortController | null>(null);
 
   const isOwner = session?.user?.id === authorId;
   const token = session?.backendToken;
@@ -61,9 +65,13 @@ const SocialDraftsPanel = ({ postId, authorId }: Props) => {
       return () => cancelAnimationFrame(id);
     }
     setEntered(false);
+    // Closing the panel stops any stream rather than letting it save unseen.
+    abortRef.current?.abort();
     const t = setTimeout(() => setRender(false), 300);
     return () => clearTimeout(t);
   }, [open]);
+
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   useEffect(() => {
     if (!open || !token) return;
@@ -102,23 +110,62 @@ const SocialDraftsPanel = ({ postId, authorId }: Props) => {
   if (!isOwner) return null;
 
   const dirty = content !== saved;
-  const overHard = content.length > LINKEDIN_HARD_CAP;
-  const overSoft = content.length > LINKEDIN_SOFT_CAP;
+  // Mid-stream text is not the final draft (assembleDraft cuts it to the cap
+  // when the stream ends), so the limit only applies once generation is done.
+  const overHard = !generating && content.length > LINKEDIN_HARD_CAP;
+  const overSoft = !generating && content.length > LINKEDIN_SOFT_CAP;
 
   const handleGenerate = async () => {
     if (!token) return;
-    if (dirty && !window.confirm("Discard your unsaved edits and regenerate?")) return;
+    // While streaming, the textarea holds the in-flight draft, not user edits.
+    if (!generating && dirty && !window.confirm("Discard your unsaved edits and regenerate?"))
+      return;
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const { signal } = controller;
     setGenerating(true);
     setError(null);
+    setContent("");
+
+    let raw = "";
     try {
-      const res = await generateDraft(postId, "linkedin", token);
-      setContent(res.content);
+      await streamDraft(postId, "linkedin", token, signal, (text) => {
+        if (signal.aborted) return;
+        raw += text;
+        setContent(raw);
+      });
+    } catch {
+      // Stop / Regenerate / close abort the stream: a user action, not an error.
+      if (signal.aborted) return;
+      setError("Generation failed. Try again.");
+      return;
+    } finally {
+      // Only the current run may clear the flag; a Regenerate already owns it.
+      if (abortRef.current === controller) {
+        abortRef.current = null;
+        setGenerating(false);
+      }
+    }
+    if (signal.aborted) return;
+
+    // Normal [DONE]: clean up once, then save. Stop can no longer reach this run.
+    const postUrl = `${window.location.origin}/blog/${postId}`;
+    const final = assembleDraft(sanitizeDraft(raw), postUrl, LINKEDIN_HARD_CAP);
+    setContent(final);
+    setSaving(true);
+    try {
+      const res = await updateDraft(postId, "linkedin", final, token);
       setSaved(res.content);
     } catch {
-      setError("Generation failed. Try again.");
+      setError("Draft generated but not saved. Use Save edits to retry.");
     } finally {
-      setGenerating(false);
+      setSaving(false);
     }
+  };
+
+  const handleStop = () => {
+    abortRef.current?.abort();
   };
 
   const handleSave = async () => {
@@ -219,6 +266,7 @@ const SocialDraftsPanel = ({ postId, authorId }: Props) => {
                   <textarea
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
+                    readOnly={generating}
                     placeholder="No draft yet — hit Generate to create one with AI."
                     className="w-full min-h-[200px] sm:min-h-[320px] flex-1 bg-bg-subtle border border-border rounded-md p-4 font-sans text-sm leading-relaxed focus:outline-none focus:ring-1 focus:ring-fg resize-y"
                   />
@@ -236,8 +284,11 @@ const SocialDraftsPanel = ({ postId, authorId }: Props) => {
                       {content.length} / {LINKEDIN_HARD_CAP} chars
                       {overHard && ` — exceeds ${LINKEDIN_HARD_CAP} limit`}
                     </span>
-                    {dirty && !overHard && (
-                      <span className="text-muted italic">Unsaved changes</span>
+                    {generating ? (
+                      <span className="text-muted italic">Generating…</span>
+                    ) : (
+                      dirty &&
+                      !overHard && <span className="text-muted italic">Unsaved changes</span>
                     )}
                   </div>
 
@@ -250,7 +301,7 @@ const SocialDraftsPanel = ({ postId, authorId }: Props) => {
               <div className="flex flex-wrap gap-2 sm:gap-3">
                 <Button
                   onClick={handleGenerate}
-                  disabled={generating || loading}
+                  disabled={saving || loading}
                   variant="secondary"
                   icon={
                     generating ? (
@@ -259,11 +310,20 @@ const SocialDraftsPanel = ({ postId, authorId }: Props) => {
                       <RefreshCw className="w-4 h-4" />
                     )
                   }
-                  label={content ? "Regenerate" : "Generate"}
+                  label={content || generating ? "Regenerate" : "Generate"}
                 />
+                {generating && (
+                  <Button
+                    onClick={handleStop}
+                    variant="secondary"
+                    icon={<Square className="w-4 h-4" />}
+                    label="Stop"
+                    size="sm"
+                  />
+                )}
                 <Button
                   onClick={handleSave}
-                  disabled={!dirty || overHard || saving || loading}
+                  disabled={!dirty || overHard || generating || saving || loading}
                   variant="primary"
                   icon={
                     saving ? (
@@ -307,7 +367,14 @@ const SocialDraftsPanel = ({ postId, authorId }: Props) => {
                 ) : (
                   <Button
                     onClick={handlePublish}
-                    disabled={!content || overHard || publishing || loading || connected === null}
+                    disabled={
+                      !content ||
+                      overHard ||
+                      generating ||
+                      publishing ||
+                      loading ||
+                      connected === null
+                    }
                     variant="primary"
                     icon={
                       publishing ? (
