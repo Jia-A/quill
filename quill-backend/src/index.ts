@@ -26,6 +26,7 @@ const app = new Hono<{
     CLOUDINARY_API_SECRET: string;
     GOOGLE_CLIENT_ID: string;
     CALIPER_TIMINGS_DO?: DurableObjectNamespace;
+    CALIPER_TOKEN?: string;
   };
   Variables: {
     userId: string;
@@ -36,7 +37,7 @@ app.use(
   "/*",
   cors({
     origin: ["http://localhost:3000", "https://lets-quill.vercel.app"],
-    allowHeaders: ["Content-Type", "Authorization", "x-caliper-run"],
+    allowHeaders: ["Content-Type", "Authorization", "x-caliper-run", "x-caliper-token"],
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     maxAge: 600,
   })

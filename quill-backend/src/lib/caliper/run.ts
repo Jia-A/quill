@@ -1,8 +1,10 @@
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
 import { getTimingStore, isValidRunId, TimingMark, TimingStore } from "./timingStore";
+import { tokenMatches } from "./token";
 
 export const RUN_HEADER = "x-caliper-run";
+export const TOKEN_HEADER = "x-caliper-token";
 
 // Only steps that cross I/O are timed. On Workers, Date.now() is frozen while
 // code runs and only advances at I/O, so a pure-CPU step (JWT auth, building
@@ -72,16 +74,22 @@ function deferOn(c: Context) {
 }
 
 type CaliperEnv = {
-  Bindings: { CALIPER_TIMINGS_DO?: DurableObjectNamespace };
+  Bindings: { CALIPER_TIMINGS_DO?: DurableObjectNamespace; CALIPER_TOKEN?: string };
   Variables: { caliperRun?: CaliperRun };
 };
 
-// Without the header this only reads one header and calls next().
-// A malformed id is ignored here (the request runs as normal) and rejected
-// with a clear 400 by the timings endpoint when Caliper asks for it.
+// Without x-caliper-run this only reads one header and calls next().
+// Recording needs x-caliper-run, an x-caliper-token matching the CALIPER_TOKEN
+// secret, and the secret to be set at all; anything less runs the request
+// exactly as an unmarked one. A malformed id is ignored here and rejected with
+// a clear 400 by the timings endpoint when Caliper asks for it.
 export const caliperRun = createMiddleware<CaliperEnv>(async (c, next) => {
   const id = c.req.header(RUN_HEADER);
-  if (id === undefined || !isValidRunId(id)) return next();
+  if (id === undefined) return next();
+  const expected = c.env.CALIPER_TOKEN;
+  const given = c.req.header(TOKEN_HEADER);
+  if (!expected || given === undefined || !isValidRunId(id)) return next();
+  if (!(await tokenMatches(given, expected))) return next();
 
   const run = new CaliperRun(id, getTimingStore(c.env), deferOn(c));
   c.set("caliperRun", run);

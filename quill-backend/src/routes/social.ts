@@ -13,6 +13,7 @@ export const socialRouter = new Hono<{
     TOKEN_ENC_KEY: string;
     FRONTEND_URL?: string;
     CALIPER_TIMINGS_DO?: DurableObjectNamespace;
+    CALIPER_TOKEN?: string;
   };
   Variables: {
     userId: string;

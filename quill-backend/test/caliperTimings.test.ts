@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { sign } from "hono/jwt";
 import type { TimingRecord } from "../src/lib/caliper/timingStore";
 
@@ -54,11 +54,13 @@ function fakeAi() {
 const { default: app } = await import("../src/index");
 
 const JWT_SECRET = "test-secret";
+const CALIPER_TOKEN = "caliper-test-token";
+const BEARER = { authorization: `Bearer ${CALIPER_TOKEN}` };
 let env: Record<string, unknown>;
 let token: string;
 
 beforeEach(async () => {
-  env = { JWT_SECRET, DATABASE_URL: "unused", AI: fakeAi() };
+  env = { JWT_SECRET, DATABASE_URL: "unused", AI: fakeAi(), CALIPER_TOKEN };
   token = await sign({ id: "user-1" }, JWT_SECRET, "HS256");
 });
 
@@ -79,23 +81,36 @@ function generate(extraHeaders: Record<string, string> = {}) {
   );
 }
 
+// Status, every header (not a subset: an added header would fail this) and
+// the exact bytes the generate route returned before the timings change.
+async function expectUnchangedResponse(res: Response) {
+  const body = new Uint8Array(await res.arrayBuffer());
+  expect(res.status).toBe(200);
+  const headers: Record<string, string> = {};
+  res.headers.forEach((value, key) => (headers[key] = value));
+  expect(headers).toEqual({
+    "access-control-allow-origin": "https://lets-quill.vercel.app",
+    "cache-control": "no-cache",
+    "content-type": "text/event-stream",
+    "timing-allow-origin": "https://lets-quill.vercel.app",
+    vary: "Origin",
+  });
+  expect(Buffer.from(body).toString("utf8")).toBe(CHUNKS.join(""));
+}
+
+async function spyOnStore() {
+  const { MemoryStore } = await import("../src/lib/caliper/timingStore");
+  return {
+    put: vi.spyOn(MemoryStore.prototype, "put"),
+    get: vi.spyOn(MemoryStore.prototype, "get"),
+  };
+}
+
+afterEach(() => vi.restoreAllMocks());
+
 describe("generate route, request without x-caliper-run", () => {
   it("returns exactly the status, headers and bytes it returned before the timings change", async () => {
-    const res = await generate();
-    const body = new Uint8Array(await res.arrayBuffer());
-
-    expect(res.status).toBe(200);
-    // Every header, not a subset: an added header would fail this.
-    const headers: Record<string, string> = {};
-    res.headers.forEach((value, key) => (headers[key] = value));
-    expect(headers).toEqual({
-      "access-control-allow-origin": "https://lets-quill.vercel.app",
-      "cache-control": "no-cache",
-      "content-type": "text/event-stream",
-      "timing-allow-origin": "https://lets-quill.vercel.app",
-      vary: "Origin",
-    });
-    expect(Buffer.from(body).toString("utf8")).toBe(CHUNKS.join(""));
+    await expectUnchangedResponse(await generate());
   });
 
   it("never touches the timing store", async () => {
@@ -111,7 +126,7 @@ describe("generate route, request without x-caliper-run", () => {
 
 describe("timings endpoint", () => {
   it("answers 404 with a clear message for a run id it has no record of", async () => {
-    const timings = await app.request("/__caliper/timings/never_sent", {}, env);
+    const timings = await app.request("/__caliper/timings/never_sent", { headers: BEARER }, env);
     expect(timings.status).toBe(404);
     expect(await timings.json()).toEqual({
       error: { code: "NOT_FOUND", message: "No timing record for this run id" },
@@ -121,11 +136,11 @@ describe("timings endpoint", () => {
 
 describe("generate route, request with x-caliper-run", () => {
   it("stores a record with postgres, model-call and first-chunk timestamps in order", async () => {
-    const res = await generate({ "x-caliper-run": "run_abc123" });
+    const res = await generate({ "x-caliper-run": "run_abc123", "x-caliper-token": CALIPER_TOKEN });
     expect(Buffer.from(await res.arrayBuffer()).toString("utf8")).toBe(CHUNKS.join(""));
     await delay(0);
 
-    const timings = await app.request("/__caliper/timings/run_abc123", {}, env);
+    const timings = await app.request("/__caliper/timings/run_abc123", { headers: BEARER }, env);
     expect(timings.status).toBe(200);
     const record = (await timings.json()) as TimingRecord;
 
@@ -147,7 +162,7 @@ describe("generate route, request with x-caliper-run", () => {
 
 describe("timings endpoint, malformed id", () => {
   it("rejects a malformed run id on the timings endpoint with a clear error", async () => {
-    const timings = await app.request("/__caliper/timings/bad%20id!", {}, env);
+    const timings = await app.request("/__caliper/timings/bad%20id!", { headers: BEARER }, env);
     expect(timings.status).toBe(400);
     expect(await timings.json()).toEqual({
       error: {
@@ -155,5 +170,87 @@ describe("timings endpoint, malformed id", () => {
         message: "Run id must be 1-64 characters of A-Z, a-z, 0-9, _ or -",
       },
     });
+  });
+});
+
+describe("timings endpoint, Caliper token", () => {
+  const UNAUTHORIZED = {
+    error: { code: "UNAUTHORIZED", message: "Missing or invalid Caliper token" },
+  };
+
+  it("answers 401 without an Authorization header and never reads the store", async () => {
+    const store = await spyOnStore();
+    const timings = await app.request("/__caliper/timings/run_abc123", {}, env);
+    expect(timings.status).toBe(401);
+    expect(await timings.json()).toEqual(UNAUTHORIZED);
+    expect(store.get).not.toHaveBeenCalled();
+  });
+
+  it("answers 401 for a wrong bearer token and never reads the store", async () => {
+    const store = await spyOnStore();
+    const timings = await app.request(
+      "/__caliper/timings/run_abc123",
+      { headers: { authorization: "Bearer not-the-token" } },
+      env
+    );
+    expect(timings.status).toBe(401);
+    expect(await timings.json()).toEqual(UNAUTHORIZED);
+    expect(store.get).not.toHaveBeenCalled();
+  });
+
+  it("answers 401 when the token is sent without the Bearer scheme", async () => {
+    const store = await spyOnStore();
+    const timings = await app.request(
+      "/__caliper/timings/run_abc123",
+      { headers: { authorization: CALIPER_TOKEN } },
+      env
+    );
+    expect(timings.status).toBe(401);
+    expect(store.get).not.toHaveBeenCalled();
+  });
+});
+
+describe("generate route, x-caliper-run without a valid x-caliper-token", () => {
+  for (const [label, headers] of [
+    ["wrong token", { "x-caliper-run": "run_wrong_tok", "x-caliper-token": "not-the-token" }],
+    ["no token", { "x-caliper-run": "run_no_tok" }],
+  ] as const) {
+    it(`${label}: behaves like an unmarked request and records nothing`, async () => {
+      const store = await spyOnStore();
+      await expectUnchangedResponse(await generate(headers));
+      await delay(0);
+      expect(store.put).not.toHaveBeenCalled();
+
+      const timings = await app.request(
+        `/__caliper/timings/${headers["x-caliper-run"]}`,
+        { headers: BEARER },
+        env
+      );
+      expect(timings.status).toBe(404);
+    });
+  }
+});
+
+describe("CALIPER_TOKEN not set", () => {
+  beforeEach(() => {
+    delete env.CALIPER_TOKEN;
+  });
+
+  it("records nothing, even for a request with both Caliper headers", async () => {
+    const store = await spyOnStore();
+    await expectUnchangedResponse(
+      await generate({ "x-caliper-run": "run_off", "x-caliper-token": CALIPER_TOKEN })
+    );
+    await delay(0);
+    expect(store.put).not.toHaveBeenCalled();
+  });
+
+  it("answers the timings route exactly like a route that doesn't exist", async () => {
+    const store = await spyOnStore();
+    const timings = await app.request("/__caliper/timings/run_off", { headers: BEARER }, env);
+    const missing = await app.request("/no/such/route", { headers: BEARER }, env);
+    expect(timings.status).toBe(404);
+    expect(await timings.json()).toEqual(await missing.json());
+    expect(store.get).not.toHaveBeenCalled();
   });
 });
