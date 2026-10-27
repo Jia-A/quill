@@ -8,7 +8,9 @@ import { imageRouter } from "./routes/image";
 import { commentRouter } from "./routes/comments";
 import { notificationRouter } from "./routes/notification";
 import { teamRouter } from "./routes/teams";
+import { caliperRouter } from "./routes/caliper";
 export { NotificationDO } from "./sockets/notificationDO";
+export { CaliperTimingsDO } from "./lib/caliper/timingsDO";
 
 const app = new Hono<{
   Bindings: {
@@ -23,6 +25,7 @@ const app = new Hono<{
     CLOUDINARY_API_KEY: string;
     CLOUDINARY_API_SECRET: string;
     GOOGLE_CLIENT_ID: string;
+    CALIPER_TIMINGS_DO?: DurableObjectNamespace;
   };
   Variables: {
     userId: string;
@@ -33,7 +36,7 @@ app.use(
   "/*",
   cors({
     origin: ["http://localhost:3000", "https://lets-quill.vercel.app"],
-    allowHeaders: ["Content-Type", "Authorization"],
+    allowHeaders: ["Content-Type", "Authorization", "x-caliper-run"],
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     maxAge: 600,
   })
@@ -55,5 +58,6 @@ app.route("/api/v1/image/", imageRouter);
 app.route("/api/v1/comment/", commentRouter);
 app.route("/api/v1/notification", notificationRouter);
 app.route("/api/v1/teams/", teamRouter);
+app.route("/__caliper", caliperRouter);
 
 export default app;

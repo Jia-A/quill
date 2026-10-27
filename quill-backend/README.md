@@ -17,5 +17,43 @@ Pass the `CloudflareBindings` as generics when instantiation `Hono`:
 
 ```ts
 // src/index.ts
-const app = new Hono<{ Bindings: CloudflareBindings }>()
+const app = new Hono<{ Bindings: CloudflareBindings }>();
 ```
+
+## Caliper timings
+
+A request to `POST /api/v1/social/:postId/generate` that carries an
+`x-caliper-run: <id>` header (1-64 chars of `A-Z a-z 0-9 _ -`) gets a timing
+record, readable for ~10 minutes at `GET /__caliper/timings/<id>`:
+
+```json
+{
+  "id": "run_1",
+  "status": 200,
+  "marks": { "postgresStart": 7, "postgresEnd": 533, "modelCallSent": 533, "firstChunk": 1439 }
+}
+```
+
+Marks are ms since the request reached the generate route. A mark is missing
+when the request stopped before that step (e.g. 401, 404, model error).
+
+- Without the header the route does no extra work and its response is
+  unchanged (tested byte for byte). The streamed response is never altered:
+  marked requests pass each chunk through untouched.
+- Only steps that cross I/O are timed. On Workers the clock is frozen during
+  CPU work, so JWT auth and prompt building would always read 0 ms; they are
+  not recorded. `modelCallSent` is stamped just before `ai.run()`, so on
+  Workers it equals `postgresEnd`.
+- `firstChunk` is when the Worker received the first chunk from Workers AI,
+  not when the browser received it.
+- Storage: one `CaliperTimingsDO` Durable Object per run id, deleted by an
+  alarm 10 minutes after the write. Without that binding (Node, tests) an
+  in-memory store is used. A miss returns 404; Caliper reports "?".
+
+Known limits: the timings endpoint is unauthenticated, and every lookup
+(including for ids that don't exist) is a Durable Object request counted
+against the account's daily DO limits. A malformed id on the generate request is
+ignored (the request runs normally); the endpoint rejects it with 400.
+
+Run `pnpm test` for the tests. Deploying needs the `v2` migration in
+`wrangler.jsonc` (adds `CaliperTimingsDO`).

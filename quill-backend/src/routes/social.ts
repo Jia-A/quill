@@ -3,6 +3,7 @@ import { streamSocialDraft, PLATFORM_CAPS, Platform } from "../lib/generateSocia
 import { decryptSecret } from "../lib/crypto";
 import { authMiddleware } from "../middlewares/authMiddleware";
 import { getPrisma } from "../lib/prisma";
+import { caliperRun, CaliperRun } from "../lib/caliper/run";
 
 export const socialRouter = new Hono<{
   Bindings: {
@@ -11,9 +12,11 @@ export const socialRouter = new Hono<{
     AI: Ai;
     TOKEN_ENC_KEY: string;
     FRONTEND_URL?: string;
+    CALIPER_TIMINGS_DO?: DurableObjectNamespace;
   };
   Variables: {
     userId: string;
+    caliperRun?: CaliperRun;
   };
 }>();
 
@@ -55,10 +58,12 @@ socialRouter.get("/:postId", authMiddleware, async (c) => {
   }
 });
 
-socialRouter.post("/:postId/generate", authMiddleware, async (c) => {
+socialRouter.post("/:postId/generate", caliperRun, authMiddleware, async (c) => {
   const prisma = getPrisma(c.env.DATABASE_URL);
   const postId = c.req.param("postId");
   const userId = c.get("userId");
+  // Set only when the request carries x-caliper-run; otherwise every run?. below is a no-op.
+  const run = c.get("caliperRun");
   const body = await c.req.json().catch(() => ({}));
   const platform = body?.platform;
 
@@ -66,7 +71,9 @@ socialRouter.post("/:postId/generate", authMiddleware, async (c) => {
     return c.json({ error: "Invalid platform" }, 400);
   }
 
+  run?.mark("postgresStart");
   const check = await assertOwnership(prisma, postId, userId);
+  run?.mark("postgresEnd");
   if ("error" in check) return c.json({ error: check.error }, check.status);
   if (check.post.visibility !== "PUBLIC") return c.json({ error: "Post must be published" }, 400);
 
@@ -78,7 +85,8 @@ socialRouter.post("/:postId/generate", authMiddleware, async (c) => {
       summary: check.post.summary,
       authorName: check.post.author?.name ?? null,
     },
-    platform
+    platform,
+    run && (() => run.mark("modelCallSent"))
   );
 
   if (!stream) return c.json({ error: "Generation failed" }, 502);
@@ -86,7 +94,7 @@ socialRouter.post("/:postId/generate", authMiddleware, async (c) => {
   // c.body keeps the headers the cors middleware already set on c.res.
   // The draft is no longer saved here: the client saves it via PUT only when
   // the stream finishes normally, so a stopped generation is never persisted.
-  return c.body(stream, 200, {
+  return c.body(run ? run.watchFirstChunk(stream) : stream, 200, {
     "Content-Type": "text/event-stream",
     "Cache-Control": "no-cache",
     "Timing-Allow-Origin": "https://lets-quill.vercel.app",
