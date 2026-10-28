@@ -5,6 +5,7 @@ export type TimingMark = "postgresStart" | "postgresEnd" | "modelCallSent" | "fi
 
 export type TimingRecord = {
   id: string;
+  runtime: "workers";
   status: number | null;
   // ms since the request reached the generate route; a mark is absent when the
   // request never got that far (e.g. 401, 404, model error).

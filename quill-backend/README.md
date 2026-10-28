@@ -43,6 +43,7 @@ curl -H "Authorization: Bearer $CALIPER_TOKEN" https://<backend>/__caliper/timin
 ```json
 {
   "id": "run_1",
+  "runtime": "workers",
   "status": 200,
   "marks": { "postgresStart": 7, "postgresEnd": 533, "modelCallSent": 533, "firstChunk": 1439 }
 }

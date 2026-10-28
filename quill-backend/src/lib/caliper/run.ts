@@ -1,6 +1,6 @@
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
-import { getTimingStore, isValidRunId, TimingMark, TimingStore } from "./timingStore";
+import { getTimingStore, isValidRunId, TimingMark, TimingRecord, TimingStore } from "./timingStore";
 import { tokenMatches } from "./token";
 
 export const RUN_HEADER = "x-caliper-run";
@@ -50,7 +50,12 @@ export class CaliperRun {
   }
 
   save() {
-    const record = { id: this.id, status: this.status, marks: { ...this.marks } };
+    const record: TimingRecord = {
+      id: this.id,
+      runtime: "workers",
+      status: this.status,
+      marks: { ...this.marks },
+    };
     this.defer(
       this.store.put(this.id, record).catch((err) => {
         console.error("Caliper timing record not saved", err);

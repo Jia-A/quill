@@ -158,6 +158,19 @@ describe("generate route, request with x-caliper-run", () => {
     expect(modelCallSent).toBeGreaterThanOrEqual(postgresEnd);
     expect(firstChunk - modelCallSent).toBeGreaterThanOrEqual(25);
   });
+
+  it("tags the record with runtime: workers", async () => {
+    const res = await generate({
+      "x-caliper-run": "run_runtime",
+      "x-caliper-token": CALIPER_TOKEN,
+    });
+    await res.arrayBuffer();
+    await delay(0);
+
+    const timings = await app.request("/__caliper/timings/run_runtime", { headers: BEARER }, env);
+    expect(timings.status).toBe(200);
+    expect(((await timings.json()) as TimingRecord).runtime).toBe("workers");
+  });
 });
 
 describe("timings endpoint, malformed id", () => {
