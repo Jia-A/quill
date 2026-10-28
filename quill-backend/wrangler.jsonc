@@ -39,6 +39,10 @@
       {
         "name": "NOTIFICATION_DO",
         "class_name": "NotificationDO"
+      },
+      {
+        "name": "CALIPER_TIMINGS_DO",
+        "class_name": "CaliperTimingsDO"
       }
     ]
   },
@@ -46,6 +50,10 @@
   {
     "tag": "v1",
     "new_sqlite_classes": ["NotificationDO"]
+  },
+  {
+    "tag": "v2",
+    "new_sqlite_classes": ["CaliperTimingsDO"]
   }
 ]
   // "observability": {
