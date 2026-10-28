@@ -14,7 +14,8 @@ export type Platform = "linkedin";
 export async function streamSocialDraft(
   ai: Ai,
   post: SocialPromptInput,
-  platform: Platform
+  platform: Platform,
+  onModelCall?: () => void
 ): Promise<ReadableStream | null> {
   if (platform !== "linkedin") return null;
 
@@ -22,6 +23,7 @@ export async function streamSocialDraft(
   try {
     // Errors like AiError 5028 throw here, before any bytes are sent, so the
     // route can still answer with a normal JSON error status.
+    onModelCall?.();
     const stream = await ai.run(MODEL, {
       messages,
       // ~4 chars/token, so 300 tokens (~1200 chars) bounds a 150-220 word
