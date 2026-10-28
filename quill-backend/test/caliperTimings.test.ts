@@ -106,7 +106,10 @@ async function spyOnStore() {
   };
 }
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
+});
 
 describe("generate route, request without x-caliper-run", () => {
   it("returns exactly the status, headers and bytes it returned before the timings change", async () => {
@@ -159,17 +162,31 @@ describe("generate route, request with x-caliper-run", () => {
     expect(firstChunk - modelCallSent).toBeGreaterThanOrEqual(25);
   });
 
-  it("tags the record with runtime: workers", async () => {
-    const res = await generate({
-      "x-caliper-run": "run_runtime",
-      "x-caliper-token": CALIPER_TOKEN,
-    });
+  async function recordFor(runId: string) {
+    const res = await generate({ "x-caliper-run": runId, "x-caliper-token": CALIPER_TOKEN });
     await res.arrayBuffer();
     await delay(0);
 
-    const timings = await app.request("/__caliper/timings/run_runtime", { headers: BEARER }, env);
+    const timings = await app.request(`/__caliper/timings/${runId}`, { headers: BEARER }, env);
     expect(timings.status).toBe(200);
-    expect(((await timings.json()) as TimingRecord).runtime).toBe("workers");
+    return (await timings.json()) as TimingRecord;
+  }
+
+  it("tags the record with runtime: workers when running on Workers", async () => {
+    // What workerd reports (global_navigator, on by default since 2022-03-21).
+    vi.stubGlobal("navigator", { userAgent: "Cloudflare-Workers" });
+    expect((await recordFor("run_on_workers")).runtime).toBe("workers");
+  });
+
+  it("omits runtime when Workers isn't detected", async () => {
+    // Plain Node here: navigator.userAgent is "Node.js/<major>".
+    const record = await recordFor("run_not_workers");
+    expect(record).not.toHaveProperty("runtime");
+  });
+
+  it("omits runtime when there is no navigator at all", async () => {
+    vi.stubGlobal("navigator", undefined);
+    expect(await recordFor("run_no_navigator")).not.toHaveProperty("runtime");
   });
 });
 

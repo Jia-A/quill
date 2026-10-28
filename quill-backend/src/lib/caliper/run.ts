@@ -6,6 +6,12 @@ import { tokenMatches } from "./token";
 export const RUN_HEADER = "x-caliper-run";
 export const TOKEN_HEADER = "x-caliper-token";
 
+// Cloudflare documents navigator.userAgent === "Cloudflare-Workers" as the way
+// to tell code is running on Workers (global_navigator flag, on by default
+// since compatibility date 2022-03-21):
+// https://developers.cloudflare.com/workers/runtime-apis/web-standards/
+const isWorkers = () => globalThis.navigator?.userAgent === "Cloudflare-Workers";
+
 // Only steps that cross I/O are timed. On Workers, Date.now() is frozen while
 // code runs and only advances at I/O, so a pure-CPU step (JWT auth, building
 // the prompt) would always read 0 ms. That's a frozen clock, not a measurement.
@@ -52,7 +58,7 @@ export class CaliperRun {
   save() {
     const record: TimingRecord = {
       id: this.id,
-      runtime: "workers",
+      ...(isWorkers() && { runtime: "workers" as const }),
       status: this.status,
       marks: { ...this.marks },
     };

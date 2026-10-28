@@ -49,6 +49,10 @@ curl -H "Authorization: Bearer $CALIPER_TOKEN" https://<backend>/__caliper/timin
 }
 ```
 
+`runtime` is `"workers"` only when the code detected it is running on Cloudflare
+Workers (`navigator.userAgent === "Cloudflare-Workers"`); anywhere else the
+field is left out rather than guessed.
+
 Marks are ms since the request reached the generate route. A mark is missing
 when the request stopped before that step (e.g. 401, 404, model error).
 
