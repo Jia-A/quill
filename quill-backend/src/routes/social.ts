@@ -3,7 +3,8 @@ import { streamSocialDraft, PLATFORM_CAPS, Platform } from "../lib/generateSocia
 import { decryptSecret } from "../lib/crypto";
 import { authMiddleware } from "../middlewares/authMiddleware";
 import { getPrisma } from "../lib/prisma";
-import { caliperRun, CaliperRun } from "../lib/caliper/run";
+import type { CaliperRun } from "caliper-timings/workers";
+import { caliperRun } from "../lib/caliper";
 
 export const socialRouter = new Hono<{
   Bindings: {
@@ -87,7 +88,11 @@ socialRouter.post("/:postId/generate", caliperRun, authMiddleware, async (c) => 
       authorName: check.post.author?.name ?? null,
     },
     platform,
-    run && (() => run.mark("modelCallSent"))
+    run &&
+      ((messages) => {
+        run.prompt(messages); // sizes only, never the text
+        run.mark("modelCallSent");
+      })
   );
 
   if (!stream) return c.json({ error: "Generation failed" }, 502);
