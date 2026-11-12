@@ -89,8 +89,8 @@ socialRouter.post("/:postId/generate", caliperRun, authMiddleware, async (c) => 
     },
     platform,
     run &&
-      ((messages) => {
-        run.prompt(messages); // sizes only, never the text
+      ((messages, parts) => {
+        run.prompt(messages, { parts }); // sizes only, never the text
         run.mark("modelCallSent");
       })
   );

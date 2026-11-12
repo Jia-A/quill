@@ -313,3 +313,42 @@ describe("generate route, prompt sizes", () => {
     );
   });
 });
+
+describe("generate route, named parts of the prompt", () => {
+  it("names the user message's parts; they're all inside it and add up to it with the separators", async () => {
+    const { CaliperRun } = await import("caliper-timings/workers");
+    const prompt = vi.spyOn(CaliperRun.prototype, "prompt");
+    const res = await generate({ "x-caliper-run": "run_parts", "x-caliper-token": CALIPER_TOKEN });
+    await res.arrayBuffer();
+    await delay(0);
+
+    // What the route passed: each part's text is really inside the user message the model gets.
+    const [messages, options] = prompt.mock.calls[0]! as [
+      { content: string }[],
+      { parts: { message: number; name: string; text: string }[] },
+    ];
+    expect(options.parts.map((p) => p.name)).toEqual([
+      "author",
+      "title",
+      "code_snippet",
+      "article",
+    ]);
+    for (const p of options.parts) {
+      expect(p.message).toBe(1);
+      expect(messages[1]!.content.includes(p.text)).toBe(true);
+    }
+
+    const timings = await app.request("/__caliper/timings/run_parts", { headers: BEARER }, env);
+    const record = (await timings.json()) as TimingRecord;
+    const user = record.prompt!.messages[1]!;
+    expect(user.parts!.map((p) => [p.name, p.found])).toEqual([
+      ["author", true],
+      ["title", true],
+      ["code_snippet", true],
+      ["article", true],
+    ]);
+    const separators = (user.parts!.length - 1) * 2; // "\n\n" between pieces
+    expect(user.parts!.reduce((a, p) => a + p.bytes!, 0) + separators).toBe(user.bytes);
+    expect(JSON.stringify(record)).not.toContain("A title");
+  });
+});

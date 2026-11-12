@@ -27,8 +27,8 @@ importers:
         specifier: 7.8.0
         version: 7.8.0(prisma@7.8.0(@types/react-dom@19.2.3(@types/react@19.2.14))(@types/react@19.2.14)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)(typescript@5.9.3))(typescript@5.9.3)
       caliper-timings:
-        specifier: 0.3.0
-        version: 0.3.0
+        specifier: 0.4.0
+        version: 0.4.0
       cloudinary:
         specifier: ^2.10.0
         version: 2.10.0
@@ -1782,8 +1782,8 @@ packages:
     resolution: {integrity: sha512-b6Ilus+c3RrdDk+JhLKUAQfzzgLEPy6wcXqS7f/xe1EETvsDP6GORG7SFuOs6cID5YkqchW/LXZbX5bc8j7ZcQ==}
     engines: {node: '>=8'}
 
-  caliper-timings@0.3.0:
-    resolution: {integrity: sha512-Pb1vcbg3J8EIZKTC20r/byKtPvP7oBIyrFAQ5WjAQ0qyab/4HIbIGZPR1uZhj//Y5+oV2/yx9G2YSrGrvD0y8w==}
+  caliper-timings@0.4.0:
+    resolution: {integrity: sha512-ILFK8RCo6K3Tqr4BOmEWgZxcS9ed0vq19h1yjJV8neZv8fB3WMAGthD0CUsj4dx9iC81g+Ft9hPbgwSE+civgA==}
     engines: {node: '>=20'}
 
   call-bind-apply-helpers@1.0.2:
@@ -5179,7 +5179,7 @@ snapshots:
 
   cac@6.7.14: {}
 
-  caliper-timings@0.3.0: {}
+  caliper-timings@0.4.0: {}
 
   call-bind-apply-helpers@1.0.2:
     dependencies:
