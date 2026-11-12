@@ -1,4 +1,4 @@
-import { buildLinkedInMessages, SocialPromptInput } from "./socialPrompt";
+import { buildLinkedInMessages, ChatMessage, SocialPromptInput } from "./socialPrompt";
 
 // Workers AI deprecated the llama-3.1-8b-instruct alias on 2026-05-30 (it
 // resolved to @cf/meta/infire-llama-3.1-8b-instruct, which was retired), so
@@ -15,7 +15,8 @@ export async function streamSocialDraft(
   ai: Ai,
   post: SocialPromptInput,
   platform: Platform,
-  onModelCall?: () => void
+  // Called just before the model call, with the exact array the model gets.
+  onModelCall?: (messages: ChatMessage[]) => void
 ): Promise<ReadableStream | null> {
   if (platform !== "linkedin") return null;
 
@@ -23,7 +24,7 @@ export async function streamSocialDraft(
   try {
     // Errors like AiError 5028 throw here, before any bytes are sent, so the
     // route can still answer with a normal JSON error status.
-    onModelCall?.();
+    onModelCall?.(messages);
     const stream = await ai.run(MODEL, {
       messages,
       // ~4 chars/token, so 300 tokens (~1200 chars) bounds a 150-220 word

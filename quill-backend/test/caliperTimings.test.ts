@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { sign } from "hono/jwt";
-import type { TimingRecord } from "../src/lib/caliper/timingStore";
+import type { TimingRecord } from "caliper-timings";
 
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -99,7 +99,7 @@ async function expectUnchangedResponse(res: Response) {
 }
 
 async function spyOnStore() {
-  const { MemoryStore } = await import("../src/lib/caliper/timingStore");
+  const { MemoryStore } = await import("caliper-timings/workers");
   return {
     put: vi.spyOn(MemoryStore.prototype, "put"),
     get: vi.spyOn(MemoryStore.prototype, "get"),
@@ -117,7 +117,7 @@ describe("generate route, request without x-caliper-run", () => {
   });
 
   it("never touches the timing store", async () => {
-    const { MemoryStore } = await import("../src/lib/caliper/timingStore");
+    const { MemoryStore } = await import("caliper-timings/workers");
     const put = vi.spyOn(MemoryStore.prototype, "put");
     const res = await generate();
     await res.arrayBuffer();
@@ -282,5 +282,34 @@ describe("CALIPER_TOKEN not set", () => {
     expect(timings.status).toBe(404);
     expect(await timings.json()).toEqual(await missing.json());
     expect(store.get).not.toHaveBeenCalled();
+  });
+});
+
+describe("generate route, prompt sizes", () => {
+  it("passes the very same messages array to run.prompt and to the model", async () => {
+    const { CaliperRun } = await import("caliper-timings/workers");
+    const prompt = vi.spyOn(CaliperRun.prototype, "prompt");
+    let sentToModel: unknown;
+    const ai = fakeAi();
+    env.AI = {
+      run: async (_model: string, input: { messages: unknown }) => {
+        sentToModel = input.messages;
+        return ai.run();
+      },
+    };
+    const res = await generate({ "x-caliper-run": "run_prompt", "x-caliper-token": CALIPER_TOKEN });
+    await res.arrayBuffer();
+    await delay(0);
+
+    expect(prompt).toHaveBeenCalledTimes(1);
+    expect(sentToModel).toBeDefined();
+    expect(prompt.mock.calls[0]![0]).toBe(sentToModel);
+
+    const timings = await app.request("/__caliper/timings/run_prompt", { headers: BEARER }, env);
+    const record = (await timings.json()) as TimingRecord;
+    expect(record.prompt?.messages.map((m) => m.role)).toEqual(["system", "user"]);
+    expect(record.prompt?.messages.every((m) => typeof m.bytes === "number" && m.bytes > 0)).toBe(
+      true
+    );
   });
 });
