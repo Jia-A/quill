@@ -8,9 +8,9 @@ import { imageRouter } from "./routes/image";
 import { commentRouter } from "./routes/comments";
 import { notificationRouter } from "./routes/notification";
 import { teamRouter } from "./routes/teams";
-import { caliperRouter } from "./routes/caliper";
+import { caliperTimings } from "./lib/caliper";
 export { NotificationDO } from "./sockets/notificationDO";
-export { CaliperTimingsDO } from "./lib/caliper/timingsDO";
+export { CaliperTimingsDO } from "./lib/caliper";
 
 const app = new Hono<{
   Bindings: {
@@ -59,6 +59,6 @@ app.route("/api/v1/image/", imageRouter);
 app.route("/api/v1/comment/", commentRouter);
 app.route("/api/v1/notification", notificationRouter);
 app.route("/api/v1/teams/", teamRouter);
-app.route("/__caliper", caliperRouter);
+app.get("/__caliper/timings/:id", caliperTimings);
 
 export default app;
