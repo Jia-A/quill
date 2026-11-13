@@ -315,7 +315,7 @@ describe("generate route, prompt sizes", () => {
 });
 
 describe("generate route, named parts of the prompt", () => {
-  it("names the user message's parts; they're all inside it and add up to it with the separators", async () => {
+  it("names the system message as one part and the user message's parts; they're all inside their message and add up to it with the separators", async () => {
     const { CaliperRun } = await import("caliper-timings/workers");
     const prompt = vi.spyOn(CaliperRun.prototype, "prompt");
     const res = await generate({ "x-caliper-run": "run_parts", "x-caliper-token": CALIPER_TOKEN });
@@ -325,21 +325,24 @@ describe("generate route, named parts of the prompt", () => {
     // What the route passed: each part's text is really inside the user message the model gets.
     const [messages, options] = prompt.mock.calls[0]! as [
       { content: string }[],
-      { parts: { message: number; name: string; text: string }[] },
+      { parts: { message: number; name: string; text: string; source?: string }[] },
     ];
-    expect(options.parts.map((p) => p.name)).toEqual([
-      "author",
-      "title",
-      "code_snippet",
-      "article",
+    expect(options.parts.map((p) => [p.message, p.name, p.source])).toEqual([
+      [0, "instructions", "app"],
+      [1, "author", "user"],
+      [1, "title", "user"],
+      [1, "code_snippet", "app"],
+      [1, "article", "user"],
     ]);
     for (const p of options.parts) {
-      expect(p.message).toBe(1);
-      expect(messages[1]!.content.includes(p.text)).toBe(true);
+      expect(messages[p.message]!.content.includes(p.text)).toBe(true);
     }
 
     const timings = await app.request("/__caliper/timings/run_parts", { headers: BEARER }, env);
     const record = (await timings.json()) as TimingRecord;
+    expect(record.prompt!.messages[0]!.parts!.map((p) => [p.name, p.found, p.bytes])).toEqual([
+      ["instructions", true, record.prompt!.messages[0]!.bytes],
+    ]);
     const user = record.prompt!.messages[1]!;
     expect(user.parts!.map((p) => [p.name, p.found])).toEqual([
       ["author", true],
