@@ -39,8 +39,11 @@ Return ONLY the post body starting with the hook. Nothing else.
 
 FINAL REMINDER: between 150 and 220 words in 2 to 5 short paragraphs, then the nudge line, then the hashtag line. Longer posts get cut off.`;
 
-// A named piece of the user message, label included, for Caliper's prompt sizes (sizes only).
-export type PromptPart = { message: number; name: string; text: string };
+// A named piece of a message, label included, for Caliper's prompt sizes (sizes and labels only).
+// source: who wrote the text. Only the post's author can generate, so the post's text is "user";
+// left out when nobody knows (summary: nothing in the API writes it).
+export type PromptSource = "app" | "user" | "outside";
+export type PromptPart = { message: number; name: string; text: string; source?: PromptSource };
 
 // The messages, and the user message's pieces by name: the same strings it's joined from.
 export function buildLinkedInPrompt(input: SocialPromptInput): {
@@ -56,19 +59,22 @@ export function buildLinkedInPrompt(input: SocialPromptInput): {
 
   const body = stripHtml(input.content).slice(0, 6000);
 
-  const pieces: [string, string | null][] = [
-    ["author", input.authorName ? `Author: ${input.authorName}` : null],
-    ["title", `Title: ${input.title}`],
-    ["summary", input.summary ? `Summary: ${input.summary}` : null],
+  const pieces: [string, string | null, PromptSource | undefined][] = [
+    ["author", input.authorName ? `Author: ${input.authorName}` : null, "user"],
+    ["title", `Title: ${input.title}`, "user"],
+    ["summary", input.summary ? `Summary: ${input.summary}` : null, undefined],
     [
       "code_snippet",
       codeHint
         ? `CODE SNIPPET (include a short illustrative version in the post):\n${codeHint}`
         : `No code snippet — write prose only, do not invent code.`,
+      codeHint ? "user" : "app",
     ],
-    ["article", `Article:\n${body}`],
+    ["article", `Article:\n${body}`, "user"],
   ];
-  const present = pieces.filter((p): p is [string, string] => Boolean(p[1]));
+  const present = pieces.filter((p): p is [string, string, PromptSource | undefined] =>
+    Boolean(p[1])
+  );
   const userText = present.map(([, text]) => text).join("\n\n");
 
   return {
@@ -76,7 +82,15 @@ export function buildLinkedInPrompt(input: SocialPromptInput): {
       { role: "system", content: LINKEDIN_SYSTEM },
       { role: "user", content: userText },
     ],
-    parts: present.map(([name, text]) => ({ message: 1, name, text })),
+    parts: [
+      { message: 0, name: "instructions", text: LINKEDIN_SYSTEM, source: "app" },
+      ...present.map(([name, text, source]) => ({
+        message: 1,
+        name,
+        text,
+        ...(source && { source }),
+      })),
+    ],
   };
 }
 
